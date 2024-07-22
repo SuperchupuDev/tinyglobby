@@ -7,6 +7,7 @@ export interface GlobOptions {
   patterns?: string[];
   ignore?: string[];
   expandDirectories?: boolean;
+  onlyDirectories?: boolean;
 }
 
 // using a directory as entry should match all files inside it
@@ -56,7 +57,19 @@ function getFdirBuilder(options: GlobOptions) {
       }
     : undefined;
 
-  return options.absolute ? new fdir(fdirOptions).withFullPaths() : new fdir(fdirOptions).withRelativePaths();
+  let builder = new fdir(fdirOptions);
+
+  if (options.absolute) {
+    builder = builder.withFullPaths();
+  } else {
+    builder = builder.withRelativePaths();
+  }
+
+  if (options.onlyDirectories) {
+    builder = builder.onlyDirs();
+  }
+
+  return builder;
 }
 
 export async function glob(options: GlobOptions | undefined = {}): Promise<string[]> {
