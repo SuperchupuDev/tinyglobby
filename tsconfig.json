@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "es2019",
+    "lib": ["esnext"],
+
+    "module": "esnext",
+    "moduleResolution": "bundler",
+
+    "outDir": "dist",
+    "esModuleInterop": true,
+    "verbatimModuleSyntax": true,
+
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "noEmitOnError": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "declaration": true,
+
+    "strict": true
+  }
+}

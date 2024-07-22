@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "biomejs.biome",
+    "christian-kohler.npm-intellisense",
+    "christian-kohler.path-intellisense",
+    "codezombiech.gitignore",
+    "connor4312.nodejs-testing",
+    "eamodio.gitlens",
+    "github.vscode-pull-request-github"
+  ]
+}
