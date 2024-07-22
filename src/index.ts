@@ -1,22 +1,35 @@
 import { fdir } from 'fdir';
 import picomatch from 'picomatch';
 
-function processPatterns(patterns?: string[], ignore?: string[]) {
+export interface GlobOptions {
+  absolute?: boolean;
+  cwd?: string;
+  patterns?: string[];
+  ignore?: string[];
+  expandDirectories?: boolean;
+}
+
+// using a directory as entry should match all files inside it
+function expandDir(pattern: string) {
+  if (pattern.endsWith('/')) {
+    return `${pattern}**`;
+  }
+  if (pattern.endsWith('\\')) {
+    return `${pattern.slice(0, -1)}/**`;
+  }
+  return `${pattern}/**`;
+}
+
+function processPatterns({ patterns, ignore = [], expandDirectories = true }: GlobOptions) {
   if (!patterns) {
     return null;
   }
   const matchPatterns: string[] = [];
-  const ignorePatterns: string[] = ignore ?? [];
+  const ignorePatterns: string[] = ignore.map(p => (!p.endsWith('*') && expandDirectories ? expandDir(p) : p));
   for (let pattern of patterns) {
     // using a directory as entry should match all files inside it
-    if (!pattern.endsWith('*')) {
-      if (pattern.endsWith('/')) {
-        pattern += '**';
-      } else if (pattern.endsWith('\\')) {
-        pattern = `${pattern.slice(0, -1)}/**`;
-      } else {
-        pattern += '/**';
-      }
+    if (!pattern.endsWith('*') && expandDirectories) {
+      pattern = expandDir(pattern);
     }
     if (pattern.startsWith('!') && pattern[1] !== '(') {
       ignorePatterns.push(pattern.slice(1));
@@ -28,17 +41,10 @@ function processPatterns(patterns?: string[], ignore?: string[]) {
   return { match: matchPatterns, ignore: ignorePatterns };
 }
 
-export interface GlobOptions {
-  absolute?: boolean;
-  cwd?: string;
-  patterns?: string[];
-  ignore?: string[];
-}
+function getFdirBuilder(options: GlobOptions) {
+  const processed = processPatterns(options);
 
-function getFdirBuilder({ absolute = false, ignore, patterns }: GlobOptions | undefined = {}) {
-  const processed = processPatterns(patterns, ignore);
-
-  const options = processed
+  const fdirOptions = processed
     ? {
         filters: [
           picomatch(processed.match, {
@@ -50,7 +56,7 @@ function getFdirBuilder({ absolute = false, ignore, patterns }: GlobOptions | un
       }
     : undefined;
 
-  return absolute ? new fdir(options).withFullPaths() : new fdir(options).withRelativePaths();
+  return options.absolute ? new fdir(fdirOptions).withFullPaths() : new fdir(fdirOptions).withRelativePaths();
 }
 
 export async function glob(options: GlobOptions | undefined = {}): Promise<string[]> {
