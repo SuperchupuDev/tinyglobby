@@ -17,8 +17,15 @@ import { glob } from 'tinyglobby';
 await glob({ patterns: ['src/*.ts', '!**/*.d.ts'] });
 ```
 
+```js
+import { globSync } from 'tinyglobby';
+
+globSync({ patterns: ['src/*.ts', '!**/*.d.ts'] });
+```
+
 ## Options
 
 - `patterns`: An array of glob patterns to search for. If not present returns every file in the cwd.
+- `ignore`: An array of glob patterns to ignore.
 - `cwd`: The current working directory in which to search. Defaults to `process.cwd()`.
 - `absolute`: Whether to return absolute paths. Defaults to `false`.

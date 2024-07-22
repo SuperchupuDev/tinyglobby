@@ -13,6 +13,11 @@ test('negative patterns', async () => {
   assert.deepEqual(files.sort(), [path.join('a', 'a.ts')]);
 });
 
+test('ignore option', async () => {
+  const files = await glob({ patterns: ['**/a.ts'], ignore: ['b/a.ts'], cwd: path.join(__dirname, 'fixtures') });
+  assert.deepEqual(files.sort(), [path.join('a', 'a.ts')]);
+});
+
 test('bracket expanding', async () => {
   const files = await glob({ patterns: ['a/{a,b}.ts'], cwd: path.join(__dirname, 'fixtures') });
   assert.deepEqual(files.sort(), [path.join('a', 'a.ts'), path.join('a', 'b.ts')]);

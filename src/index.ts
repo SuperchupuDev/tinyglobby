@@ -1,12 +1,12 @@
 import { fdir } from 'fdir';
 import picomatch from 'picomatch';
 
-function processPatterns(patterns?: string[]) {
+function processPatterns(patterns?: string[], ignore?: string[]) {
   if (!patterns) {
     return null;
   }
   const matchPatterns: string[] = [];
-  const ignorePatterns: string[] = [];
+  const ignorePatterns: string[] = ignore ?? [];
   for (let pattern of patterns) {
     // using a directory as entry should match all files inside it
     if (!pattern.endsWith('*')) {
@@ -32,10 +32,11 @@ export interface GlobOptions {
   absolute?: boolean;
   cwd?: string;
   patterns?: string[];
+  ignore?: string[];
 }
 
-function getFdirBuilder({ absolute, patterns }: GlobOptions | undefined = {}) {
-  const processed = processPatterns(patterns);
+function getFdirBuilder({ absolute = false, ignore, patterns }: GlobOptions | undefined = {}) {
+  const processed = processPatterns(patterns, ignore);
 
   const options = processed
     ? {
@@ -52,14 +53,14 @@ function getFdirBuilder({ absolute, patterns }: GlobOptions | undefined = {}) {
   return absolute ? new fdir(options).withFullPaths() : new fdir(options).withRelativePaths();
 }
 
-export async function glob({
-  absolute = false,
-  cwd = process.cwd(),
-  patterns
-}: GlobOptions | undefined = {}): Promise<string[]> {
-  return getFdirBuilder({ absolute, patterns }).crawl(cwd).withPromise();
+export async function glob(options: GlobOptions | undefined = {}): Promise<string[]> {
+  return getFdirBuilder(options)
+    .crawl(options.cwd ?? process.cwd())
+    .withPromise();
 }
 
-export function globSync({ absolute = false, cwd = process.cwd(), patterns }: GlobOptions | undefined = {}): string[] {
-  return getFdirBuilder({ absolute, patterns }).crawl(cwd).sync();
+export function globSync(options: GlobOptions | undefined = {}): string[] {
+  return getFdirBuilder(options)
+    .crawl(options.cwd ?? process.cwd())
+    .sync();
 }
