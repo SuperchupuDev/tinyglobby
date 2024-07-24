@@ -50,8 +50,7 @@ function getFdirBuilder(options: GlobOptions) {
         filters: [
           picomatch(processed.match, {
             dot: true,
-            ignore: processed.ignore,
-            windows: process.platform === 'win32'
+            ignore: processed.ignore
           })
         ]
       }
