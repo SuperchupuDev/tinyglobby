@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { type Options as FdirOptions, fdir } from 'fdir';
 import picomatch from 'picomatch';
 
@@ -6,6 +7,7 @@ export interface GlobOptions {
   cwd?: string;
   patterns?: string[];
   ignore?: string[];
+  dot?: boolean;
   expandDirectories?: boolean;
   onlyDirectories?: boolean;
 }
@@ -44,17 +46,17 @@ function processPatterns({ patterns, ignore = [], expandDirectories = true }: Gl
   return { match: matchPatterns, ignore: ignorePatterns };
 }
 
-function getFdirBuilder(options: GlobOptions) {
+function getFdirBuilder(options: GlobOptions, cwd: string) {
   const processed = processPatterns(options);
 
-  const fdirOptions: Partial<FdirOptions> = {
-    filters: [
-      picomatch(processed.match, {
-        dot: true,
-        ignore: processed.ignore
-      })
-    ],
+  const matcher = picomatch(processed.match, {
+    dot: options.dot,
+    ignore: processed.ignore
+  });
 
+  const fdirOptions: Partial<FdirOptions> = {
+    // use relative paths in the matcher
+    filters: [options.absolute ? p => matcher(p.slice(cwd.length + 1)) : matcher],
     relativePaths: true
   };
 
@@ -73,13 +75,11 @@ function getFdirBuilder(options: GlobOptions) {
 }
 
 export async function glob(options: GlobOptions | undefined = {}): Promise<string[]> {
-  return getFdirBuilder(options)
-    .crawl(options.cwd ?? process.cwd())
-    .withPromise();
+  const cwd = options.cwd ? path.resolve(options.cwd) : process.cwd();
+  return getFdirBuilder(options, cwd).crawl(cwd).withPromise();
 }
 
 export function globSync(options: GlobOptions | undefined = {}): string[] {
-  return getFdirBuilder(options)
-    .crawl(options.cwd ?? process.cwd())
-    .sync();
+  const cwd = options.cwd ? path.resolve(options.cwd) : process.cwd();
+  return getFdirBuilder(options, cwd).crawl(cwd).sync();
 }

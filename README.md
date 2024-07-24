@@ -25,9 +25,10 @@ globSync({ patterns: ['src/*.ts', '!**/*.d.ts'] });
 
 ## Options
 
-- `patterns`: An array of glob patterns to search for. If not present returns every file in the cwd.
+- `patterns`: An array of glob patterns to search for. Defaults to `['**/*']`.
 - `ignore`: An array of glob patterns to ignore.
 - `cwd`: The current working directory in which to search. Defaults to `process.cwd()`.
 - `absolute`: Whether to return absolute paths. Defaults to `false`.
+- `dot`: Whether to allow entries starting with a dot. Defaults to `false`.
 - `expandDirectories`: Whether to expand directories. Disable to best match `fast-glob`. Defaults to `true`.
 - `onlyDirectories`: Enable to only return directories. Defaults to `false`.

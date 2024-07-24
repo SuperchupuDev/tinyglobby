@@ -35,6 +35,26 @@ test('bracket expanding', async () => {
   assert.deepEqual(files.sort(), [path.join('a', 'a.ts'), path.join('a', 'b.ts')]);
 });
 
+test('dot', async () => {
+  const files = await glob({ patterns: ['a/a.ts'], dot: true, cwd: path.join(cwd, '.a') });
+  assert.deepEqual(files.sort(), [path.join('a', 'a.ts')]);
+});
+
+test('absolute + dot', async () => {
+  const files = await glob({ patterns: ['a/a.ts'], dot: true, cwd: path.join(cwd, '.a'), absolute: true });
+  assert.equal(files[0].slice(path.join(cwd, '.a').length + 1), path.join('a', 'a.ts'));
+});
+
+test('absolute', async () => {
+  const files = await glob({ patterns: ['a/a.ts'], dot: true, cwd: path.join(cwd, '.a'), absolute: true });
+  assert.equal(files[0].slice(path.join(cwd, '.a').length + 1), path.join('a', 'a.ts'));
+});
+
+test('works with non-absolute cwd', async () => {
+  const files = await glob({ patterns: ['a/*.ts'], cwd: 'test/fixtures' });
+  assert.deepEqual(files.sort(), [path.join('a', 'a.ts'), path.join('a', 'b.ts')]);
+});
+
 test('no patterns returns everything in cwd', async () => {
   const files = await glob({ cwd });
   assert.deepEqual(files.sort(), [
