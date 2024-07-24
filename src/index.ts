@@ -1,4 +1,4 @@
-import { fdir } from 'fdir';
+import { type Options as FdirOptions, fdir } from 'fdir';
 import picomatch from 'picomatch';
 
 export interface GlobOptions {
@@ -22,11 +22,13 @@ function expandDir(pattern: string) {
 }
 
 function processPatterns({ patterns, ignore = [], expandDirectories = true }: GlobOptions) {
-  if (!patterns) {
-    return null;
-  }
   const matchPatterns: string[] = [];
   const ignorePatterns: string[] = ignore.map(p => (!p.endsWith('*') && expandDirectories ? expandDir(p) : p));
+
+  if (!patterns || patterns.length === 0) {
+    return { match: ['**/*'], ignore: ignorePatterns };
+  }
+
   for (let pattern of patterns) {
     // using a directory as entry should match all files inside it
     if (!pattern.endsWith('*') && expandDirectories) {
@@ -45,30 +47,29 @@ function processPatterns({ patterns, ignore = [], expandDirectories = true }: Gl
 function getFdirBuilder(options: GlobOptions) {
   const processed = processPatterns(options);
 
-  const fdirOptions = processed
-    ? {
-        filters: [
-          picomatch(processed.match, {
-            dot: true,
-            ignore: processed.ignore
-          })
-        ]
-      }
-    : undefined;
+  const fdirOptions: Partial<FdirOptions> = {
+    filters: [
+      picomatch(processed.match, {
+        dot: true,
+        ignore: processed.ignore
+      })
+    ],
 
-  let builder = new fdir(fdirOptions);
+    relativePaths: true
+  };
 
   if (options.absolute) {
-    builder = builder.withFullPaths();
-  } else {
-    builder = builder.withRelativePaths();
+    fdirOptions.relativePaths = false;
+    fdirOptions.resolvePaths = true;
+    fdirOptions.includeBasePath = true;
   }
 
   if (options.onlyDirectories) {
-    builder = builder.onlyDirs();
+    fdirOptions.excludeFiles = true;
+    fdirOptions.includeDirs = true;
   }
 
-  return builder;
+  return new fdir(fdirOptions);
 }
 
 export async function glob(options: GlobOptions | undefined = {}): Promise<string[]> {
