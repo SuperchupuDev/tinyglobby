@@ -30,5 +30,6 @@ globSync({ patterns: ['src/*.ts', '!**/*.d.ts'] });
 - `cwd`: The current working directory in which to search. Defaults to `process.cwd()`.
 - `absolute`: Whether to return absolute paths. Defaults to `false`.
 - `dot`: Whether to allow entries starting with a dot. Defaults to `false`.
+- `deep`: Maximum depth of a directory. Defaults to `Infinity`.
 - `expandDirectories`: Whether to expand directories. Disable to best match `fast-glob`. Defaults to `true`.
 - `onlyDirectories`: Enable to only return directories. Defaults to `false`.

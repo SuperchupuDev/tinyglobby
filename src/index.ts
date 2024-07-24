@@ -8,6 +8,7 @@ export interface GlobOptions {
   patterns?: string[];
   ignore?: string[];
   dot?: boolean;
+  deep?: number;
   expandDirectories?: boolean;
   onlyDirectories?: boolean;
 }
@@ -59,6 +60,10 @@ function getFdirBuilder(options: GlobOptions, cwd: string) {
     filters: [options.absolute ? p => matcher(p.slice(cwd.length + 1)) : matcher],
     relativePaths: true
   };
+
+  if (options.deep) {
+    fdirOptions.maxDepth = options.deep;
+  }
 
   if (options.absolute) {
     fdirOptions.relativePaths = false;

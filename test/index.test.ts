@@ -40,14 +40,22 @@ test('dot', async () => {
   assert.deepEqual(files.sort(), [path.join('a', 'a.ts')]);
 });
 
+test('deep', async () => {
+  const files = await glob({ patterns: ['.deep/a/a/*.ts'], deep: 3, cwd });
+  assert.deepEqual(files.sort(), [path.join('.deep', 'a', 'a', 'a.ts')]);
+
+  const files2 = await glob({ patterns: ['.deep/a/a/*.ts'], deep: 2, cwd });
+  assert.deepEqual(files2.sort(), []);
+});
+
 test('absolute + dot', async () => {
   const files = await glob({ patterns: ['a/a.ts'], dot: true, cwd: path.join(cwd, '.a'), absolute: true });
-  assert.equal(files[0].slice(path.join(cwd, '.a').length + 1), path.join('a', 'a.ts'));
+  assert.deepEqual(files.sort(), [path.resolve(cwd, '.a', 'a', 'a.ts')]);
 });
 
 test('absolute', async () => {
   const files = await glob({ patterns: ['a/a.ts'], dot: true, cwd: path.join(cwd, '.a'), absolute: true });
-  assert.equal(files[0].slice(path.join(cwd, '.a').length + 1), path.join('a', 'a.ts'));
+  assert.deepEqual(files.sort(), [path.resolve(cwd, '.a', 'a', 'a.ts')]);
 });
 
 test('works with non-absolute cwd', async () => {
