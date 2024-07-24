@@ -3,7 +3,8 @@ on:
   release:
     types: [created]
 jobs:
-  build:
+  publish:
+    name: Publish
     runs-on: ubuntu-latest
     permissions:
       contents: read
