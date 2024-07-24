@@ -11,6 +11,7 @@ export interface GlobOptions {
   deep?: number;
   expandDirectories?: boolean;
   onlyDirectories?: boolean;
+  onlyFiles?: boolean;
 }
 
 // using a directory as entry should match all files inside it
@@ -73,6 +74,8 @@ function getFdirBuilder(options: GlobOptions, cwd: string) {
 
   if (options.onlyDirectories) {
     fdirOptions.excludeFiles = true;
+    fdirOptions.includeDirs = true;
+  } else if (options.onlyFiles === false) {
     fdirOptions.includeDirs = true;
   }
 

@@ -32,4 +32,5 @@ globSync({ patterns: ['src/*.ts', '!**/*.d.ts'] });
 - `dot`: Whether to allow entries starting with a dot. Defaults to `false`.
 - `deep`: Maximum depth of a directory. Defaults to `Infinity`.
 - `expandDirectories`: Whether to expand directories. Disable to best match `fast-glob`. Defaults to `true`.
-- `onlyDirectories`: Enable to only return directories. Defaults to `false`.
+- `onlyDirectories`: Enable to only return directories. Disables `onlyFiles` if set. Defaults to `false`.
+- `onlyFiles`: Enable to only return files. Defaults to `true`.
