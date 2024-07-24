@@ -82,12 +82,28 @@ function getFdirBuilder(options: GlobOptions, cwd: string) {
   return new fdir(fdirOptions);
 }
 
-export async function glob(options: GlobOptions | undefined = {}): Promise<string[]> {
-  const cwd = options.cwd ? path.resolve(options.cwd) : process.cwd();
-  return getFdirBuilder(options, cwd).crawl(cwd).withPromise();
+export function glob(patterns: string[], options?: Omit<GlobOptions, 'patterns'>): Promise<string[]>;
+export function glob(options: GlobOptions): Promise<string[]>;
+export async function glob(patternsOrOptions: string[] | GlobOptions, options?: GlobOptions): Promise<string[]> {
+  if (patternsOrOptions && options?.patterns) {
+    throw new Error('Cannot pass patterns as both an argument and an option');
+  }
+
+  const opts = Array.isArray(patternsOrOptions) ? { ...options, patterns: patternsOrOptions } : patternsOrOptions;
+  const cwd = opts.cwd ? path.resolve(opts.cwd) : process.cwd();
+
+  return getFdirBuilder(opts, cwd).crawl(cwd).withPromise();
 }
 
-export function globSync(options: GlobOptions | undefined = {}): string[] {
-  const cwd = options.cwd ? path.resolve(options.cwd) : process.cwd();
-  return getFdirBuilder(options, cwd).crawl(cwd).sync();
+export function globSync(patterns: string[], options?: Omit<GlobOptions, 'patterns'>): string[];
+export function globSync(options: GlobOptions): string[];
+export function globSync(patternsOrOptions: string[] | GlobOptions, options?: GlobOptions): string[] {
+  if (patternsOrOptions && options?.patterns) {
+    throw new Error('Cannot pass patterns as both an argument and an option');
+  }
+
+  const opts = Array.isArray(patternsOrOptions) ? { ...options, patterns: patternsOrOptions } : patternsOrOptions;
+  const cwd = opts.cwd ? path.resolve(opts.cwd) : process.cwd();
+
+  return getFdirBuilder(opts, cwd).crawl(cwd).sync();
 }

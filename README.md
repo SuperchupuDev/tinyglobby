@@ -12,15 +12,14 @@ This library uses only two subdependencies, unlike globby's [24](https://npmgrap
 ## Usage
 
 ```js
-import { glob } from 'tinyglobby';
+import { glob, globSync } from 'tinyglobby';
 
-await glob({ patterns: ['src/*.ts', '!**/*.d.ts'] });
-```
+await glob(['files/*.ts', '!**/*.d.ts'], { cwd: 'src' });
+globSync(['src/**/*.ts'], { ignore: ['**/*.d.ts'] });
 
-```js
-import { globSync } from 'tinyglobby';
-
-globSync({ patterns: ['src/*.ts', '!**/*.d.ts'] });
+// you can also specify patterns inside the options object (exclusive to tinyglobby)
+await glob({ patterns: ['src/*.ts', '!**/*.d.ts'], dot: true });
+globSync({ patterns: ['src/**/*.ts', '!**/*.d.ts'], deep: 3 });
 ```
 
 ## Options

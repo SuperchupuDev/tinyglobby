@@ -15,6 +15,16 @@ test('no directory expansion if expandDirectories is set to false', async () => 
   assert.deepEqual(files.sort(), []);
 });
 
+test('classic patterns as first argument', async () => {
+  const files = await glob(['a/*.ts'], { cwd });
+  assert.deepEqual(files.sort(), [path.join('a', 'a.ts'), path.join('a', 'b.ts')]);
+});
+
+test("cant have both classic patterns and options' patterns", async () => {
+  // @ts-expect-error
+  assert.rejects(glob(['a/*.ts'], { patterns: ['whoops!'], cwd }));
+});
+
 test('negative patterns', async () => {
   const files = await glob({ patterns: ['**/a.ts', '!b/a.ts'], cwd });
   assert.deepEqual(files.sort(), [path.join('a', 'a.ts')]);
