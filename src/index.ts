@@ -56,9 +56,14 @@ function getFdirBuilder(options: GlobOptions, cwd: string) {
     ignore: processed.ignore
   });
 
+  const exclude = picomatch(processed.ignore, {
+    dot: options.dot
+  });
+
   const fdirOptions: Partial<FdirOptions> = {
     // use relative paths in the matcher
-    filters: [options.absolute ? p => matcher(p.slice(cwd.length + 1)) : matcher],
+    filters: [p => matcher(options.absolute ? p.slice(cwd.length + 1) : p)],
+    exclude: (_, p) => exclude(p.slice(cwd.length + 1)),
     relativePaths: true
   };
 
