@@ -64,7 +64,8 @@ function getFdirBuilder(options: GlobOptions, cwd: string) {
     // use relative paths in the matcher
     filters: [p => matcher(options.absolute ? p.slice(cwd.length + 1) : p)],
     exclude: (_, p) => exclude(p.slice(cwd.length + 1)),
-    relativePaths: true
+    relativePaths: true,
+    pathSeparator: '/'
   };
 
   if (options.deep) {

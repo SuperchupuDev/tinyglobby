@@ -8,7 +8,7 @@
     "format": "biome format --write",
     "lint": "biome lint",
     "lint:fix": "biome lint --fix --unsafe",
-    "test": "node --import tsx --test test/*.test.ts",
+    "test": "tsx --test",
     "typecheck": "tsc --noEmit"
   },
   "main": "dist/index.js",
