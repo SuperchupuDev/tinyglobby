@@ -26,13 +26,13 @@ importers:
         version: 3.0.0
       tsup:
         specifier: ^8.2.2
-        version: 8.2.2(tsx@4.16.2)(typescript@5.5.3)(yaml@2.4.5)
+        version: 8.2.2(tsx@4.16.2)(typescript@5.5.4)(yaml@2.4.5)
       tsx:
         specifier: ^4.16.2
         version: 4.16.2
       typescript:
         specifier: ^5.5.3
-        version: 5.5.3
+        version: 5.5.4
 
 packages:
 
@@ -930,8 +930,8 @@ packages:
     engines: {node: '>=18.0.0'}
     hasBin: true
 
-  typescript@5.5.3:
-    resolution: {integrity: sha512-/hreyEujaB0w76zKo6717l3L0o/qEUtRgdvUBvlkhoWeOVMjMuHNHk0BRBzikzuGDqNmPQbg5ifMEqsHLiIUcQ==}
+  typescript@5.5.4:
+    resolution: {integrity: sha512-Mtq29sKDAEYP7aljRgtPOpTvOfbwRWlS6dPRzwjdE+C0R4brX/GUyhHSecbHMFLNBLcJIPt9nl9yG5TZ1weH+Q==}
     engines: {node: '>=14.17'}
     hasBin: true
 
@@ -1649,7 +1649,7 @@ snapshots:
 
   ts-interface-checker@0.1.13: {}
 
-  tsup@8.2.2(tsx@4.16.2)(typescript@5.5.3)(yaml@2.4.5):
+  tsup@8.2.2(tsx@4.16.2)(typescript@5.5.4)(yaml@2.4.5):
     dependencies:
       bundle-require: 5.0.0(esbuild@0.23.0)
       cac: 6.7.14
@@ -1668,7 +1668,7 @@ snapshots:
       sucrase: 3.35.0
       tree-kill: 1.2.2
     optionalDependencies:
-      typescript: 5.5.3
+      typescript: 5.5.4
     transitivePeerDependencies:
       - jiti
       - supports-color
@@ -1682,7 +1682,7 @@ snapshots:
     optionalDependencies:
       fsevents: 2.3.3
 
-  typescript@5.5.3: {}
+  typescript@5.5.4: {}
 
   undici-types@5.26.5: {}
 
