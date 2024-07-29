@@ -44,7 +44,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
-    "@types/node": "^20.14.11",
+    "@types/node": "^22.0.0",
     "@types/picomatch": "^3.0.0",
     "tsup": "^8.2.2",
     "tsx": "^4.16.2",
