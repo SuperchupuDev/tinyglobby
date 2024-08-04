@@ -10,6 +10,11 @@ test('directory expansion', async () => {
   assert.deepEqual(files.sort(), ['a/a.ts', 'a/b.ts']);
 });
 
+test('empty array matches nothing', async () => {
+  const files = await glob({ patterns: [], cwd });
+  assert.deepEqual(files.sort(), []);
+});
+
 test('no directory expansion if expandDirectories is set to false', async () => {
   const files = await glob({ patterns: ['a'], expandDirectories: false, cwd });
   assert.deepEqual(files.sort(), []);

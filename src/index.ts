@@ -29,7 +29,7 @@ function processPatterns({ patterns, ignore = [], expandDirectories = true }: Gl
   const matchPatterns: string[] = [];
   const ignorePatterns: string[] = ignore.map(p => (!p.endsWith('*') && expandDirectories ? expandDir(p) : p));
 
-  if (!patterns || patterns.length === 0) {
+  if (!patterns) {
     return { match: ['**/*'], ignore: ignorePatterns };
   }
 
@@ -64,8 +64,8 @@ function getFdirBuilder(options: GlobOptions, cwd: string) {
     // use relative paths in the matcher
     filters: [p => matcher(options.absolute ? p.slice(cwd.length + 1) : p)],
     exclude: (_, p) => exclude(p.slice(cwd.length + 1)),
-    relativePaths: true,
-    pathSeparator: '/'
+    pathSeparator: '/',
+    relativePaths: true
   };
 
   if (options.deep) {
