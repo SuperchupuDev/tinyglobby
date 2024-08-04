@@ -1,3 +1,14 @@
+## [0.2.1](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.0...0.2.1)
+
+#### Fixed
+
+- Using an empty array of `patterns` no longer acts as `['**/*']`
+
+#### Changed
+
+- Windows now uses forward slashes instead of backslashes
+- Modified `ignore` behavior to vastly improve performance when ignoring whole directories
+
 ## [0.2.0](https://github.com/SuperchupuDev/tinyglobby/compare/0.1.2...0.2.0)
 
 #### BREAKING CHANGES
