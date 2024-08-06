@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { test } from 'node:test';
-import { glob, globSync } from '../src';
+import { glob, globSync } from '../src/index.js';
 
 const cwd = path.join(__dirname, '../fixtures');
 
@@ -11,7 +11,7 @@ test('directory expansion', async () => {
 });
 
 test('empty array matches nothing', async () => {
-  const files = await glob({ patterns: [], cwd });
+  const files = await glob({ patterns: [] });
   assert.deepEqual(files.sort(), []);
 });
 
@@ -28,6 +28,9 @@ test('classic patterns as first argument', async () => {
 test("cant have both classic patterns and options' patterns", async () => {
   // @ts-expect-error
   assert.rejects(glob(['a/*.ts'], { patterns: ['whoops!'], cwd }));
+
+  // @ts-expect-error
+  assert.throws(() => globSync(['a/*.ts'], { patterns: ['whoops!'], cwd }));
 });
 
 test('negative patterns', async () => {
@@ -60,6 +63,11 @@ test('matching only a directory works', async () => {
   assert.deepEqual(files.sort(), ['a/']);
 });
 
+test('expandDirectories true', async () => {
+  const files = await glob({ patterns: ['a'], expandDirectories: true, cwd });
+  assert.deepEqual(files.sort(), ['a/a.ts', 'a/b.ts']);
+});
+
 test('handle absolute patterns to some extent', async () => {
   const files = await glob({ patterns: [`${cwd.replaceAll('\\', '/')}/a/a.ts`], cwd });
   assert.deepEqual(files.sort(), ['a/a.ts']);
@@ -81,6 +89,9 @@ test('deep', async () => {
 
   const files2 = await glob({ patterns: ['.deep/a/a/*.ts'], deep: 2, cwd });
   assert.deepEqual(files2.sort(), []);
+
+  const files3 = await glob({ patterns: ['.deep/a/a/*.ts'], deep: 1, cwd });
+  assert.deepEqual(files3.sort(), []);
 });
 
 test('absolute + dot', async () => {
@@ -108,7 +119,51 @@ test('**/* works', async () => {
   assert.deepEqual(files.sort(), ['a/a.ts', 'a/b.ts', 'b/a.ts', 'b/b.ts']);
 });
 
+test('matching files with specific naming pattern', async () => {
+  const files = await glob({ patterns: ['**/[a-c].ts'], cwd });
+  assert.deepEqual(files.sort(), ['a/a.ts', 'a/b.ts', 'b/a.ts', 'b/b.ts']);
+});
+
+test('using extglob patterns', async () => {
+  const files = await glob({ patterns: ['a/*(a|b).ts'], cwd });
+  assert.deepEqual(files.sort(), ['a/a.ts', 'a/b.ts']);
+});
+
+test('pattern normalization', async () => {
+  const files1 = await glob({ patterns: ['a/'], cwd });
+  const files2 = await glob({ patterns: ['a'], cwd });
+  assert.deepEqual(files1, files2);
+});
+
+test('negative patterns in options', async () => {
+  const files = await glob({ patterns: ['**/*.ts', '!**/b.ts'], cwd });
+  assert.deepEqual(files.sort(), ['a/a.ts', 'b/a.ts']);
+
+  const files2 = await glob({ patterns: ['**/*.ts', '!**/a.ts'], cwd });
+  assert.deepEqual(files2.sort(), ['a/b.ts', 'b/b.ts']);
+});
+
 test('sync version', () => {
   const files = globSync({ patterns: ['a/*.ts'], cwd });
   assert.deepEqual(files.sort(), ['a/a.ts', 'a/b.ts']);
+});
+
+test('sync version with no patterns', () => {
+  const files = globSync({ cwd });
+  assert.deepEqual(files.sort(), ['a/a.ts', 'a/b.ts', 'b/a.ts', 'b/b.ts']);
+});
+
+test('sync version with no patterns and onlyDirectories', () => {
+  const files = globSync({ cwd, onlyDirectories: true });
+  assert.deepEqual(files.sort(), ['a/', 'b/']);
+});
+
+test('sync version with multiple patterns', () => {
+  const files = globSync({ patterns: ['a/*.ts', 'b/*.ts'], cwd });
+  assert.deepEqual(files.sort(), ['a/a.ts', 'a/b.ts', 'b/a.ts', 'b/b.ts']);
+});
+
+test('sync with empty array matches nothing', () => {
+  const files = globSync({ patterns: [] });
+  assert.deepEqual(files.sort(), []);
 });
