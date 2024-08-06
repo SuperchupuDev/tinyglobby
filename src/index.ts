@@ -14,30 +14,28 @@ export interface GlobOptions {
   onlyFiles?: boolean;
 }
 
-// using a directory as entry should match all files inside it
-function expandDir(pattern: string) {
-  if (pattern.endsWith('/')) {
-    return `${pattern}**`;
+function normalizePattern(pattern: string, expandDirectories: boolean) {
+  let result: string = pattern;
+  if (pattern.endsWith('/') || pattern.endsWith('\\')) {
+    result = pattern.slice(0, -1);
   }
-  if (pattern.endsWith('\\')) {
-    return `${pattern.slice(0, -1)}/**`;
+  // using a directory as entry should match all files inside it
+  if (!pattern.endsWith('*') && expandDirectories) {
+    result += '/**';
   }
-  return `${pattern}/**`;
+  return result;
 }
 
 function processPatterns({ patterns, ignore = [], expandDirectories = true }: GlobOptions) {
   const matchPatterns: string[] = [];
-  const ignorePatterns: string[] = ignore.map(p => (!p.endsWith('*') && expandDirectories ? expandDir(p) : p));
+  const ignorePatterns: string[] = ignore.map(p => normalizePattern(p, expandDirectories));
 
   if (!patterns) {
     return { match: ['**/*'], ignore: ignorePatterns };
   }
 
   for (let pattern of patterns) {
-    // using a directory as entry should match all files inside it
-    if (!pattern.endsWith('*') && expandDirectories) {
-      pattern = expandDir(pattern);
-    }
+    pattern = normalizePattern(pattern, expandDirectories);
     if (pattern.startsWith('!') && pattern[1] !== '(') {
       ignorePatterns.push(pattern.slice(1));
     } else {
