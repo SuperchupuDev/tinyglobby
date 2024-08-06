@@ -60,6 +60,11 @@ test('matching only a directory works', async () => {
   assert.deepEqual(files.sort(), ['a/']);
 });
 
+test('handle absolute patterns to some extent', async () => {
+  const files = await glob({ patterns: [`${cwd.replaceAll('\\', '/')}/a/a.ts`], cwd });
+  assert.deepEqual(files.sort(), ['a/a.ts']);
+});
+
 test('bracket expanding', async () => {
   const files = await glob({ patterns: ['a/{a,b}.ts'], cwd });
   assert.deepEqual(files.sort(), ['a/a.ts', 'a/b.ts']);

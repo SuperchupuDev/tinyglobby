@@ -14,28 +14,31 @@ export interface GlobOptions {
   onlyFiles?: boolean;
 }
 
-function normalizePattern(pattern: string, expandDirectories: boolean) {
+function normalizePattern(pattern: string, expandDirectories: boolean, cwd: string) {
   let result: string = pattern;
-  if (pattern.endsWith('/') || pattern.endsWith('\\')) {
+  if (pattern.endsWith('/')) {
     result = pattern.slice(0, -1);
   }
   // using a directory as entry should match all files inside it
   if (!pattern.endsWith('*') && expandDirectories) {
     result += '/**';
   }
+  if (result.startsWith(cwd.replace(/\\/g, '/'))) {
+    result = path.relative(cwd, result).replace(/\\/g, '/');
+  }
   return result;
 }
 
-function processPatterns({ patterns, ignore = [], expandDirectories = true }: GlobOptions) {
+function processPatterns({ patterns, ignore = [], expandDirectories = true }: GlobOptions, cwd: string) {
   const matchPatterns: string[] = [];
-  const ignorePatterns: string[] = ignore.map(p => normalizePattern(p, expandDirectories));
+  const ignorePatterns: string[] = ignore.map(p => normalizePattern(p, expandDirectories, cwd));
 
   if (!patterns) {
     return { match: ['**/*'], ignore: ignorePatterns };
   }
 
   for (let pattern of patterns) {
-    pattern = normalizePattern(pattern, expandDirectories);
+    pattern = normalizePattern(pattern, expandDirectories, cwd);
     if (pattern.startsWith('!') && pattern[1] !== '(') {
       ignorePatterns.push(pattern.slice(1));
     } else {
@@ -53,7 +56,7 @@ function processPath(path: string, cwd: string, absolute?: boolean) {
 }
 
 function getFdirBuilder(options: GlobOptions, cwd: string) {
-  const processed = processPatterns(options);
+  const processed = processPatterns(options, cwd);
 
   const matcher = picomatch(processed.match, {
     dot: options.dot,
