@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { test } from 'node:test';
-import { glob, globSync } from '../src';
+import { glob, globSync } from '../src/index.js';
 
 const cwd = path.join(__dirname, '../fixtures');
 
@@ -11,7 +11,7 @@ test('directory expansion', async () => {
 });
 
 test('empty array matches nothing', async () => {
-  const files = await glob({ patterns: [], cwd });
+  const files = await glob({ patterns: [] });
   assert.deepEqual(files.sort(), []);
 });
 
@@ -28,6 +28,9 @@ test('classic patterns as first argument', async () => {
 test("cant have both classic patterns and options' patterns", async () => {
   // @ts-expect-error
   assert.rejects(glob(['a/*.ts'], { patterns: ['whoops!'], cwd }));
+
+  // @ts-expect-error
+  assert.throws(() => globSync(['a/*.ts'], { patterns: ['whoops!'], cwd }));
 });
 
 test('negative patterns', async () => {
@@ -140,7 +143,6 @@ test('negative patterns in options', async () => {
   assert.deepEqual(files2.sort(), ['a/b.ts', 'b/b.ts']);
 });
 
-
 test('sync version', () => {
   const files = globSync({ patterns: ['a/*.ts'], cwd });
   assert.deepEqual(files.sort(), ['a/a.ts', 'a/b.ts']);
@@ -162,6 +164,6 @@ test('sync version with multiple patterns', () => {
 });
 
 test('sync with empty array matches nothing', () => {
-  const files = globSync({ patterns: [], cwd });
+  const files = globSync({ patterns: [] });
   assert.deepEqual(files.sort(), []);
 });

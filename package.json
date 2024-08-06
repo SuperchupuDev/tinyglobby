@@ -9,7 +9,7 @@
     "lint": "biome lint",
     "lint:fix": "biome lint --fix --unsafe",
     "test": "tsx --test",
-    "test:cov":"tsx --test --experimental-test-coverage",
+    "test:cov": "tsx --test --experimental-test-coverage",
     "typecheck": "tsc --noEmit"
   },
   "main": "dist/index.js",
