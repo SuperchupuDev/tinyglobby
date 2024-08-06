@@ -1,4 +1,15 @@
-## [0.2.1](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.0...0.2.1)
+### [0.2.2](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.1...0.2.2)
+
+#### Added
+
+- Basic handling of absolute patterns
+
+#### Fixed
+
+- Adding trailing slashes to the end of patterns no longer returns incorrect results
+- Matching directories without `expandDirectories` without a trailing slash now works correctly
+
+### [0.2.1](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.0...0.2.1)
 
 #### Fixed
 
