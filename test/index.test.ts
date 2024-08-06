@@ -55,6 +55,11 @@ test('onlyDirectories has preference over onlyFiles', async () => {
   assert.deepEqual(files.sort(), ['a/']);
 });
 
+test('matching only a directory works', async () => {
+  const files = await glob({ patterns: ['a'], onlyFiles: false, expandDirectories: false, cwd });
+  assert.deepEqual(files.sort(), ['a/']);
+});
+
 test('bracket expanding', async () => {
   const files = await glob({ patterns: ['a/{a,b}.ts'], cwd });
   assert.deepEqual(files.sort(), ['a/a.ts', 'a/b.ts']);

@@ -46,6 +46,12 @@ function processPatterns({ patterns, ignore = [], expandDirectories = true }: Gl
   return { match: matchPatterns, ignore: ignorePatterns };
 }
 
+function processPath(path: string, cwd: string, absolute?: boolean) {
+  const pathWithoutTrailingSlash = path.endsWith('/') ? path.slice(0, -1) : path;
+
+  return absolute ? pathWithoutTrailingSlash.slice(cwd.length + 1) : pathWithoutTrailingSlash;
+}
+
 function getFdirBuilder(options: GlobOptions, cwd: string) {
   const processed = processPatterns(options);
 
@@ -60,8 +66,8 @@ function getFdirBuilder(options: GlobOptions, cwd: string) {
 
   const fdirOptions: Partial<FdirOptions> = {
     // use relative paths in the matcher
-    filters: [p => matcher(options.absolute ? p.slice(cwd.length + 1) : p)],
-    exclude: (_, p) => exclude(p.slice(cwd.length + 1)),
+    filters: [p => matcher(processPath(p, cwd, options.absolute))],
+    exclude: (_, p) => exclude(p.slice(cwd.length + 1).slice(0, -1)),
     pathSeparator: '/',
     relativePaths: true
   };
