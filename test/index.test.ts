@@ -73,6 +73,16 @@ test('handle absolute patterns to some extent', async () => {
   assert.deepEqual(files.sort(), ['a/a.ts']);
 });
 
+test('leading ../', async () => {
+  const files = await glob({ patterns: ['../b/*.ts'], cwd: path.join(cwd, 'a') });
+  assert.deepEqual(files.sort(), ['../b/a.ts', '../b/b.ts']);
+});
+
+test('leading ../ with absolute on', async () => {
+  const files = await glob({ patterns: ['../b/*.ts'], absolute: true, cwd: path.join(cwd, 'a') });
+  assert.deepEqual(files.sort(), [`${cwd.replaceAll('\\', '/')}/b/a.ts`, `${cwd.replaceAll('\\', '/')}/b/b.ts`]);
+});
+
 test('bracket expanding', async () => {
   const files = await glob({ patterns: ['a/{a,b}.ts'], cwd });
   assert.deepEqual(files.sort(), ['a/a.ts', 'a/b.ts']);

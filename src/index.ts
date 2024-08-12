@@ -1,4 +1,4 @@
-import path from 'node:path';
+import path, { posix } from 'node:path';
 import { type Options as FdirOptions, fdir } from 'fdir';
 import picomatch from 'picomatch';
 
@@ -14,18 +14,34 @@ export interface GlobOptions {
   onlyFiles?: boolean;
 }
 
+let root: string;
+
 function normalizePattern(pattern: string, expandDirectories: boolean, cwd: string) {
   let result: string = pattern;
   if (pattern.endsWith('/')) {
     result = pattern.slice(0, -1);
   }
   // using a directory as entry should match all files inside it
-  if (!pattern.endsWith('*') && expandDirectories) {
+  if (!result.endsWith('*') && expandDirectories) {
     result += '/**';
   }
-  if (result.startsWith(cwd.replace(/\\/g, '/'))) {
-    result = path.relative(cwd, result).replace(/\\/g, '/');
+
+  if (result.startsWith(cwd)) {
+    return posix.relative(cwd, result);
   }
+
+  if (result.startsWith('./')) {
+    result = result.slice(2);
+  }
+
+  const parentDirectoryMatch = /^(\/?\.\.)+/.exec(result);
+  if (parentDirectoryMatch?.[0]) {
+    const potentialRoot = posix.join(cwd, parentDirectoryMatch[0]);
+    if (root.length > potentialRoot.length) {
+      root = potentialRoot;
+    }
+  }
+
   return result;
 }
 
@@ -49,13 +65,24 @@ function processPatterns({ patterns, ignore = [], expandDirectories = true }: Gl
   return { match: matchPatterns, ignore: ignorePatterns };
 }
 
-function processPath(path: string, cwd: string, absolute?: boolean) {
-  const pathWithoutTrailingSlash = path.endsWith('/') ? path.slice(0, -1) : path;
-
-  return absolute ? pathWithoutTrailingSlash.slice(cwd.length + 1) : pathWithoutTrailingSlash;
+// TODO: this is slow, find a better way to do this
+function getRelativePath(path: string, cwd: string) {
+  return posix.relative(cwd, `${root}/${path}`);
 }
 
-function getFdirBuilder(options: GlobOptions, cwd: string) {
+function processPath(path: string, cwd: string, isDirectory: boolean, absolute?: boolean) {
+  const relativePath = absolute ? path.slice(root.length + 1) : path;
+  if (root === cwd) {
+    return isDirectory ? relativePath.slice(0, -1) : relativePath;
+  }
+
+  return getRelativePath(relativePath, cwd);
+}
+
+function crawl(options: GlobOptions, cwd: string, sync: false): Promise<string[]>;
+function crawl(options: GlobOptions, cwd: string, sync: true): string[];
+function crawl(options: GlobOptions, cwd: string, sync: boolean) {
+  root = cwd;
   const processed = processPatterns(options, cwd);
 
   const matcher = picomatch(processed.match, {
@@ -69,8 +96,8 @@ function getFdirBuilder(options: GlobOptions, cwd: string) {
 
   const fdirOptions: Partial<FdirOptions> = {
     // use relative paths in the matcher
-    filters: [p => matcher(processPath(p, cwd, options.absolute))],
-    exclude: (_, p) => exclude(p.slice(cwd.length + 1).slice(0, -1)),
+    filters: [(p, isDirectory) => matcher(processPath(p, cwd, isDirectory, options.absolute))],
+    exclude: (_, p) => exclude(processPath(p, cwd, true, true)),
     pathSeparator: '/',
     relativePaths: true
   };
@@ -92,7 +119,15 @@ function getFdirBuilder(options: GlobOptions, cwd: string) {
     fdirOptions.includeDirs = true;
   }
 
-  return new fdir(fdirOptions);
+  const api = new fdir(fdirOptions).crawl(root);
+
+  if (cwd === root || options.absolute) {
+    return sync ? api.sync() : api.withPromise();
+  }
+
+  return sync
+    ? api.sync().map(p => getRelativePath(p, cwd))
+    : api.withPromise().then(paths => paths.map(p => getRelativePath(p, cwd)));
 }
 
 export function glob(patterns: string[], options?: Omit<GlobOptions, 'patterns'>): Promise<string[]>;
@@ -103,9 +138,9 @@ export async function glob(patternsOrOptions: string[] | GlobOptions, options?: 
   }
 
   const opts = Array.isArray(patternsOrOptions) ? { ...options, patterns: patternsOrOptions } : patternsOrOptions;
-  const cwd = opts.cwd ? path.resolve(opts.cwd) : process.cwd();
+  const cwd = opts.cwd ? path.resolve(opts.cwd).replace(/\\/g, '/') : process.cwd().replace(/\\/g, '/');
 
-  return getFdirBuilder(opts, cwd).crawl(cwd).withPromise();
+  return crawl(opts, cwd, false);
 }
 
 export function globSync(patterns: string[], options?: Omit<GlobOptions, 'patterns'>): string[];
@@ -116,7 +151,7 @@ export function globSync(patternsOrOptions: string[] | GlobOptions, options?: Gl
   }
 
   const opts = Array.isArray(patternsOrOptions) ? { ...options, patterns: patternsOrOptions } : patternsOrOptions;
-  const cwd = opts.cwd ? path.resolve(opts.cwd) : process.cwd();
+  const cwd = opts.cwd ? path.resolve(opts.cwd).replace(/\\/g, '/') : process.cwd().replace(/\\/g, '/');
 
-  return getFdirBuilder(opts, cwd).crawl(cwd).sync();
+  return crawl(opts, cwd, true);
 }
