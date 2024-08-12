@@ -140,9 +140,11 @@ test('using extglob patterns', async () => {
 });
 
 test('pattern normalization', async () => {
-  const files1 = await glob({ patterns: ['a/'], cwd });
-  const files2 = await glob({ patterns: ['a'], cwd });
+  const files1 = await glob({ patterns: ['a'], cwd });
+  const files2 = await glob({ patterns: ['a/'], cwd });
+  const files3 = await glob({ patterns: ['./a'], cwd });
   assert.deepEqual(files1, files2);
+  assert.deepEqual(files1, files3);
 });
 
 test('negative patterns in options', async () => {
