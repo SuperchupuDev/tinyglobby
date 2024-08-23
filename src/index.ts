@@ -14,9 +14,19 @@ export interface GlobOptions {
   onlyFiles?: boolean;
 }
 
-let root: string;
+interface InternalProperties {
+  root: string;
+  commonPath: string[] | null;
+  depthOffset: number;
+}
 
-function normalizePattern(pattern: string, expandDirectories: boolean, cwd: string) {
+function normalizePattern(
+  pattern: string,
+  expandDirectories: boolean,
+  cwd: string,
+  properties: InternalProperties,
+  isIgnore: boolean
+) {
   let result: string = pattern;
   if (pattern.endsWith('/')) {
     result = pattern.slice(0, -1);
@@ -37,24 +47,48 @@ function normalizePattern(pattern: string, expandDirectories: boolean, cwd: stri
   const parentDirectoryMatch = /^(\/?\.\.)+/.exec(result);
   if (parentDirectoryMatch?.[0]) {
     const potentialRoot = posix.join(cwd, parentDirectoryMatch[0]);
-    if (root.length > potentialRoot.length) {
-      root = potentialRoot;
+    if (properties.root.length > potentialRoot.length) {
+      properties.root = potentialRoot;
+      properties.depthOffset = -(parentDirectoryMatch[0].length + 1) / 3;
     }
+  } else if (!isIgnore && properties.depthOffset >= 0) {
+    const current = result.split('/');
+    properties.commonPath ??= current;
+
+    const newCommonPath = [];
+
+    for (let i = 0; i < Math.min(properties.commonPath.length, current.length); i++) {
+      const part = current[i];
+      if (properties.commonPath[i] === part && !/[\!\*\{\}\(\)]/.test(part)) {
+        newCommonPath.push(part);
+      } else {
+        newCommonPath.pop();
+        break;
+      }
+    }
+
+    properties.depthOffset = newCommonPath.length;
+    properties.commonPath = newCommonPath;
+    properties.root = `${cwd}/${newCommonPath.join('/')}`;
   }
 
   return result;
 }
 
-function processPatterns({ patterns, ignore = [], expandDirectories = true }: GlobOptions, cwd: string) {
+function processPatterns(
+  { patterns, ignore = [], expandDirectories = true }: GlobOptions,
+  cwd: string,
+  properties: InternalProperties
+) {
   const matchPatterns: string[] = [];
-  const ignorePatterns: string[] = ignore.map(p => normalizePattern(p, expandDirectories, cwd));
+  const ignorePatterns: string[] = ignore.map(p => normalizePattern(p, expandDirectories, cwd, properties, true));
 
   if (!patterns) {
     return { match: ['**/*'], ignore: ignorePatterns };
   }
 
   for (let pattern of patterns) {
-    pattern = normalizePattern(pattern, expandDirectories, cwd);
+    pattern = normalizePattern(pattern, expandDirectories, cwd, properties, false);
     if (pattern.startsWith('!') && pattern[1] !== '(') {
       ignorePatterns.push(pattern.slice(1));
     } else {
@@ -66,24 +100,29 @@ function processPatterns({ patterns, ignore = [], expandDirectories = true }: Gl
 }
 
 // TODO: this is slow, find a better way to do this
-function getRelativePath(path: string, cwd: string) {
+function getRelativePath(path: string, cwd: string, root: string) {
   return posix.relative(cwd, `${root}/${path}`);
 }
 
-function processPath(path: string, cwd: string, isDirectory: boolean, absolute?: boolean) {
+function processPath(path: string, cwd: string, root: string, isDirectory: boolean, absolute?: boolean) {
   const relativePath = absolute ? path.slice(root.length + 1) : path;
   if (root === cwd) {
     return isDirectory ? relativePath.slice(0, -1) : relativePath;
   }
 
-  return getRelativePath(relativePath, cwd);
+  return getRelativePath(relativePath, cwd, root);
 }
 
 function crawl(options: GlobOptions, cwd: string, sync: false): Promise<string[]>;
 function crawl(options: GlobOptions, cwd: string, sync: true): string[];
 function crawl(options: GlobOptions, cwd: string, sync: boolean) {
-  root = cwd;
-  const processed = processPatterns(options, cwd);
+  const properties = {
+    root: cwd,
+    commonPath: null,
+    depthOffset: 0
+  };
+
+  const processed = processPatterns(options, cwd, properties);
 
   const matcher = picomatch(processed.match, {
     dot: options.dot,
@@ -96,14 +135,14 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
 
   const fdirOptions: Partial<FdirOptions> = {
     // use relative paths in the matcher
-    filters: [(p, isDirectory) => matcher(processPath(p, cwd, isDirectory, options.absolute))],
-    exclude: (_, p) => exclude(processPath(p, cwd, true, true)),
+    filters: [(p, isDirectory) => matcher(processPath(p, cwd, properties.root, isDirectory, options.absolute))],
+    exclude: (_, p) => exclude(processPath(p, cwd, properties.root, true, true)),
     pathSeparator: '/',
     relativePaths: true
   };
 
   if (options.deep) {
-    fdirOptions.maxDepth = options.deep;
+    fdirOptions.maxDepth = Math.round(options.deep - properties.depthOffset);
   }
 
   if (options.absolute) {
@@ -119,15 +158,17 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     fdirOptions.includeDirs = true;
   }
 
-  const api = new fdir(fdirOptions).crawl(root);
+  const api = new fdir(fdirOptions).crawl(properties.root);
 
-  if (cwd === root || options.absolute) {
+  if (cwd === properties.root || options.absolute) {
     return sync ? api.sync() : api.withPromise();
   }
 
   return sync
-    ? api.sync().map(p => getRelativePath(p, cwd))
-    : api.withPromise().then(paths => paths.map(p => getRelativePath(p, cwd)));
+    ? api.sync().map(p => getRelativePath(p, cwd, properties.root) + (!p || p.endsWith('/') ? '/' : ''))
+    : api
+        .withPromise()
+        .then(paths => paths.map(p => getRelativePath(p, cwd, properties.root) + (!p || p.endsWith('/') ? '/' : '')));
 }
 
 export function glob(patterns: string[], options?: Omit<GlobOptions, 'patterns'>): Promise<string[]>;
