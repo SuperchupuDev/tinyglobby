@@ -36,12 +36,10 @@ function normalizePattern(
     result += '/**';
   }
 
-  if (result.startsWith(cwd)) {
-    return posix.relative(cwd, result);
-  }
-
-  if (result.startsWith('./')) {
-    result = result.slice(2);
+  if (path.isAbsolute(result)) {
+    result = posix.relative(cwd, result);
+  } else {
+    result = posix.normalize(result);
   }
 
   const parentDirectoryMatch = /^(\/?\.\.)+/.exec(result);

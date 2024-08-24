@@ -78,9 +78,17 @@ test("expandDirectories doesn't break common path inferring either", async () =>
   assert.deepEqual(files.sort(), ['a/a.ts']);
 });
 
-test('handle absolute patterns to some extent', async () => {
+test("handle absolute patterns that don't escape the cwd", async () => {
   const files = await glob({ patterns: [`${cwd.replaceAll('\\', '/')}/a/a.ts`], cwd });
   assert.deepEqual(files.sort(), ['a/a.ts']);
+});
+
+test('fully handle absolute patterns', async () => {
+  const files = await glob({
+    patterns: [`${cwd.replaceAll('\\', '/')}/a/a.ts`, `${cwd.replaceAll('\\', '/')}/b/a.ts`],
+    cwd: path.join(cwd, 'a')
+  });
+  assert.deepEqual(files.sort(), ['../b/a.ts', 'a.ts']);
 });
 
 test('leading ../', async () => {
