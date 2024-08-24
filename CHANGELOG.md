@@ -1,3 +1,13 @@
+### [0.2.3](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.2...0.2.3)
+
+#### Added
+
+- Support for leading `../` in patterns
+
+#### Changed
+
+- A common root is now inferred from the patterns if possible to avoid unnecessary crawling
+
 ### [0.2.2](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.1...0.2.2)
 
 #### Added
