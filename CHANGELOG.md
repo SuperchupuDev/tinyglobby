@@ -1,3 +1,9 @@
+### [0.2.4](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.3...0.2.4)
+
+#### Fixed
+
+- Using a pattern that can't infer a common root with `absolute` enabled no longer produces incorrect matches
+
 ### [0.2.3](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.2...0.2.3)
 
 #### Added
