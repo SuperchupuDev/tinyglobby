@@ -26,7 +26,7 @@ importers:
         version: 3.0.0
       tsup:
         specifier: ^8.2.2
-        version: 8.2.2(typescript@5.5.3)
+        version: 8.2.4(typescript@5.5.3)
       typescript:
         specifier: ^5.5.3
         version: 5.5.3
@@ -754,8 +754,8 @@ packages:
   ts-interface-checker@0.1.13:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
 
-  tsup@8.2.2:
-    resolution: {integrity: sha512-MufIuzdSt6HYPOeOtjUXLR4rqRJySi6XsRNZdwvjC2XR+xghsu2L3vSmYmX+k4S1mO6j0OlUEyVQ3Fc0H66XcA==}
+  tsup@8.2.4:
+    resolution: {integrity: sha512-akpCPePnBnC/CXgRrcy72ZSntgIEUa1jN0oJbbvpALWKNOz1B7aM+UVDWGRGIO/T/PZugAESWDJUAb5FD48o8Q==}
     engines: {node: '>=18'}
     hasBin: true
     peerDependencies:
@@ -1383,7 +1383,7 @@ snapshots:
 
   ts-interface-checker@0.1.13: {}
 
-  tsup@8.2.2(typescript@5.5.3):
+  tsup@8.2.4(typescript@5.5.3):
     dependencies:
       bundle-require: 5.0.0(esbuild@0.23.1)
       cac: 6.7.14
