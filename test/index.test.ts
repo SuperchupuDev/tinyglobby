@@ -120,14 +120,19 @@ test('deep with ../', async () => {
   assert.deepEqual(files3.sort(), ['a.ts']);
 });
 
+test('absolute', async () => {
+  const files = await glob({ patterns: ['a/a.ts'], cwd, absolute: true });
+  assert.deepEqual(files.sort(), [`${cwd.replaceAll('\\', '/')}/a/a.ts`]);
+});
+
 test('absolute + dot', async () => {
   const files = await glob({ patterns: ['a/a.ts'], dot: true, cwd: path.join(cwd, '.a'), absolute: true });
   assert.deepEqual(files.sort(), [`${cwd.replaceAll('\\', '/')}/.a/a/a.ts`]);
 });
 
-test('absolute', async () => {
-  const files = await glob({ patterns: ['a/a.ts'], dot: true, cwd: path.join(cwd, '.a'), absolute: true });
-  assert.deepEqual(files.sort(), [`${cwd.replaceAll('\\', '/')}/.a/a/a.ts`]);
+test('absolute + empty commonPath', async () => {
+  const files = await glob({ patterns: ['a/**.ts'], cwd, absolute: true, expandDirectories: false });
+  assert.deepEqual(files.sort(), [`${cwd.replaceAll('\\', '/')}/a/a.ts`, `${cwd.replaceAll('\\', '/')}/a/b.ts`]);
 });
 
 test('works with non-absolute cwd', async () => {

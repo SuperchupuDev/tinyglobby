@@ -69,7 +69,8 @@ function normalizePattern(
 
     properties.depthOffset = newCommonPath.length;
     properties.commonPath = newCommonPath;
-    properties.root = `${cwd}/${newCommonPath.join('/')}`;
+
+    properties.root = newCommonPath.length > 0 ? `${cwd}/${newCommonPath.join('/')}` : cwd;
   }
 
   return result;
@@ -106,6 +107,7 @@ function getRelativePath(path: string, cwd: string, root: string) {
 
 function processPath(path: string, cwd: string, root: string, isDirectory: boolean, absolute?: boolean) {
   const relativePath = absolute ? path.slice(root.length + 1) : path;
+  //if (absolute) console.log({ path, cwd, root, relativePath });
   if (root === cwd) {
     return isDirectory ? relativePath.slice(0, -1) : relativePath;
   }
