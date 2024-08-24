@@ -62,10 +62,11 @@ function normalizePattern(
       if (properties.commonPath[i] === part && !/[\!\*\{\}\(\)]/.test(part)) {
         newCommonPath.push(part);
       } else {
-        newCommonPath.pop();
         break;
       }
     }
+
+    newCommonPath.pop();
 
     properties.depthOffset = newCommonPath.length;
     properties.commonPath = newCommonPath;
