@@ -78,6 +78,11 @@ test('leading ../', async () => {
   assert.deepEqual(files.sort(), ['../b/a.ts', '../b/b.ts']);
 });
 
+test('leading ../ plus normal pattern', async () => {
+  const files = await glob({ patterns: ['../b/*.ts', 'a.ts'], cwd: path.join(cwd, 'a') });
+  assert.deepEqual(files.sort(), ['../b/a.ts', '../b/b.ts', 'a.ts']);
+});
+
 test('leading ../ with absolute on', async () => {
   const files = await glob({ patterns: ['../b/*.ts'], absolute: true, cwd: path.join(cwd, 'a') });
   assert.deepEqual(files.sort(), [`${cwd.replaceAll('\\', '/')}/b/a.ts`, `${cwd.replaceAll('\\', '/')}/b/b.ts`]);
@@ -102,6 +107,17 @@ test('deep', async () => {
 
   const files3 = await glob({ patterns: ['.deep/a/a/*.ts'], deep: 1, cwd });
   assert.deepEqual(files3.sort(), []);
+});
+
+test('deep with ../', async () => {
+  const files = await glob({ patterns: ['../.deep/a/a/*.ts', 'a.ts'], deep: 3, cwd: path.join(cwd, 'a') });
+  assert.deepEqual(files.sort(), ['../.deep/a/a/a.ts', 'a.ts']);
+
+  const files2 = await glob({ patterns: ['../.deep/a/a/*.ts', 'a.ts'], deep: 2, cwd: path.join(cwd, 'a') });
+  assert.deepEqual(files2.sort(), ['../.deep/a/a/a.ts', 'a.ts']);
+
+  const files3 = await glob({ patterns: ['../.deep/a/a/*.ts', 'a.ts'], deep: 1, cwd: path.join(cwd, 'a') });
+  assert.deepEqual(files3.sort(), ['a.ts']);
 });
 
 test('absolute + dot', async () => {
