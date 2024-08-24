@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { test } from 'node:test';
-import { glob, globSync } from '../src/index.js';
+import { glob, globSync } from '../src/index.ts';
 
-const cwd = path.join(__dirname, '../fixtures');
+const cwd = path.join(import.meta.dirname, '../fixtures');
 
 test('directory expansion', async () => {
   const files = await glob({ patterns: ['a'], cwd });

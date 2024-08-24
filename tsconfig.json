@@ -10,12 +10,10 @@
     "esModuleInterop": true,
     "verbatimModuleSyntax": true,
 
-    "forceConsistentCasingInFileNames": true,
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
-    "noEmitOnError": true,
+    "noEmit": true,
     "skipLibCheck": true,
-    "sourceMap": true,
-    "declaration": true,
 
     "strict": true
   }
