@@ -1,3 +1,10 @@
+### [0.2.5](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.4...0.2.5)
+
+#### Fixed
+
+- Using a pattern that doesn't end with special characters with
+`expandDirectories` disabled no longer produces incorrect matches
+
 ### [0.2.4](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.3...0.2.4)
 
 #### Fixed
