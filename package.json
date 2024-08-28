@@ -9,7 +9,7 @@
     "lint": "biome lint",
     "lint:fix": "biome lint --fix --unsafe",
     "test": "node --experimental-transform-types --test test/*.test.ts",
-    "test:cov": "node --experimental-transform-types --test --experimental-test-coverage test/*.test.ts",
+    "test:coverage": "node --experimental-transform-types --test --experimental-test-coverage test/*.test.ts",
     "test:only": "node --experimental-transform-types --test --test-only test/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
@@ -48,6 +48,7 @@
     "@biomejs/biome": "^1.8.3",
     "@types/node": "^22.5.0",
     "@types/picomatch": "^3.0.1",
+    "fs-fixture": "^2.4.0",
     "tsup": "^8.2.4",
     "typescript": "^5.5.4"
   },

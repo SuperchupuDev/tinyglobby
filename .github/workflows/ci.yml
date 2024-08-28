@@ -41,7 +41,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run tests
-        run: node --run test:cov
+        run: node --run test:coverage
 
   typescript:
     name: TypeScript
