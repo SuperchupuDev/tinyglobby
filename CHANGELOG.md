@@ -1,3 +1,10 @@
+### [0.2.6](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.5...0.2.6)
+
+#### Added
+
+- Full support for absolute paths as patterns
+- `caseSensitiveMatch` option
+
 ### [0.2.5](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.4...0.2.5)
 
 #### Fixed
