@@ -1,6 +1,9 @@
 # tinyglobby
 
-<a href="https://www.npmjs.com/package/tinyglobby"><img src="https://img.shields.io/npm/v/tinyglobby.svg?maxAge=3600" alt="npm version" /></a>
+<a href="https://www.npmjs.com/package/tinyglobby">
+  <img src="https://img.shields.io/npm/v/tinyglobby.svg?maxAge=3600" alt="npm version" />
+  <img src="https://img.shields.io/npm/dm/tinyglobby.svg?maxAge=3600" alt="monthly downloads" />
+</a>
 
 A fast and minimal alternative to globby and fast-glob, meant to behave the same way.
 
@@ -16,10 +19,6 @@ import { glob, globSync } from 'tinyglobby';
 
 await glob(['files/*.ts', '!**/*.d.ts'], { cwd: 'src' });
 globSync(['src/**/*.ts'], { ignore: ['**/*.d.ts'] });
-
-// you can also specify patterns inside the options object (exclusive to tinyglobby)
-await glob({ patterns: ['src/*.ts', '!**/*.d.ts'], dot: true });
-globSync({ patterns: ['src/**/*.ts', '!**/*.d.ts'], deep: 3 });
 ```
 
 ## Options
@@ -34,3 +33,18 @@ globSync({ patterns: ['src/**/*.ts', '!**/*.d.ts'], deep: 3 });
 - `expandDirectories`: Whether to expand directories. Disable to best match `fast-glob`. Defaults to `true`.
 - `onlyDirectories`: Enable to only return directories. Disables `onlyFiles` if set. Defaults to `false`.
 - `onlyFiles`: Enable to only return files. Defaults to `true`.
+
+## Used by
+
+`tinyglobby` is downloaded many times by projects all around the world. Here's a list of notable projects that use it:
+
+<!-- should be sorted by weekly download count -->
+- [`vitest`](https://github.com/vitest-dev/vitest)
+- [`tsup`](https://github.com/egoist/tsup)
+- [`nuxt`](https://github.com/nuxt/nuxt)
+- [`vite-plugin-pwa`](https://github.com/vite-pwa/vite-plugin-pwa)
+- [`unocss`](https://github.com/unocss/unocss)
+- [`vitepress`](https://github.com/vuejs/vitepress)
+- [`pkg.pr.new`](https://github.com/stackblitz-labs/pkg.pr.new)
+- Your own project? [Open an issue](https://github.com/SuperchupuDev/tinyglobby/issues)
+if you feel like this list is incomplete.
