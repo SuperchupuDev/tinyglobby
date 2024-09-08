@@ -41,12 +41,12 @@
   },
   "homepage": "https://github.com/SuperchupuDev/tinyglobby#readme",
   "dependencies": {
-    "fdir": "^6.2.0",
+    "fdir": "^6.3.0",
     "picomatch": "^4.0.2"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
-    "@types/node": "^22.5.0",
+    "@types/node": "^22.5.4",
     "@types/picomatch": "^3.0.1",
     "fs-fixture": "^2.4.0",
     "tsup": "^8.2.4",
@@ -59,5 +59,5 @@
     "access": "public",
     "provenance": true
   },
-  "packageManager": "pnpm@9.8.0"
+  "packageManager": "pnpm@9.9.0"
 }
