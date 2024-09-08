@@ -63,6 +63,21 @@ test('ignore option', async () => {
   assert.deepEqual(files.sort(), ['a/a.txt']);
 });
 
+test('caseSensitiveMatch', async () => {
+  const files = await glob({ patterns: ['**/A.TXT'], caseSensitiveMatch: false, cwd });
+  assert.deepEqual(files.sort(), ['a/a.txt', 'b/a.txt']);
+});
+
+test('caseSensitiveMatch (default)', async () => {
+  const files = await glob({ patterns: ['**/A.TXT'], cwd });
+  assert.deepEqual(files.sort(), []);
+});
+
+test('caseSensitiveMatch with ignore', async () => {
+  const files = await glob({ patterns: ['**/A.TXT'], ignore: ['B/**'], caseSensitiveMatch: false, cwd });
+  assert.deepEqual(files.sort(), ['a/a.txt']);
+});
+
 test('onlyDirectories option', async () => {
   const files = await glob({ patterns: ['a'], onlyDirectories: true, cwd });
   assert.deepEqual(files.sort(), ['a/']);

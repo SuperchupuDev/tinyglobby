@@ -9,6 +9,7 @@ export interface GlobOptions {
   ignore?: string[];
   dot?: boolean;
   deep?: number;
+  caseSensitiveMatch?: boolean;
   expandDirectories?: boolean;
   onlyDirectories?: boolean;
   onlyFiles?: boolean;
@@ -105,8 +106,8 @@ function getRelativePath(path: string, cwd: string, root: string) {
 }
 
 function processPath(path: string, cwd: string, root: string, isDirectory: boolean, absolute?: boolean) {
-  const relativePath = absolute ? path.slice(root.length + 1) : path;
-  //if (absolute) console.log({ path, cwd, root, relativePath });
+  const relativePath = (absolute ? path.slice(root.length + 1) : path) || './';
+
   if (root === cwd) {
     return isDirectory ? relativePath.slice(0, -1) : relativePath;
   }
@@ -127,11 +128,13 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
 
   const matcher = picomatch(processed.match, {
     dot: options.dot,
+    nocase: options.caseSensitiveMatch === false,
     ignore: processed.ignore
   });
 
   const exclude = picomatch(processed.ignore, {
-    dot: options.dot
+    dot: options.dot,
+    nocase: options.caseSensitiveMatch === false
   });
 
   const fdirOptions: Partial<FdirOptions> = {

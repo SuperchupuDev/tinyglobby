@@ -30,6 +30,7 @@ globSync({ patterns: ['src/**/*.ts', '!**/*.d.ts'], deep: 3 });
 - `absolute`: Whether to return absolute paths. Defaults to `false`.
 - `dot`: Whether to allow entries starting with a dot. Defaults to `false`.
 - `deep`: Maximum depth of a directory. Defaults to `Infinity`.
+- `caseSensitiveMatch`: Whether to match in case-sensitive mode. Defaults to `true`.
 - `expandDirectories`: Whether to expand directories. Disable to best match `fast-glob`. Defaults to `true`.
 - `onlyDirectories`: Enable to only return directories. Disables `onlyFiles` if set. Defaults to `false`.
 - `onlyFiles`: Enable to only return files. Defaults to `true`.
