@@ -43,6 +43,8 @@ globSync(['src/**/*.ts'], { ignore: ['**/*.d.ts'] });
 - [`tsup`](https://github.com/egoist/tsup)
 - [`nuxt`](https://github.com/nuxt/nuxt)
 - [`vite-plugin-pwa`](https://github.com/vite-pwa/vite-plugin-pwa)
+- [`size-limit`](https://github.com/ai/size-limit)
+- [`postcss-mixins`](https://github.com/postcss/postcss-mixins)
 - [`unocss`](https://github.com/unocss/unocss)
 - [`vitepress`](https://github.com/vuejs/vitepress)
 - [`pkg.pr.new`](https://github.com/stackblitz-labs/pkg.pr.new)
