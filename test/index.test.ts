@@ -58,8 +58,18 @@ test('negative patterns', async () => {
   assert.deepEqual(files.sort(), ['a/a.txt']);
 });
 
+test('patterns as string', async () => {
+  const files = await glob('a/a.txt', { cwd });
+  assert.deepEqual(files.sort(), ['a/a.txt']);
+});
+
 test('ignore option', async () => {
   const files = await glob({ patterns: ['**/a.txt'], ignore: ['b/a.txt'], cwd });
+  assert.deepEqual(files.sort(), ['a/a.txt']);
+});
+
+test('ignore option as string', async () => {
+  const files = await glob({ patterns: ['**/a.txt'], ignore: 'b/a.txt', cwd });
   assert.deepEqual(files.sort(), ['a/a.txt']);
 });
 
@@ -230,7 +240,7 @@ test('negative patterns in options', async () => {
 });
 
 test('sync version', () => {
-  const files = globSync({ patterns: ['a/*.txt'], cwd });
+  const files = globSync(['a/*.txt'], { cwd });
   assert.deepEqual(files.sort(), ['a/a.txt', 'a/b.txt']);
 });
 

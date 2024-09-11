@@ -5,8 +5,8 @@ import picomatch from 'picomatch';
 export interface GlobOptions {
   absolute?: boolean;
   cwd?: string;
-  patterns?: string[];
-  ignore?: string[];
+  patterns?: string | string[];
+  ignore?: string | string[];
   dot?: boolean;
   deep?: number;
   caseSensitiveMatch?: boolean;
@@ -81,6 +81,14 @@ function processPatterns(
   cwd: string,
   properties: InternalProperties
 ) {
+  if (typeof patterns === 'string') {
+    patterns = [patterns];
+  }
+
+  if (typeof ignore === 'string') {
+    ignore = [ignore];
+  }
+
   const matchPatterns: string[] = [];
   const ignorePatterns: string[] = ignore.map(p => normalizePattern(p, expandDirectories, cwd, properties, true));
 
@@ -175,27 +183,36 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
         .then(paths => paths.map(p => getRelativePath(p, cwd, properties.root) + (!p || p.endsWith('/') ? '/' : '')));
 }
 
-export function glob(patterns: string[], options?: Omit<GlobOptions, 'patterns'>): Promise<string[]>;
+export function glob(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): Promise<string[]>;
 export function glob(options: GlobOptions): Promise<string[]>;
-export async function glob(patternsOrOptions: string[] | GlobOptions, options?: GlobOptions): Promise<string[]> {
+export async function glob(
+  patternsOrOptions: string | string[] | GlobOptions,
+  options?: GlobOptions
+): Promise<string[]> {
   if (patternsOrOptions && options?.patterns) {
     throw new Error('Cannot pass patterns as both an argument and an option');
   }
 
-  const opts = Array.isArray(patternsOrOptions) ? { ...options, patterns: patternsOrOptions } : patternsOrOptions;
+  const opts =
+    Array.isArray(patternsOrOptions) || typeof patternsOrOptions === 'string'
+      ? { ...options, patterns: patternsOrOptions }
+      : patternsOrOptions;
   const cwd = opts.cwd ? path.resolve(opts.cwd).replace(/\\/g, '/') : process.cwd().replace(/\\/g, '/');
 
   return crawl(opts, cwd, false);
 }
 
-export function globSync(patterns: string[], options?: Omit<GlobOptions, 'patterns'>): string[];
+export function globSync(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): string[];
 export function globSync(options: GlobOptions): string[];
-export function globSync(patternsOrOptions: string[] | GlobOptions, options?: GlobOptions): string[] {
+export function globSync(patternsOrOptions: string | string[] | GlobOptions, options?: GlobOptions): string[] {
   if (patternsOrOptions && options?.patterns) {
     throw new Error('Cannot pass patterns as both an argument and an option');
   }
 
-  const opts = Array.isArray(patternsOrOptions) ? { ...options, patterns: patternsOrOptions } : patternsOrOptions;
+  const opts =
+    Array.isArray(patternsOrOptions) || typeof patternsOrOptions === 'string'
+      ? { ...options, patterns: patternsOrOptions }
+      : patternsOrOptions;
   const cwd = opts.cwd ? path.resolve(opts.cwd).replace(/\\/g, '/') : process.cwd().replace(/\\/g, '/');
 
   return crawl(opts, cwd, true);
