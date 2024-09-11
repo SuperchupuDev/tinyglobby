@@ -1,3 +1,4 @@
+import * as os from 'node:os';
 import path, { posix } from 'node:path';
 import { type Options as FdirOptions, fdir } from 'fdir';
 import picomatch from 'picomatch';
@@ -220,4 +221,43 @@ export function globSync(patternsOrOptions: string | string[] | GlobOptions, opt
   const cwd = opts.cwd ? path.resolve(opts.cwd).replace(/\\/g, '/') : process.cwd().replace(/\\/g, '/');
 
   return crawl(opts, cwd, true);
+}
+
+// code below copied from fast-glob under MIT license
+
+const escaper = os.platform() === 'win32' ? escapeWindowsPath : escapePosixPath;
+
+export const escapePath = withPatternsInputAssert(escaper);
+
+/**
+ * All non-escaped special characters.
+ * Posix: ()*?[]{|}, !+@ before (, ! at the beginning, \\ before non-special characters.
+ * Windows: (){}[], !+@ before (, ! at the beginning.
+ */
+const POSIX_UNESCAPED_GLOB_SYMBOLS_RE = /(?<escape>\\?)(?<symbols>[()*?[\]{|}]|^!|[!+@](?=\()|\\(?![!()*+?@[\]{|}]))/g;
+const WINDOWS_UNESCAPED_GLOB_SYMBOLS_RE = /(?<escape>\\?)(?<symbols>[()[\]{}]|^!|[!+@](?=\())/g;
+
+function escapeWindowsPath(pattern: string): string {
+  return pattern.replaceAll(WINDOWS_UNESCAPED_GLOB_SYMBOLS_RE, '\\$2');
+}
+
+function escapePosixPath(pattern: string): string {
+  return pattern.replaceAll(POSIX_UNESCAPED_GLOB_SYMBOLS_RE, '\\$2');
+}
+
+function assertPatternsInput(input: unknown) {
+  const source = ([] as unknown[]).concat(input);
+  const isValidSource = source.every(item => typeof item === 'string' && item !== '');
+
+  if (!isValidSource) {
+    throw new TypeError('Patterns must be a string (non empty) or an array of strings');
+  }
+}
+
+function withPatternsInputAssert(method: (source: string) => string) {
+  return (source: string): string => {
+    assertPatternsInput(source);
+
+    return method(source);
+  };
 }
