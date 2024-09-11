@@ -1,4 +1,5 @@
 import path, { posix } from 'node:path';
+import process from 'node:process';
 import { type Options as FdirOptions, fdir } from 'fdir';
 import picomatch from 'picomatch';
 
