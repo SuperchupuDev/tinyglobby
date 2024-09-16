@@ -230,8 +230,9 @@ export function globSync(patternsOrOptions: string | string[] | GlobOptions, opt
  * Posix: ()*?[]{|}, !+@ before (, ! at the beginning, \\ before non-special characters.
  * Windows: (){}[], !+@ before (, ! at the beginning.
  */
-const POSIX_UNESCAPED_GLOB_SYMBOLS_RE = /(?<escape>\\?)(?<symbols>[()*?[\]{|}]|^!|[!+@](?=\()|\\(?![!()*+?@[\]{|}]))/g;
-const WINDOWS_UNESCAPED_GLOB_SYMBOLS_RE = /(?<escape>\\?)(?<symbols>[()[\]{}]|^!|[!+@](?=\())/g;
+const UNESCAPED_GLOB_SYMBOLS_RE = os.platform() === 'win32'
+  ? /(?<escape>\\?)(?<symbols>[()[\]{}]|^!|[!+@](?=\())/g
+  : /(?<escape>\\?)(?<symbols>[()*?[\]{|}]|^!|[!+@](?=\()|\\(?![!()*+?@[\]{|}]))/g;
 
 function assertPatternsInput(input: unknown) {
   const source = ([] as unknown[]).concat(input);
@@ -244,5 +245,5 @@ function assertPatternsInput(input: unknown) {
 
 export function escapePath(pattern: string): string {
   assertPatternsInput(pattern);
-  return pattern.replaceAll(os.platform() === 'win32' ? WINDOWS_UNESCAPED_GLOB_SYMBOLS_RE : POSIX_UNESCAPED_GLOB_SYMBOLS_RE, '\\$2');
+  return pattern.replaceAll(UNESCAPED_GLOB_SYMBOLS_RE, '\\$2');
 }
