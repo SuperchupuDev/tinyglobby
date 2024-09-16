@@ -252,4 +252,4 @@ function escapePosixPath(pattern: string): string {
   return pattern.replaceAll(POSIX_UNESCAPED_GLOB_SYMBOLS_RE, '\\$2');
 }
 
-export const escapePath = os.platform() === 'win32' ? escapeWindowsPath : escapePosixPath;
+export const escapePath: (pattern: string) => string = os.platform() === 'win32' ? escapeWindowsPath : escapePosixPath;
