@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
+import * as os from 'node:os';
 import path from 'node:path';
 import { after, test } from 'node:test';
 import { createFixture } from 'fs-fixture';
-import { glob, globSync } from '../src/index.ts';
+import { escapePath, glob, globSync } from '../src/index.ts';
 
 const fixture = await createFixture({
   a: {
@@ -263,3 +264,21 @@ test('sync with empty array matches nothing', () => {
   const files = globSync({ patterns: [] });
   assert.deepEqual(files.sort(), []);
 });
+
+if (os.platform() === 'win32') {
+  test('win32 .escapePath', () => {
+    const expected = 'C:\\Program Files \\(x86\\)\\**\\*';
+
+    const actual = escapePath('C:\\Program Files (x86)\\**\\*');
+
+    assert.strictEqual(actual, expected);
+  });  
+} else {
+  test('posix .escapePath', () => {
+    const expected = '/directory/\\*\\*/\\*';
+
+    const actual = escapePath('/directory/*\\*/*');
+
+    assert.strictEqual(actual, expected);
+  });
+}
