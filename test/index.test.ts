@@ -272,7 +272,7 @@ if (os.platform() === 'win32') {
     const actual = escapePath('C:\\Program Files (x86)\\**\\*');
 
     assert.strictEqual(actual, expected);
-  });  
+  });
 } else {
   test('posix .escapePath', () => {
     const expected = '/directory/\\*\\*/\\*';
