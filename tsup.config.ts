@@ -1,4 +1,4 @@
-import { defineConfig } from 'tsup';
+import { type Options, defineConfig } from 'tsup';
 
 export default defineConfig({
   clean: true,
@@ -8,4 +8,4 @@ export default defineConfig({
   platform: 'node',
   sourcemap: true,
   target: 'node12'
-});
+}) as Options;
