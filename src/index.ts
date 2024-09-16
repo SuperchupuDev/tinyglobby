@@ -236,10 +236,8 @@ const UNESCAPED_GLOB_SYMBOLS_RE =
     : /(?<escape>\\?)(?<symbols>[()*?[\]{|}]|^!|[!+@](?=\()|\\(?![!()*+?@[\]{|}]))/g;
 
 export function escapePath(pattern: string): string {
-  const source = ([] as unknown[]).concat(pattern);
-  const isValidSource = source.every(item => typeof item === 'string' && item !== '');
-  if (!isValidSource) {
-    throw new TypeError('Patterns must be a string (non empty) or an array of strings');
+  if (typeof pattern !== 'string' || pattern === '') {
+    throw new TypeError('Patterns must be a string (non empty) or an array of strings')
   }
   return pattern.replaceAll(UNESCAPED_GLOB_SYMBOLS_RE, '\\$2');
 }
