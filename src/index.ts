@@ -234,16 +234,11 @@ const UNESCAPED_GLOB_SYMBOLS_RE = os.platform() === 'win32'
   ? /(?<escape>\\?)(?<symbols>[()[\]{}]|^!|[!+@](?=\())/g
   : /(?<escape>\\?)(?<symbols>[()*?[\]{|}]|^!|[!+@](?=\()|\\(?![!()*+?@[\]{|}]))/g;
 
-function assertPatternsInput(input: unknown) {
-  const source = ([] as unknown[]).concat(input);
+export function escapePath(pattern: string): string {
+  const source = ([] as unknown[]).concat(pattern);
   const isValidSource = source.every(item => typeof item === 'string' && item !== '');
-
   if (!isValidSource) {
     throw new TypeError('Patterns must be a string (non empty) or an array of strings');
   }
-}
-
-export function escapePath(pattern: string): string {
-  assertPatternsInput(pattern);
   return pattern.replaceAll(UNESCAPED_GLOB_SYMBOLS_RE, '\\$2');
 }
