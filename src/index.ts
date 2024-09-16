@@ -232,7 +232,7 @@ export function globSync(patternsOrOptions: string | string[] | GlobOptions, opt
  */
 const UNESCAPED_GLOB_SYMBOLS_RE =
   os.platform() === 'win32'
-    ? /(?<escape>\\?)(?<symbols>[()[\]{}]|^!|[!+@](?=\())/g
-    : /(?<escape>\\?)(?<symbols>[()*?[\]{|}]|^!|[!+@](?=\()|\\(?![!()*+?@[\]{|}]))/g;
+    ? /(\\?)([()[\]{}]|^!|[!+@](?=\())/g
+    : /(\\?)([()*?[\]{|}]|^!|[!+@](?=\()|\\(?![!()*+?@[\]{|}]))/g;
 
 export const escapePath = (pattern: string): string => pattern.replace(UNESCAPED_GLOB_SYMBOLS_RE, '\\$2');
