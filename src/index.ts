@@ -223,11 +223,7 @@ export function globSync(patternsOrOptions: string | string[] | GlobOptions, opt
   return crawl(opts, cwd, true);
 }
 
-// code below copied from fast-glob under MIT license
-
-const escaper = os.platform() === 'win32' ? escapeWindowsPath : escapePosixPath;
-
-export const escapePath = withPatternsInputAssert(escaper);
+// code below derived from fast-glob under MIT license
 
 /**
  * All non-escaped special characters.
@@ -236,14 +232,6 @@ export const escapePath = withPatternsInputAssert(escaper);
  */
 const POSIX_UNESCAPED_GLOB_SYMBOLS_RE = /(?<escape>\\?)(?<symbols>[()*?[\]{|}]|^!|[!+@](?=\()|\\(?![!()*+?@[\]{|}]))/g;
 const WINDOWS_UNESCAPED_GLOB_SYMBOLS_RE = /(?<escape>\\?)(?<symbols>[()[\]{}]|^!|[!+@](?=\())/g;
-
-function escapeWindowsPath(pattern: string): string {
-  return pattern.replaceAll(WINDOWS_UNESCAPED_GLOB_SYMBOLS_RE, '\\$2');
-}
-
-function escapePosixPath(pattern: string): string {
-  return pattern.replaceAll(POSIX_UNESCAPED_GLOB_SYMBOLS_RE, '\\$2');
-}
 
 function assertPatternsInput(input: unknown) {
   const source = ([] as unknown[]).concat(input);
@@ -254,10 +242,14 @@ function assertPatternsInput(input: unknown) {
   }
 }
 
-function withPatternsInputAssert(method: (source: string) => string) {
-  return (source: string): string => {
-    assertPatternsInput(source);
-
-    return method(source);
-  };
+function escapeWindowsPath(pattern: string): string {
+  assertPatternsInput(pattern);
+  return pattern.replaceAll(WINDOWS_UNESCAPED_GLOB_SYMBOLS_RE, '\\$2');
 }
+
+function escapePosixPath(pattern: string): string {
+  assertPatternsInput(pattern);
+  return pattern.replaceAll(POSIX_UNESCAPED_GLOB_SYMBOLS_RE, '\\$2');
+}
+
+export const escapePath = os.platform() === 'win32' ? escapeWindowsPath : escapePosixPath;
