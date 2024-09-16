@@ -236,8 +236,5 @@ const UNESCAPED_GLOB_SYMBOLS_RE =
     : /(?<escape>\\?)(?<symbols>[()*?[\]{|}]|^!|[!+@](?=\()|\\(?![!()*+?@[\]{|}]))/g;
 
 export function escapePath(pattern: string): string {
-  if (typeof pattern !== 'string' || pattern === '') {
-    throw new TypeError('Patterns must be a string (non empty) or an array of strings')
-  }
   return pattern.replaceAll(UNESCAPED_GLOB_SYMBOLS_RE, '\\$2');
 }
