@@ -242,14 +242,7 @@ function assertPatternsInput(input: unknown) {
   }
 }
 
-function escapeWindowsPath(pattern: string): string {
+export function escapePath(pattern: string): string {
   assertPatternsInput(pattern);
-  return pattern.replaceAll(WINDOWS_UNESCAPED_GLOB_SYMBOLS_RE, '\\$2');
+  return pattern.replaceAll(os.platform() === 'win32' ? WINDOWS_UNESCAPED_GLOB_SYMBOLS_RE : POSIX_UNESCAPED_GLOB_SYMBOLS_RE, '\\$2');
 }
-
-function escapePosixPath(pattern: string): string {
-  assertPatternsInput(pattern);
-  return pattern.replaceAll(POSIX_UNESCAPED_GLOB_SYMBOLS_RE, '\\$2');
-}
-
-export const escapePath: (pattern: string) => string = os.platform() === 'win32' ? escapeWindowsPath : escapePosixPath;
