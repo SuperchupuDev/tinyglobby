@@ -230,9 +230,10 @@ export function globSync(patternsOrOptions: string | string[] | GlobOptions, opt
  * Posix: ()*?[]{|}, !+@ before (, ! at the beginning, \\ before non-special characters.
  * Windows: (){}[], !+@ before (, ! at the beginning.
  */
-const UNESCAPED_GLOB_SYMBOLS_RE = os.platform() === 'win32'
-  ? /(?<escape>\\?)(?<symbols>[()[\]{}]|^!|[!+@](?=\())/g
-  : /(?<escape>\\?)(?<symbols>[()*?[\]{|}]|^!|[!+@](?=\()|\\(?![!()*+?@[\]{|}]))/g;
+const UNESCAPED_GLOB_SYMBOLS_RE =
+  os.platform() === 'win32'
+    ? /(?<escape>\\?)(?<symbols>[()[\]{}]|^!|[!+@](?=\())/g
+    : /(?<escape>\\?)(?<symbols>[()*?[\]{|}]|^!|[!+@](?=\()|\\(?![!()*+?@[\]{|}]))/g;
 
 export function escapePath(pattern: string): string {
   const source = ([] as unknown[]).concat(pattern);
