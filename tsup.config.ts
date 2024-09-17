@@ -6,6 +6,6 @@ export default defineConfig({
   entry: ['src/index.ts'],
   format: ['esm', 'cjs'],
   platform: 'node',
-  sourcemap: true,
+  sourcemap: !process.env.IS_RELEASE,
   target: 'node12'
 }) as Options;
