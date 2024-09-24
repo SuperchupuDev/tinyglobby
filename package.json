@@ -25,7 +25,7 @@
     "dist"
   ],
   "author": "Superchupu",
-  "license": "ISC",
+  "license": "MIT",
   "keywords": [
     "glob",
     "patterns",
