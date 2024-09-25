@@ -54,18 +54,21 @@ function normalizePattern(
     const current = result.split('/');
     properties.commonPath ??= current;
 
-    const newCommonPath = [];
+    const newCommonPath: string[] = [];
 
     for (let i = 0; i < Math.min(properties.commonPath.length, current.length); i++) {
       const part = current[i];
-      if (properties.commonPath[i] === part && !/[\!\*\{\}\(\)]/.test(part)) {
-        newCommonPath.push(part);
-      } else {
+      if (/[\!\*\{\}\(\)]/.test(part)) {
+        newCommonPath.pop();
         break;
       }
-    }
 
-    newCommonPath.pop();
+      if (part !== properties.commonPath[i] || i === current.length - 1) {
+        break;
+      }
+
+      newCommonPath.push(part);
+    }
 
     properties.depthOffset = newCommonPath.length;
     properties.commonPath = newCommonPath;
@@ -171,7 +174,6 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
   }
 
   const api = new fdir(fdirOptions).crawl(properties.root);
-
   if (cwd === properties.root || options.absolute) {
     return sync ? api.sync() : api.withPromise();
   }
