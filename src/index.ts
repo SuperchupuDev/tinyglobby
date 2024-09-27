@@ -58,12 +58,13 @@ function normalizePattern(
 
     for (let i = 0; i < Math.min(properties.commonPath.length, current.length); i++) {
       const part = current[i];
-      if (/[\!\*\{\}\(\)]/.test(part)) {
+
+      if (part === '**') {
         newCommonPath.pop();
         break;
       }
 
-      if (part !== properties.commonPath[i] || i === current.length - 1) {
+      if (part !== properties.commonPath[i] || /[\!\*\{\}\(\)]/.test(part) || i === current.length - 1) {
         break;
       }
 
@@ -174,6 +175,7 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
   }
 
   const api = new fdir(fdirOptions).crawl(properties.root);
+
   if (cwd === properties.root || options.absolute) {
     return sync ? api.sync() : api.withPromise();
   }
