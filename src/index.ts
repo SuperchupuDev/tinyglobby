@@ -1,6 +1,7 @@
 import path, { posix } from 'node:path';
 import { type Options as FdirOptions, fdir } from 'fdir';
 import picomatch from 'picomatch';
+import { isDynamicPattern } from './utils.ts';
 
 export interface GlobOptions {
   absolute?: boolean;
@@ -64,7 +65,7 @@ function normalizePattern(
         break;
       }
 
-      if (part !== properties.commonPath[i] || /[\!\*\{\}\(\)]/.test(part) || i === current.length - 1) {
+      if (part !== properties.commonPath[i] || isDynamicPattern(part) || i === current.length - 1) {
         break;
       }
 
@@ -174,7 +175,8 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     fdirOptions.includeDirs = true;
   }
 
-  const api = new fdir(fdirOptions).crawl(properties.root);
+  // backslashes are removed so that inferred roots like `C:/New folder \\(1\\)` work
+  const api = new fdir(fdirOptions).crawl(properties.root.replace(/\\/g, ''));
 
   if (cwd === properties.root || options.absolute) {
     return sync ? api.sync() : api.withPromise();
@@ -222,4 +224,4 @@ export function globSync(patternsOrOptions: string | string[] | GlobOptions, opt
   return crawl(opts, cwd, true);
 }
 
-export { escapePath } from './utils.ts';
+export { escapePath, isDynamicPattern } from './utils.ts';

@@ -8,7 +8,8 @@ A fast and minimal alternative to globby and fast-glob, meant to behave the same
 Both globby and fast-glob present some behavior no other globbing lib has,
 which makes it hard to manually replace with something smaller and better.
 
-This library uses only two subdependencies, unlike globby's [23](https://npmgraph.js.org/?q=globby@14.0.2) and fast-glob's [17](https://npmgraph.js.org/?q=fast-glob@3.3.2).
+This library uses only two subdependencies, compared to `globby`'s [23](https://npmgraph.js.org/?q=globby@14.0.2)
+and `fast-glob`'s [17](https://npmgraph.js.org/?q=fast-glob@3.3.2).
 
 ## Usage
 
@@ -18,6 +19,13 @@ import { glob, globSync } from 'tinyglobby';
 await glob(['files/*.ts', '!**/*.d.ts'], { cwd: 'src' });
 globSync(['src/**/*.ts'], { ignore: ['**/*.d.ts'] });
 ```
+
+## API
+
+- `glob(patterns: string | string[], options: GlobOptions): Promise<string[]>`: Returns a promise with an array of matches.
+- `globSync(patterns: string | string[], options: GlobOptions): string[]`: Returns an array of matches.
+- `escapePath(path: string): string`: Escapes a path's special characters.
+- `isDynamicPattern(pattern: string, options?: GlobOptions): boolean`: Checks if a pattern is dynamic.
 
 ## Options
 
