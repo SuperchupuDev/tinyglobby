@@ -221,3 +221,5 @@ export function globSync(patternsOrOptions: string | string[] | GlobOptions, opt
 
   return crawl(opts, cwd, true);
 }
+
+export { escapePath } from './utils.ts';

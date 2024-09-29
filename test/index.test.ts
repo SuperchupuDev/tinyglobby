@@ -199,7 +199,7 @@ test('absolute + empty commonPath', async () => {
 });
 
 test('works with non-absolute cwd', async () => {
-  const files = await glob({ patterns: ['*.test.ts'], cwd: 'test' });
+  const files = await glob({ patterns: ['index.test.ts'], cwd: 'test' });
   assert.deepEqual(files.sort(), ['index.test.ts']);
 });
 
