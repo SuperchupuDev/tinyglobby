@@ -54,7 +54,7 @@ function normalizePattern(
     const current = result.split('/');
     properties.commonPath ??= current;
 
-    const newCommonPath: string[] = [];
+    const newCommonPath = [];
 
     for (let i = 0; i < Math.min(properties.commonPath.length, current.length); i++) {
       const part = current[i];
@@ -118,7 +118,7 @@ function getRelativePath(path: string, cwd: string, root: string) {
 }
 
 function processPath(path: string, cwd: string, root: string, isDirectory: boolean, absolute?: boolean) {
-  const relativePath = (absolute ? path.slice(root.length + 1) : path) || './';
+  const relativePath = absolute ? path.slice(root.length + 1) : path;
 
   if (root === cwd) {
     return isDirectory ? relativePath.slice(0, -1) : relativePath;
