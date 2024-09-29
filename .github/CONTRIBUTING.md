@@ -12,4 +12,4 @@ To get ready to work on the codebase, please do the following:
 2. Run `pnpm install --frozen-lockfile`
 3. Code!
 4. Run `pnpm check`, `pnpm typecheck` and `pnpm test`
-5. [Submit a pull request](https://github.com/SuperchupuDev/neon-env/compare)
+5. [Submit a pull request](https://github.com/SuperchupuDev/tinyglobby/compare)
