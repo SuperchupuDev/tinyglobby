@@ -75,7 +75,7 @@ describe('isDynamicPattern', () => {
     assert.ok(!isDynamicPattern('{b'));
   });
 
-  test('doesn\'t return true on patterns that include backslashes unlike fast-glob', () => {
+  test("doesn't return true on patterns that include backslashes unlike fast-glob", () => {
     assert.ok(!isDynamicPattern('\\'));
     assert.ok(!isDynamicPattern('this is my favorite character: \\('));
   });
