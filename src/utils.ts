@@ -15,4 +15,4 @@ export const escapeWin32Path = (pattern: string): string => pattern.replace(WIN3
 
 export const escapePath: (pattern: string) => string = process.platform === 'win32' ? escapeWin32Path : escapePosixPath;
 
-//#endregion
+// #endregion
