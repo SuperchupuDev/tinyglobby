@@ -1,4 +1,3 @@
-import * as os from 'node:os';
 import path, { posix } from 'node:path';
 import { type Options as FdirOptions, fdir } from 'fdir';
 import picomatch from 'picomatch';
@@ -223,16 +222,4 @@ export function globSync(patternsOrOptions: string | string[] | GlobOptions, opt
   return crawl(opts, cwd, true);
 }
 
-// code below derived from fast-glob under MIT license
-
-/**
- * All non-escaped special characters.
- * Posix: ()*?[]{|}, !+@ before (, ! at the beginning, \\ before non-special characters.
- * Windows: (){}[], !+@ before (, ! at the beginning.
- */
-const UNESCAPED_GLOB_SYMBOLS_RE =
-  os.platform() === 'win32'
-    ? /(\\?)([()[\]{}]|^!|[!+@](?=\())/g
-    : /(\\?)([()*?[\]{|}]|^!|[!+@](?=\()|\\(?![!()*+?@[\]{|}]))/g;
-
-export const escapePath = (pattern: string): string => pattern.replace(UNESCAPED_GLOB_SYMBOLS_RE, '\\$2');
+export { escapePath } from './utils.ts';
