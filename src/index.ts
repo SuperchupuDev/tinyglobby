@@ -38,8 +38,7 @@ function normalizePattern(
     result += '/**';
   }
 
-  // TODO: use a better regex for this
-  if (path.isAbsolute(result.replace(/\\/g, ''))) {
+  if (path.isAbsolute(result.replace(/\\(?=[()[\]{}!*+?@|])/g, ''))) {
     result = posix.relative(cwd, result);
   } else {
     result = posix.normalize(result);
