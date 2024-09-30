@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import { escapePosixPath, escapeWin32Path } from '../../src/utils.ts';
 
-for (const platform of ['win32', 'posix']) {
+for (const platform of ['posix', 'win32']) {
   const escapePath = platform === 'posix' ? escapePosixPath : escapeWin32Path;
 
   describe(`escapePath (${platform})`, () => {

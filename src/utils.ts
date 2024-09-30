@@ -1,5 +1,19 @@
 import picomatch from 'picomatch';
 
+// #region convertPathToPattern
+const ESCAPED_WIN32_BACKSLASHES = /\\(?![()[\]{}!+@])/g;
+export function convertPosixPathToPattern(path: string): string {
+  return escapePosixPath(path);
+}
+
+export function convertWin32PathToPattern(path: string): string {
+  return escapeWin32Path(path).replace(ESCAPED_WIN32_BACKSLASHES, '/');
+}
+
+export const convertPathToPattern: (path: string) => string =
+  process.platform === 'win32' ? convertWin32PathToPattern : convertPosixPathToPattern;
+// #endregion
+
 // #region escapePath
 /*
   Matches the following unescaped symbols:

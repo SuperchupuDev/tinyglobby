@@ -24,7 +24,8 @@ globSync(['src/**/*.ts'], { ignore: ['**/*.d.ts'] });
 
 - `glob(patterns: string | string[], options: GlobOptions): Promise<string[]>`: Returns a promise with an array of matches.
 - `globSync(patterns: string | string[], options: GlobOptions): string[]`: Returns an array of matches.
-- `escapePath(path: string): string`: Escapes a path's special characters.
+- `convertPathToPattern(path: string): string`: Converts a path to a pattern depending on the platform.
+- `escapePath(path: string): string`: Escapes a path's special characters depending on the platform.
 - `isDynamicPattern(pattern: string, options?: GlobOptions): boolean`: Checks if a pattern is dynamic.
 
 ## Options

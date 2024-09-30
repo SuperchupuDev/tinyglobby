@@ -231,4 +231,4 @@ export function globSync(patternsOrOptions: string | string[] | GlobOptions, opt
   return crawl(opts, cwd, true);
 }
 
-export { escapePath, isDynamicPattern } from './utils.ts';
+export { convertPathToPattern, escapePath, isDynamicPattern } from './utils.ts';
