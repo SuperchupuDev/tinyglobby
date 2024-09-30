@@ -183,7 +183,8 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
   }
 
   // backslashes are removed so that inferred roots like `C:/New folder \\(1\\)` work
-  const api = new fdir(fdirOptions).crawl(properties.root.replace(/\\/g, ''));
+  properties.root = properties.root.replace(/\\/g, '');
+  const api = new fdir(fdirOptions).crawl(properties.root);
 
   if (cwd === properties.root || options.absolute) {
     return sync ? api.sync() : api.withPromise();
