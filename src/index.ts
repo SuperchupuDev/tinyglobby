@@ -120,10 +120,10 @@ function getRelativePath(path: string, cwd: string, root: string) {
 }
 
 function processPath(path: string, cwd: string, root: string, isDirectory: boolean, absolute?: boolean) {
-  const relativePath = absolute ? path.slice(root.length + 1) : path;
+  const relativePath = absolute ? path.slice(root.length + 1) || '.' : path;
 
   if (root === cwd) {
-    return isDirectory ? relativePath.slice(0, -1) : relativePath;
+    return isDirectory && relativePath !== '.' ? relativePath.slice(0, -1) : relativePath;
   }
 
   return getRelativePath(relativePath, cwd, root);

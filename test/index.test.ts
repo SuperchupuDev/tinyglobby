@@ -223,6 +223,16 @@ test('exclude symlinks if the option is disabled', async () => {
   assert.deepEqual(files.sort(), []);
 });
 
+test('. works', async () => {
+  const files = await glob(['.'], { cwd, expandDirectories: false, onlyDirectories: true });
+  assert.deepEqual(files.sort(), ['.']);
+});
+
+test('. works (absolute)', async () => {
+  const files = await glob(['.'], { cwd, absolute: true, expandDirectories: false, onlyDirectories: true });
+  assert.deepEqual(files.sort(), [cwd.replaceAll('\\', '/')]);
+});
+
 test('works with non-absolute cwd', async () => {
   const files = await glob({ patterns: ['index.test.ts'], cwd: 'test' });
   assert.deepEqual(files.sort(), ['index.test.ts']);
