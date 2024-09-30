@@ -61,7 +61,7 @@ function normalizePattern(
     for (let i = 0; i < Math.min(properties.commonPath.length, current.length); i++) {
       const part = current[i];
 
-      if (part === '**') {
+      if (part === '**' && !current[i + 1]) {
         newCommonPath.pop();
         break;
       }
