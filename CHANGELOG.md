@@ -1,3 +1,25 @@
+### [0.2.7](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.6...0.2.7)
+
+#### Added
+
+- Support for providing patterns as a string
+- `followSymbolicLinks` option
+- `escapePath` utility function by @benmccann
+- `isDynamicPattern` utility function
+- `convertPathToPattern` utility function
+
+#### Fixed
+
+- `.` as a pattern now works as expected
+- Globbing no longer returns an empty string when matching the root directory
+- Handling of escaped symbols in patterns
+
+#### Changed
+
+- Relicensed the project to the MIT license
+- Disabled source maps on release builds for smaller bundle size
+- Improved the common root inference algorithm
+
 ### [0.2.6](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.5...0.2.6)
 
 #### Added
