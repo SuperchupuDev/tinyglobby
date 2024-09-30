@@ -155,9 +155,9 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     // use relative paths in the matcher
     filters: [(p, isDirectory) => matcher(processPath(p, cwd, properties.root, isDirectory, options.absolute))],
     exclude: (_, p) => exclude(processPath(p, cwd, properties.root, true, true)),
-    excludeSymlinks: true,
     pathSeparator: '/',
-    relativePaths: true
+    relativePaths: true,
+    resolveSymlinks: true
   };
 
   if (options.deep) {
@@ -170,9 +170,9 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     fdirOptions.includeBasePath = true;
   }
 
-  if (options.followSymbolicLinks !== false) {
-    fdirOptions.resolveSymlinks = true;
-    fdirOptions.excludeSymlinks = false;
+  if (options.followSymbolicLinks === false) {
+    fdirOptions.resolveSymlinks = false;
+    fdirOptions.excludeSymlinks = true;
   }
 
   if (options.onlyDirectories) {
