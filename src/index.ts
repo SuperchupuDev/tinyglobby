@@ -10,6 +10,7 @@ export interface GlobOptions {
   ignore?: string | string[];
   dot?: boolean;
   deep?: number;
+  followSymbolicLinks?: boolean;
   caseSensitiveMatch?: boolean;
   expandDirectories?: boolean;
   onlyDirectories?: boolean;
@@ -154,6 +155,7 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     // use relative paths in the matcher
     filters: [(p, isDirectory) => matcher(processPath(p, cwd, properties.root, isDirectory, options.absolute))],
     exclude: (_, p) => exclude(processPath(p, cwd, properties.root, true, true)),
+    excludeSymlinks: true,
     pathSeparator: '/',
     relativePaths: true
   };
@@ -166,6 +168,11 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     fdirOptions.relativePaths = false;
     fdirOptions.resolvePaths = true;
     fdirOptions.includeBasePath = true;
+  }
+
+  if (options.followSymbolicLinks !== false) {
+    fdirOptions.resolveSymlinks = true;
+    fdirOptions.excludeSymlinks = false;
   }
 
   if (options.onlyDirectories) {

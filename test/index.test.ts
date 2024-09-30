@@ -198,6 +198,31 @@ test('absolute + empty commonPath', async () => {
   assert.deepEqual(files.sort(), [`${cwd.replaceAll('\\', '/')}a/a.txt`, `${cwd.replaceAll('\\', '/')}a/b.txt`]);
 });
 
+test('handle symlinks', async () => {
+  const files = await glob({ patterns: ['.symlink/**'], dot: true, cwd });
+  assert.deepEqual(files.sort(), ['.symlink/dir/a.txt', '.symlink/dir/b.txt', '.symlink/file']);
+});
+
+test('handle symlinks (absolute)', async () => {
+  const files = await glob({ patterns: ['.symlink/**'], dot: true, absolute: true, cwd });
+  assert.deepEqual(files.sort(), [
+    `${cwd.replaceAll('\\', '/')}.symlink/dir/a.txt`,
+    `${cwd.replaceAll('\\', '/')}.symlink/dir/b.txt`,
+    `${cwd.replaceAll('\\', '/')}.symlink/file`
+  ]);
+});
+
+test('exclude symlinks if the option is disabled', async () => {
+  const files = await glob({
+    patterns: ['.symlink/**'],
+    dot: true,
+    followSymbolicLinks: false,
+    expandDirectories: false,
+    cwd
+  });
+  assert.deepEqual(files.sort(), []);
+});
+
 test('works with non-absolute cwd', async () => {
   const files = await glob({ patterns: ['index.test.ts'], cwd: 'test' });
   assert.deepEqual(files.sort(), ['index.test.ts']);
