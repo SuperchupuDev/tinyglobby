@@ -156,8 +156,8 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     filters: [(p, isDirectory) => matcher(processPath(p, cwd, properties.root, isDirectory, options.absolute))],
     exclude: (_, p) => exclude(processPath(p, cwd, properties.root, true, true)),
     pathSeparator: '/',
-    relativePaths: true,
-    resolveSymlinks: true
+    relativePaths: true
+    // resolveSymlinks: true
   };
 
   if (options.deep) {
