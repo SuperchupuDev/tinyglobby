@@ -1,3 +1,9 @@
+### [0.2.9](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.8...0.2.9)
+
+#### Changed
+
+- Temporarily reverted resolution of symbolic links due to a critical bug. See [#54](https://github.com/SuperchupuDev/tinyglobby/issues/54) for more info
+
 ### [0.2.8](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.7...0.2.8)
 
 #### Fixed
