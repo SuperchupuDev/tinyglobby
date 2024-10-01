@@ -1,6 +1,6 @@
 {
   "name": "tinyglobby",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "A fast and minimal alternative to globby and fast-glob",
   "scripts": {
     "build": "tsup",

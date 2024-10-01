@@ -1,3 +1,13 @@
+### [0.2.8](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.7...0.2.8)
+
+#### Fixed
+
+- Escaped symbols (i.e. `"\\["`) in the inferred common root producing empty matches
+
+#### Changed
+
+- Improved the common root inference algorithm to optimize non-trailing `**` patterns
+
 ### [0.2.7](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.6...0.2.7)
 
 #### Added
