@@ -49,6 +49,7 @@ globSync(['src/**/*.ts'], { ignore: ['**/*.d.ts'] });
 <!-- should be sorted by weekly download count -->
 - [`vitest`](https://github.com/vitest-dev/vitest)
 - [`tsup`](https://github.com/egoist/tsup)
+- [`cspell`](https://github.com/streetsidesoftware/cspell)
 - [`nuxt`](https://github.com/nuxt/nuxt)
 - [`vite-plugin-pwa`](https://github.com/vite-pwa/vite-plugin-pwa)
 - [`size-limit`](https://github.com/ai/size-limit)
