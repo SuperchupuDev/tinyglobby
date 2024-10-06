@@ -48,6 +48,7 @@ globSync(['src/**/*.ts'], { ignore: ['**/*.d.ts'] });
 
 <!-- should be sorted by weekly download count -->
 - [`vitest`](https://github.com/vitest-dev/vitest)
+- [`ts-morph`](https://github.com/dsherret/ts-morph)
 - [`tsup`](https://github.com/egoist/tsup)
 - [`cspell`](https://github.com/streetsidesoftware/cspell)
 - [`nuxt`](https://github.com/nuxt/nuxt)
@@ -56,6 +57,7 @@ globSync(['src/**/*.ts'], { ignore: ['**/*.d.ts'] });
 - [`postcss-mixins`](https://github.com/postcss/postcss-mixins)
 - [`unocss`](https://github.com/unocss/unocss)
 - [`vitepress`](https://github.com/vuejs/vitepress)
+- [`@sanity/import'](https://github.com/sanity-io/import)
 - [`pkg.pr.new`](https://github.com/stackblitz-labs/pkg.pr.new)
 - Your own project? [Open an issue](https://github.com/SuperchupuDev/tinyglobby/issues)
 if you feel like this list is incomplete.
