@@ -41,7 +41,7 @@
   },
   "homepage": "https://github.com/SuperchupuDev/tinyglobby#readme",
   "dependencies": {
-    "fdir": "^6.4.0",
+    "fdir": "^6.4.2",
     "picomatch": "^4.0.2"
   },
   "devDependencies": {

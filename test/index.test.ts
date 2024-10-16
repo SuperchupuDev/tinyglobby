@@ -17,7 +17,8 @@ const fixture = await createFixture({
   '.deep/a/a/a.txt': 'a',
   '.symlink': {
     file: ({ symlink }) => symlink('../a/a.txt'),
-    dir: ({ symlink }) => symlink('../a')
+    dir: ({ symlink }) => symlink('../a'),
+    '.recursive': ({ symlink }) => symlink('..')
   }
 });
 
@@ -198,22 +199,48 @@ test('absolute + empty commonPath', async () => {
   assert.deepEqual(files.sort(), [`${cwd.replaceAll('\\', '/')}a/a.txt`, `${cwd.replaceAll('\\', '/')}a/b.txt`]);
 });
 
-test('do NOT handle symlinks for now', async () => {
-  const files = await glob({ patterns: ['.symlink/**'], dot: true, cwd });
-  assert.deepEqual(files.sort(), ['.symlink/dir', '.symlink/file']);
-});
-
-test.skip('handle symlinks', async () => {
-  const files = await glob({ patterns: ['.symlink/**'], dot: true, cwd });
+test('handle symlinks', async () => {
+  const files = await glob({ patterns: ['.symlink/**'], cwd });
   assert.deepEqual(files.sort(), ['.symlink/dir/a.txt', '.symlink/dir/b.txt', '.symlink/file']);
 });
 
-test.skip('handle symlinks (absolute)', async () => {
-  const files = await glob({ patterns: ['.symlink/**'], dot: true, absolute: true, cwd });
+test('handle recursive symlinks', async () => {
+  const files = await glob({
+    patterns: ['.symlink/.recursive/**', '!.symlink/.recursive/**/.{a,deep}'],
+    dot: true,
+    cwd
+  });
+  assert.deepEqual(files.sort(), [
+    '.symlink/.recursive/.symlink/file',
+    '.symlink/.recursive/a/a.txt',
+    '.symlink/.recursive/a/b.txt',
+    '.symlink/.recursive/b/a.txt',
+    '.symlink/.recursive/b/b.txt'
+  ]);
+});
+
+test('handle symlinks (absolute)', async () => {
+  const files = await glob({ patterns: ['.symlink/**'], absolute: true, cwd });
   assert.deepEqual(files.sort(), [
     `${cwd.replaceAll('\\', '/')}.symlink/dir/a.txt`,
     `${cwd.replaceAll('\\', '/')}.symlink/dir/b.txt`,
     `${cwd.replaceAll('\\', '/')}.symlink/file`
+  ]);
+});
+
+test('handle recursive symlinks (absolute)', async () => {
+  const files = await glob({
+    patterns: ['.symlink/.recursive/**', '!.symlink/.recursive/**/.{a,deep}'],
+    absolute: true,
+    dot: true,
+    cwd
+  });
+  assert.deepEqual(files.sort(), [
+    `${cwd.replaceAll('\\', '/')}.symlink/.recursive/.symlink/file`,
+    `${cwd.replaceAll('\\', '/')}.symlink/.recursive/a/a.txt`,
+    `${cwd.replaceAll('\\', '/')}.symlink/.recursive/a/b.txt`,
+    `${cwd.replaceAll('\\', '/')}.symlink/.recursive/b/a.txt`,
+    `${cwd.replaceAll('\\', '/')}.symlink/.recursive/b/b.txt`
   ]);
 });
 
