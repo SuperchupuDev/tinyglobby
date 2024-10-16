@@ -48,6 +48,8 @@ globSync(['src/**/*.ts'], { ignore: ['**/*.d.ts'] });
 
 <!-- should be sorted by weekly download count -->
 - [`vitest`](https://github.com/vitest-dev/vitest)
+- [`ts-morph`](https://github.com/dsherret/ts-morph)
+- [`sort-package-json`](https://github.com/keithamus/sort-package-json)
 - [`tsup`](https://github.com/egoist/tsup)
 - [`cspell`](https://github.com/streetsidesoftware/cspell)
 - [`nuxt`](https://github.com/nuxt/nuxt)
