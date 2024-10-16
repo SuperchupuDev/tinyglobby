@@ -102,12 +102,13 @@ function processPatterns(
     return { match: ['**/*'], ignore: ignorePatterns };
   }
 
-  for (let pattern of patterns) {
-    pattern = normalizePattern(pattern, expandDirectories, cwd, properties, false);
+  for (const pattern of patterns) {
     if (pattern.startsWith('!') && pattern[1] !== '(') {
-      ignorePatterns.push(pattern.slice(1));
+      const newPattern = normalizePattern(pattern.slice(1), expandDirectories, cwd, properties, true);
+      ignorePatterns.push(newPattern);
     } else {
-      matchPatterns.push(pattern);
+      const newPattern = normalizePattern(pattern, expandDirectories, cwd, properties, false);
+      matchPatterns.push(newPattern);
     }
   }
 

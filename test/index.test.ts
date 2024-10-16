@@ -306,6 +306,20 @@ test('negative patterns in options', async () => {
   assert.deepEqual(files2.sort(), ['a/b.txt', 'b/b.txt']);
 });
 
+test('negative absolute patterns in options', async () => {
+  const files = await glob({
+    patterns: [`${cwd.replaceAll('\\', '/')}**/*.txt`, `!${cwd.replaceAll('\\', '/')}**/b.txt`],
+    cwd
+  });
+  assert.deepEqual(files.sort(), ['a/a.txt', 'b/a.txt']);
+
+  const files2 = await glob({
+    patterns: [`${cwd.replaceAll('\\', '/')}**/*.txt`, `!${cwd.replaceAll('\\', '/')}**/a.txt`],
+    cwd
+  });
+  assert.deepEqual(files2.sort(), ['a/b.txt', 'b/b.txt']);
+});
+
 test('sync version', () => {
   const files = globSync(['a/*.txt'], { cwd });
   assert.deepEqual(files.sort(), ['a/a.txt', 'a/b.txt']);
