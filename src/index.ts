@@ -89,6 +89,9 @@ function processPatterns(
 ) {
   if (typeof patterns === 'string') {
     patterns = [patterns];
+  } else if (!patterns) {
+    // tinyglobby exclusive behavior, should be considered deprecated
+    patterns = ['**/*'];
   }
 
   if (typeof ignore === 'string') {
@@ -96,19 +99,23 @@ function processPatterns(
   }
 
   const matchPatterns: string[] = [];
-  const ignorePatterns: string[] = ignore.map(p => normalizePattern(p, expandDirectories, cwd, properties, true));
+  const ignorePatterns: string[] = [];
 
-  if (!patterns) {
-    return { match: ['**/*'], ignore: ignorePatterns };
+  for (const pattern of ignore) {
+    // don't handle negated patterns here for consistency with fast-glob
+    if (!pattern.startsWith('!') || pattern[1] === '(') {
+      const newPattern = normalizePattern(pattern, expandDirectories, cwd, properties, true);
+      ignorePatterns.push(newPattern);
+    }
   }
 
   for (const pattern of patterns) {
-    if (pattern.startsWith('!') && pattern[1] !== '(') {
-      const newPattern = normalizePattern(pattern.slice(1), expandDirectories, cwd, properties, true);
-      ignorePatterns.push(newPattern);
-    } else {
+    if (!pattern.startsWith('!') || pattern[1] === '(') {
       const newPattern = normalizePattern(pattern, expandDirectories, cwd, properties, false);
       matchPatterns.push(newPattern);
+    } else if (pattern[1] !== '!' || pattern[2] === '(') {
+      const newPattern = normalizePattern(pattern.slice(1), expandDirectories, cwd, properties, true);
+      ignorePatterns.push(newPattern);
     }
   }
 
