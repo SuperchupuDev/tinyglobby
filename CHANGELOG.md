@@ -1,3 +1,14 @@
+### [0.2.10](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.9...0.2.10)
+
+#### Added
+
+- Re-enabled symlinks resolution. Big thanks to [thecodrr](https://github.com/thecodrr) for fixing the critical bug upstream
+
+#### Fixed
+
+- Processing of absolute negative patterns
+- Negative `ignore` patterns are now not processed for consistency with `fast-glob`
+
 ### [0.2.9](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.8...0.2.9)
 
 #### Changed
