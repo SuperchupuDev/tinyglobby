@@ -141,7 +141,7 @@ function crawl(options: GlobOptions, cwd: string, sync: false): Promise<string[]
 function crawl(options: GlobOptions, cwd: string, sync: true): string[];
 function crawl(options: GlobOptions, cwd: string, sync: boolean) {
   if (Array.isArray(options.patterns) && options.patterns.length === 0) {
-    return [];
+    return sync ? [] : Promise.resolve([]);
   }
 
   const properties = {
