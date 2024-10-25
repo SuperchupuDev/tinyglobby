@@ -140,6 +140,10 @@ function processPath(path: string, cwd: string, root: string, isDirectory: boole
 function crawl(options: GlobOptions, cwd: string, sync: false): Promise<string[]>;
 function crawl(options: GlobOptions, cwd: string, sync: true): string[];
 function crawl(options: GlobOptions, cwd: string, sync: boolean) {
+  if (Array.isArray(options.patterns) && options.patterns.length === 0) {
+    return [];
+  }
+
   const properties = {
     root: cwd,
     commonPath: null,
