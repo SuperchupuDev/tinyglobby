@@ -75,7 +75,6 @@ function normalizePattern(
 
     properties.depthOffset = newCommonPath.length;
     properties.commonPath = newCommonPath;
-
     properties.root = newCommonPath.length > 0 ? `${cwd}/${newCommonPath.join('/')}` : cwd;
   }
 
@@ -108,32 +107,50 @@ function processPatterns(
       ignorePatterns.push(newPattern);
     }
   }
-
+  const transformed: string[] = [];
   for (const pattern of patterns) {
     if (!pattern.startsWith('!') || pattern[1] === '(') {
       const newPattern = normalizePattern(pattern, expandDirectories, cwd, properties, false);
       matchPatterns.push(newPattern);
+      const split = newPattern.split('/'); //.filter(e => e !== '');
+      // if (/*split.at(-1)?.includes('**') ||*/ split.length === 1) {
+      //   transformed.push(split.join('/'));
+      // } else {
+      //   transformed.push(split.slice(0, -1).join('/'));
+      // }
+
+      if (split[split.length - 1]?.includes('**')) {
+        split[split.length - 2] = '**';
+        split.pop();
+        transformed.push(split.join('/'));
+      } else {
+        transformed.push(split.length > 1 ? split.slice(0, -1).join('/') : split.join('/'));
+      }
+      console.log(newPattern, split);
     } else if (pattern[1] !== '!' || pattern[2] === '(') {
       const newPattern = normalizePattern(pattern.slice(1), expandDirectories, cwd, properties, true);
       ignorePatterns.push(newPattern);
     }
   }
-
-  return { match: matchPatterns, ignore: ignorePatterns };
+  console.log(transformed, 'transformed');
+  return { match: matchPatterns, ignore: ignorePatterns, transformed };
 }
 
 // TODO: this is slow, find a better way to do this
 function getRelativePath(path: string, cwd: string, root: string) {
   return posix.relative(cwd, `${root}/${path}`);
 }
-
-function processPath(path: string, cwd: string, root: string, isDirectory: boolean, absolute?: boolean) {
+let i = 0;
+function processPath(path: string, cwd: string, root: string, isDirectory: boolean, absolute?: boolean, count = false) {
   const relativePath = absolute ? path.slice(root.length + 1) || '.' : path;
 
   if (root === cwd) {
     return isDirectory && relativePath !== '.' ? relativePath.slice(0, -1) : relativePath;
   }
-
+  if (count) {
+    i++;
+    console.log(i);
+  }
   return getRelativePath(relativePath, cwd, root);
 }
 
@@ -157,16 +174,28 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     nocase: options.caseSensitiveMatch === false,
     ignore: processed.ignore
   });
+  console.log(processed.transformed, 'Hi');
 
   const exclude = picomatch(processed.ignore, {
     dot: options.dot,
     nocase: options.caseSensitiveMatch === false
   });
+  const newExclude = picomatch('**/*', {
+    ignore: processed.transformed,
+    dot: !options.dot,
+    nocase: options.caseSensitiveMatch === false
+  });
 
   const fdirOptions: Partial<FdirOptions> = {
     // use relative paths in the matcher
-    filters: [(p, isDirectory) => matcher(processPath(p, cwd, properties.root, isDirectory, options.absolute))],
-    exclude: (_, p) => exclude(processPath(p, cwd, properties.root, true, true)),
+    filters: [(p, isDirectory) => matcher(processPath(p, cwd, properties.root, isDirectory, options.absolute, true))],
+    exclude: (_, p) => {
+      const h =
+        exclude(processPath(p, cwd, properties.root, true, true, false)) ||
+        newExclude(processPath(p, cwd, properties.root, true, true, false));
+      console.log(h, processPath(p, cwd, properties.root, true, true, false));
+      return h;
+    },
     pathSeparator: '/',
     relativePaths: true,
     resolveSymlinks: true
