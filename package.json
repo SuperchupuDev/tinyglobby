@@ -8,9 +8,9 @@
     "format": "biome format --write",
     "lint": "biome lint",
     "lint:fix": "biome lint --fix --unsafe",
-    "test": "node --experimental-transform-types --test test/**/*.test.ts",
-    "test:coverage": "node --experimental-transform-types --test --experimental-test-coverage test/**/*.test.ts",
-    "test:only": "node --experimental-transform-types --test --test-only test/**/*.test.ts",
+    "test": "node --experimental-transform-types --test",
+    "test:coverage": "node --experimental-transform-types --test --experimental-test-coverage",
+    "test:only": "node --experimental-transform-types --test --test-only",
     "typecheck": "tsc --noEmit"
   },
   "main": "dist/index.js",
