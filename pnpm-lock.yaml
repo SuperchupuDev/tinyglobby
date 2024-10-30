@@ -4,16 +4,21 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  picomatch@4.0.2:
+    hash: be85d04d529134b97aa354ee0e29f701cbe12c24f6311e00d0bc4e33d7484805
+    path: patches/picomatch@4.0.2.patch
+
 importers:
 
   .:
     dependencies:
       fdir:
         specifier: ^6.4.3
-        version: 6.4.3(picomatch@4.0.2)
+        version: 6.4.3(picomatch@4.0.2(patch_hash=be85d04d529134b97aa354ee0e29f701cbe12c24f6311e00d0bc4e33d7484805))
       picomatch:
         specifier: ^4.0.2
-        version: 4.0.2
+        version: 4.0.2(patch_hash=be85d04d529134b97aa354ee0e29f701cbe12c24f6311e00d0bc4e33d7484805)
     devDependencies:
       '@biomejs/biome':
         specifier: ^1.9.4
@@ -977,9 +982,9 @@ snapshots:
       '@esbuild/win32-ia32': 0.24.2
       '@esbuild/win32-x64': 0.24.2
 
-  fdir@6.4.3(picomatch@4.0.2):
+  fdir@6.4.3(picomatch@4.0.2(patch_hash=be85d04d529134b97aa354ee0e29f701cbe12c24f6311e00d0bc4e33d7484805)):
     optionalDependencies:
-      picomatch: 4.0.2
+      picomatch: 4.0.2(patch_hash=be85d04d529134b97aa354ee0e29f701cbe12c24f6311e00d0bc4e33d7484805)
 
   foreground-child@3.3.0:
     dependencies:
@@ -1049,7 +1054,7 @@ snapshots:
 
   picocolors@1.1.1: {}
 
-  picomatch@4.0.2: {}
+  picomatch@4.0.2(patch_hash=be85d04d529134b97aa354ee0e29f701cbe12c24f6311e00d0bc4e33d7484805): {}
 
   pirates@4.0.6: {}
 
@@ -1142,8 +1147,8 @@ snapshots:
 
   tinyglobby@0.2.10:
     dependencies:
-      fdir: 6.4.3(picomatch@4.0.2)
-      picomatch: 4.0.2
+      fdir: 6.4.3(picomatch@4.0.2(patch_hash=be85d04d529134b97aa354ee0e29f701cbe12c24f6311e00d0bc4e33d7484805))
+      picomatch: 4.0.2(patch_hash=be85d04d529134b97aa354ee0e29f701cbe12c24f6311e00d0bc4e33d7484805)
 
   tr46@1.0.1:
     dependencies:
