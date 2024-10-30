@@ -59,5 +59,10 @@
     "access": "public",
     "provenance": true
   },
-  "packageManager": "pnpm@9.12.2"
+  "packageManager": "pnpm@9.12.2",
+  "pnpm": {
+    "patchedDependencies": {
+      "picomatch@4.0.2": "patches/picomatch@4.0.2.patch"
+    }
+  }
 }

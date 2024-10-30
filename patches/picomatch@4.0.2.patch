@@ -1,0 +1,27 @@
+diff --git a/lib/picomatch.js b/lib/picomatch.js
+index d0ebd9f163cf240a00998dec9ed69523d1405b4d..b5d9fb5b0f55b70f99a5012b80e91974b46699eb 100644
+--- a/lib/picomatch.js
++++ b/lib/picomatch.js
+@@ -75,12 +75,17 @@ const picomatch = (glob, options, returnState = false) => {
+       return returnObject ? result : false;
+     }
+ 
+-    if (isIgnored(input)) {
+-      if (typeof opts.onIgnore === 'function') {
+-        opts.onIgnore(result);
++    ignored: {
++      if (isIgnored(input)) {
++        if (typeof opts.onIgnore === 'function') {
++          if (opts.onIgnore(result) === true) {
++            result.isMatch = true;
++            break ignored;
++          }
++        }
++        result.isMatch = false;
++        return returnObject ? result : false;
+       }
+-      result.isMatch = false;
+-      return returnObject ? result : false;
+     }
+ 
+     if (typeof opts.onMatch === 'function') {
