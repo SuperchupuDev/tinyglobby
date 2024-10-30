@@ -106,14 +106,16 @@ function processPatterns(
 
   const matchPatterns: string[] = [];
   const ignorePatterns: string[] = [];
+  const unignorePatterns: string[] = [];
 
   for (const pattern of ignore) {
     if (!pattern) {
       continue;
     }
-    // don't handle negated patterns here for consistency with fast-glob
     if (pattern[0] !== '!' || pattern[1] === '(') {
       ignorePatterns.push(normalizePattern(pattern, expandDirectories, cwd, props, true));
+    } else {
+      unignorePatterns.push(pattern.slice(1));
     }
   }
 
@@ -128,7 +130,7 @@ function processPatterns(
     }
   }
 
-  return { match: matchPatterns, ignore: ignorePatterns };
+  return { match: matchPatterns, ignore: ignorePatterns, unignore: unignorePatterns };
 }
 
 // TODO: this is slow, find a better way to do this
@@ -182,10 +184,13 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     log('internal processing patterns:', processed);
   }
 
+  const unignoreMatcher = processed.unignore.length === 0 ? undefined : picomatch(processed.unignore);
+
   const matcher = picomatch(processed.match, {
     dot: options.dot,
     nocase,
-    ignore: processed.ignore
+    ignore: processed.ignore,
+    onIgnore: unignoreMatcher ? result => unignoreMatcher(result.output) : undefined
   });
 
   const ignore = picomatch(processed.ignore, {
