@@ -162,6 +162,11 @@ test('dot', async () => {
   assert.deepEqual(files.sort(), ['a/a.txt']);
 });
 
+test('no common path optimization', async () => {
+  const files = await glob({ patterns: ['.deep/a/a/*.txt', 'a/a.*'], cwd });
+  assert.deepEqual(files.sort(), ['.deep/a/a/a.txt', 'a/a.txt']);
+});
+
 test('deep', async () => {
   const files = await glob({ patterns: ['.deep/a/a/*.txt'], deep: 3, cwd });
   assert.deepEqual(files.sort(), ['.deep/a/a/a.txt']);
