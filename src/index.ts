@@ -115,15 +115,13 @@ function processPatterns(
       const newPattern = normalizePattern(pattern, expandDirectories, cwd, properties, false);
       matchPatterns.push(newPattern);
       const split = newPattern.split('/');
-      let current = '';
-      if (split[split.length - 1]?.includes('**')) {
+      if (split[split.length - 1] === '**') {
         split[split.length - 2] = '**';
         split.pop();
-        current = split.join('/');
+        transformed.push(split.join('/'));
       } else {
-        current = split.length > 1 ? split.slice(0, -1).join('/') : split.join('/');
+        transformed.push(split.length > 1 ? split.slice(0, -1).join('/') : split.join('/'));
       }
-      transformed.push(current);
 
       for (let i = split.length - 2; i > 0; i--) {
         const part = split.slice(0, i);
@@ -140,6 +138,7 @@ function processPatterns(
       ignorePatterns.push(newPattern);
     }
   }
+
   return { match: matchPatterns, ignore: ignorePatterns, transformed };
 }
 
@@ -185,9 +184,9 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
   });
 
   const exclude = picomatch('**', {
-    ignore: processed.transformed,
-    dot: !options.dot,
-    nocase: options.caseSensitiveMatch === false
+    dot: true,
+    nocase: options.caseSensitiveMatch === false,
+    ignore: processed.transformed
   });
 
   const fdirOptions: Partial<FdirOptions> = {
