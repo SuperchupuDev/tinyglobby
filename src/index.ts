@@ -113,19 +113,32 @@ function processPatterns(
       const newPattern = normalizePattern(pattern, expandDirectories, cwd, properties, false);
       matchPatterns.push(newPattern);
       const split = newPattern.split('/');
-
+      let current = '';
       if (split[split.length - 1]?.includes('**')) {
         split[split.length - 2] = '**';
         split.pop();
-        transformed.push(split.join('/'));
+        current = split.join('/');
       } else {
-        transformed.push(split.length > 1 ? split.slice(0, -1).join('/') : split.join('/'));
+        current = split.length > 1 ? split.slice(0, -1).join('/') : split.join('/');
+      }
+      transformed.push(current);
+
+      for (let i = split.length - 2; i > 0; i--) {
+        const part = split.slice(0, i);
+        if (part[part.length - 1] === '**') {
+          part.pop();
+          if (part.length > 1) {
+            part.pop();
+          }
+        }
+        transformed.push(part.join('/'));
       }
     } else if (pattern[1] !== '!' || pattern[2] === '(') {
       const newPattern = normalizePattern(pattern.slice(1), expandDirectories, cwd, properties, true);
       ignorePatterns.push(newPattern);
     }
   }
+  console.log({ transformed, patterns });
   return { match: matchPatterns, ignore: ignorePatterns, transformed };
 }
 
