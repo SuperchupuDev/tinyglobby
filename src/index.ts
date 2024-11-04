@@ -75,6 +75,7 @@ function normalizePattern(
 
     properties.depthOffset = newCommonPath.length;
     properties.commonPath = newCommonPath;
+
     properties.root = newCommonPath.length > 0 ? `${cwd}/${newCommonPath.join('/')}` : cwd;
   }
 
@@ -107,6 +108,7 @@ function processPatterns(
       ignorePatterns.push(newPattern);
     }
   }
+
   const transformed: string[] = [];
   for (const pattern of patterns) {
     if (!pattern.startsWith('!') || pattern[1] === '(') {
@@ -138,7 +140,6 @@ function processPatterns(
       ignorePatterns.push(newPattern);
     }
   }
-  console.log({ transformed, patterns });
   return { match: matchPatterns, ignore: ignorePatterns, transformed };
 }
 
@@ -153,6 +154,7 @@ function processPath(path: string, cwd: string, root: string, isDirectory: boole
   if (root === cwd) {
     return isDirectory && relativePath !== '.' ? relativePath.slice(0, -1) : relativePath;
   }
+
   return getRelativePath(relativePath, cwd, root);
 }
 
@@ -177,11 +179,12 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     ignore: processed.ignore
   });
 
-  const exclude = picomatch(processed.ignore, {
+  const ignore = picomatch(processed.ignore, {
     dot: options.dot,
     nocase: options.caseSensitiveMatch === false
   });
-  const newExclude = picomatch('**/*', {
+
+  const exclude = picomatch('**', {
     ignore: processed.transformed,
     dot: !options.dot,
     nocase: options.caseSensitiveMatch === false
@@ -190,9 +193,10 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
   const fdirOptions: Partial<FdirOptions> = {
     // use relative paths in the matcher
     filters: [(p, isDirectory) => matcher(processPath(p, cwd, properties.root, isDirectory, options.absolute))],
-    exclude: (_, p) =>
-      exclude(processPath(p, cwd, properties.root, true, true)) ||
-      newExclude(processPath(p, cwd, properties.root, true, true)),
+    exclude: (_, p) => {
+      const relativePath = processPath(p, cwd, properties.root, true, true);
+      return ignore(relativePath) || exclude(relativePath);
+    },
     pathSeparator: '/',
     relativePaths: true,
     resolveSymlinks: true
