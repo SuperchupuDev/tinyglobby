@@ -116,8 +116,10 @@ function processPatterns(
       matchPatterns.push(newPattern);
       const split = newPattern.split('/');
       if (split[split.length - 1] === '**') {
-        split[split.length - 2] = '**';
-        split.pop();
+        if (split[split.length - 2] !== '..') {
+          split[split.length - 2] = '**';
+          split.pop();
+        }
         transformed.push(split.join('/'));
       } else {
         transformed.push(split.length > 1 ? split.slice(0, -1).join('/') : split.join('/'));
@@ -183,7 +185,7 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     nocase: options.caseSensitiveMatch === false
   });
 
-  const exclude = picomatch('**', {
+  const exclude = picomatch('*(../)**', {
     dot: true,
     nocase: options.caseSensitiveMatch === false,
     ignore: processed.transformed
