@@ -19,17 +19,17 @@ importers:
         specifier: ^1.9.4
         version: 1.9.4
       '@types/node':
-        specifier: ^22.7.9
-        version: 22.7.9
+        specifier: ^22.9.0
+        version: 22.9.0
       '@types/picomatch':
         specifier: ^3.0.1
         version: 3.0.1
       fs-fixture:
-        specifier: ^2.5.0
-        version: 2.5.0
+        specifier: ^2.6.0
+        version: 2.6.0
       tsup:
-        specifier: ^8.3.4
-        version: 8.3.4(typescript@5.6.3)
+        specifier: ^8.3.5
+        version: 8.3.5(typescript@5.6.3)
       typescript:
         specifier: ^5.6.3
         version: 5.6.3
@@ -342,8 +342,8 @@ packages:
   '@types/estree@1.0.6':
     resolution: {integrity: sha512-AYnb1nQyY49te+VRAVgmzfcgjYS91mY5P0TKUDCLEM+gNnA+3T6rWITXRLYCpahpqSQbN5cE+gHpnPyXjHWxcw==}
 
-  '@types/node@22.7.9':
-    resolution: {integrity: sha512-jrTfRC7FM6nChvU7X2KqcrgquofrWLFDeYC1hKfwNWomVvrn7JIksqf344WN2X/y8xrgqBd2dJATZV4GbatBfg==}
+  '@types/node@22.9.0':
+    resolution: {integrity: sha512-vuyHg81vvWA1Z1ELfvLko2c8f34gyA0zaic0+Rllc5lbCnbSyuvb2Oxpm6TAUAC/2xZN3QGqxBNggD1nNR2AfQ==}
 
   '@types/picomatch@3.0.1':
     resolution: {integrity: sha512-1MRgzpzY0hOp9pW/kLRxeQhUWwil6gnrUYd3oEpeYBqp/FexhaCPv3F8LsYr47gtUU45fO2cm1dbwkSrHEo8Uw==}
@@ -441,8 +441,8 @@ packages:
     resolution: {integrity: sha512-Ld2g8rrAyMYFXBhEqMz8ZAHBi4J4uS1i/CxGMDnjyFWddMXLVcDp051DZfu+t7+ab7Wv6SMqpWmyFIj5UbfFvg==}
     engines: {node: '>=14'}
 
-  fs-fixture@2.5.0:
-    resolution: {integrity: sha512-AzCSCaChZORdNcSa9w9IBnGWhDP2Bv/lOso0P9mAl5nJw2s7pjSEoDaHtzZ9VGIHQlSXR2fuTPO7ln1dM4HTNQ==}
+  fs-fixture@2.6.0:
+    resolution: {integrity: sha512-XQNHBGYgth08BSgThjQNrUuzE9XUmr7CDgGFStKaAeB9Oq+kxUHd1zS6hp1YO11B501Sjv9Jq+B2VFn+CdwmIg==}
     engines: {node: '>=18.0.0'}
 
   fsevents@2.3.3:
@@ -621,8 +621,8 @@ packages:
   ts-interface-checker@0.1.13:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
 
-  tsup@8.3.4:
-    resolution: {integrity: sha512-0uCsxLADTFwGsEfSMx5fBFtXNw1mZJBAU6ZJe6xMeGfLT6o/12JDigvBIrQJEZlK01YBsocRxU3i+YY6QduShQ==}
+  tsup@8.3.5:
+    resolution: {integrity: sha512-Tunf6r6m6tnZsG9GYWndg0z8dEV7fD733VBFzFJ5Vcm1FtlXB8xBD/rtrBi2a3YKEV7hHtxiZtW5EAVADoe1pA==}
     engines: {node: '>=18'}
     hasBin: true
     peerDependencies:
@@ -855,7 +855,7 @@ snapshots:
 
   '@types/estree@1.0.6': {}
 
-  '@types/node@22.7.9':
+  '@types/node@22.9.0':
     dependencies:
       undici-types: 6.19.8
 
@@ -952,7 +952,7 @@ snapshots:
       cross-spawn: 7.0.3
       signal-exit: 4.1.0
 
-  fs-fixture@2.5.0: {}
+  fs-fixture@2.6.0: {}
 
   fsevents@2.3.3:
     optional: true
@@ -1116,7 +1116,7 @@ snapshots:
 
   ts-interface-checker@0.1.13: {}
 
-  tsup@8.3.4(typescript@5.6.3):
+  tsup@8.3.5(typescript@5.6.3):
     dependencies:
       bundle-require: 5.0.0(esbuild@0.24.0)
       cac: 6.7.14
