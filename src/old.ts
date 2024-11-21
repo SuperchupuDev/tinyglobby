@@ -1,8 +1,6 @@
-import assert from 'node:assert/strict';
 import path, { posix } from 'node:path';
 import { type Options as FdirOptions, fdir } from 'fdir';
 import picomatch from 'picomatch';
-import { globOld, globOldSync } from './old.ts';
 import { isDynamicPattern } from './utils.ts';
 
 export interface GlobOptions {
@@ -111,39 +109,17 @@ function processPatterns(
     }
   }
 
-  const transformed: string[] = [];
   for (const pattern of patterns) {
     if (!pattern.startsWith('!') || pattern[1] === '(') {
       const newPattern = normalizePattern(pattern, expandDirectories, cwd, properties, false);
       matchPatterns.push(newPattern);
-      const split = newPattern.split('/');
-      if (split[split.length - 1] === '**') {
-        if (split[split.length - 2] !== '..') {
-          split[split.length - 2] = '**';
-          split.pop();
-        }
-        transformed.push(split.join('/'));
-      } else {
-        transformed.push(split.length > 1 ? split.slice(0, -1).join('/') : split.join('/'));
-      }
-
-      for (let i = split.length - 2; i > 0; i--) {
-        const part = split.slice(0, i);
-        if (part[part.length - 1] === '**') {
-          part.pop();
-          if (part.length > 1) {
-            part.pop();
-          }
-        }
-        transformed.push(part.join('/'));
-      }
     } else if (pattern[1] !== '!' || pattern[2] === '(') {
       const newPattern = normalizePattern(pattern.slice(1), expandDirectories, cwd, properties, true);
       ignorePatterns.push(newPattern);
     }
   }
 
-  return { match: matchPatterns, ignore: ignorePatterns, transformed };
+  return { match: matchPatterns, ignore: ignorePatterns };
 }
 
 // TODO: this is slow, find a better way to do this
@@ -182,24 +158,15 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     ignore: processed.ignore
   });
 
-  const ignore = picomatch(processed.ignore, {
+  const exclude = picomatch(processed.ignore, {
     dot: options.dot,
     nocase: options.caseSensitiveMatch === false
-  });
-
-  const exclude = picomatch('*(../)**', {
-    dot: true,
-    nocase: options.caseSensitiveMatch === false,
-    ignore: processed.transformed
   });
 
   const fdirOptions: Partial<FdirOptions> = {
     // use relative paths in the matcher
     filters: [(p, isDirectory) => matcher(processPath(p, cwd, properties.root, isDirectory, options.absolute))],
-    exclude: (_, p) => {
-      const relativePath = processPath(p, cwd, properties.root, true, true);
-      return ignore(relativePath) || exclude(relativePath);
-    },
+    exclude: (_, p) => exclude(processPath(p, cwd, properties.root, true, true)),
     pathSeparator: '/',
     relativePaths: true,
     resolveSymlinks: true
@@ -242,9 +209,9 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
         .then(paths => paths.map(p => getRelativePath(p, cwd, properties.root) + (!p || p.endsWith('/') ? '/' : '')));
 }
 
-export function glob(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): Promise<string[]>;
-export function glob(options: GlobOptions): Promise<string[]>;
-export async function glob(
+export function globOld(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): Promise<string[]>;
+export function globOld(options: GlobOptions): Promise<string[]>;
+export async function globOld(
   patternsOrOptions: string | string[] | GlobOptions,
   options?: GlobOptions
 ): Promise<string[]> {
@@ -258,17 +225,12 @@ export async function glob(
       : patternsOrOptions;
   const cwd = opts.cwd ? path.resolve(opts.cwd).replace(/\\/g, '/') : process.cwd().replace(/\\/g, '/');
 
-  const files = await crawl(opts, cwd, false);
-  const files2 = await globOld(opts);
-
-  assert.deepStrictEqual(files.sort(), files2.sort());
-
-  return files;
+  return crawl(opts, cwd, false);
 }
 
-export function globSync(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): string[];
-export function globSync(options: GlobOptions): string[];
-export function globSync(patternsOrOptions: string | string[] | GlobOptions, options?: GlobOptions): string[] {
+export function globOldSync(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): string[];
+export function globOldSync(options: GlobOptions): string[];
+export function globOldSync(patternsOrOptions: string | string[] | GlobOptions, options?: GlobOptions): string[] {
   if (patternsOrOptions && options?.patterns) {
     throw new Error('Cannot pass patterns as both an argument and an option');
   }
@@ -279,12 +241,7 @@ export function globSync(patternsOrOptions: string | string[] | GlobOptions, opt
       : patternsOrOptions;
   const cwd = opts.cwd ? path.resolve(opts.cwd).replace(/\\/g, '/') : process.cwd().replace(/\\/g, '/');
 
-  const files = crawl(opts, cwd, true);
-  const files2 = globOldSync(opts);
-
-  assert.deepStrictEqual(files.sort(), files2.sort());
-
-  return files;
+  return crawl(opts, cwd, true);
 }
 
 export { convertPathToPattern, escapePath, isDynamicPattern } from './utils.ts';
