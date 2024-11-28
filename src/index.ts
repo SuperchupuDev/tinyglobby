@@ -122,7 +122,7 @@ function processPatterns(
           split[split.length - 2] = '**';
           split.pop();
         }
-        transformed.push(split.join('/'));
+        transformed.push(split.length ? split.join('/') : '*');
       } else {
         transformed.push(split.length > 1 ? split.slice(0, -1).join('/') : split.join('/'));
       }

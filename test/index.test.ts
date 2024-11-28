@@ -26,6 +26,12 @@ const cwd = fixture.path;
 
 after(() => fixture.rm());
 
+test('only double star', async () => {
+  const files = await glob({ patterns: ['**'], cwd });
+  assert.deepEqual(files.sort(), ['a/a.txt', 'a/b.txt', 'b/a.txt', 'b/b.txt']);
+});
+
+
 test('directory expansion', async () => {
   const files = await glob({ patterns: ['a'], cwd });
   assert.deepEqual(files.sort(), ['a/a.txt', 'a/b.txt']);
