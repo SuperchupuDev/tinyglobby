@@ -109,17 +109,39 @@ function processPatterns(
     }
   }
 
+  const transformed: string[] = [];
   for (const pattern of patterns) {
     if (!pattern.startsWith('!') || pattern[1] === '(') {
       const newPattern = normalizePattern(pattern, expandDirectories, cwd, properties, false);
       matchPatterns.push(newPattern);
+      const split = newPattern.split('/');
+      if (split[split.length - 1] === '**') {
+        if (split[split.length - 2] !== '..') {
+          split[split.length - 2] = '**';
+          split.pop();
+        }
+        transformed.push(split.length ? split.join('/') : '*');
+      } else {
+        transformed.push(split.length > 1 ? split.slice(0, -1).join('/') : split.join('/'));
+      }
+
+      for (let i = split.length - 2; i > 0; i--) {
+        const part = split.slice(0, i);
+        if (part[part.length - 1] === '**') {
+          part.pop();
+          if (part.length > 1) {
+            part.pop();
+          }
+        }
+        transformed.push(part.join('/'));
+      }
     } else if (pattern[1] !== '!' || pattern[2] === '(') {
       const newPattern = normalizePattern(pattern.slice(1), expandDirectories, cwd, properties, true);
       ignorePatterns.push(newPattern);
     }
   }
 
-  return { match: matchPatterns, ignore: ignorePatterns };
+  return { match: matchPatterns, ignore: ignorePatterns, transformed };
 }
 
 // TODO: this is slow, find a better way to do this
@@ -158,15 +180,24 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     ignore: processed.ignore
   });
 
-  const exclude = picomatch(processed.ignore, {
+  const ignore = picomatch(processed.ignore, {
     dot: options.dot,
     nocase: options.caseSensitiveMatch === false
+  });
+
+  const exclude = picomatch('*(../)**', {
+    dot: true,
+    nocase: options.caseSensitiveMatch === false,
+    ignore: processed.transformed
   });
 
   const fdirOptions: Partial<FdirOptions> = {
     // use relative paths in the matcher
     filters: [(p, isDirectory) => matcher(processPath(p, cwd, properties.root, isDirectory, options.absolute))],
-    exclude: (_, p) => exclude(processPath(p, cwd, properties.root, true, true)),
+    exclude: (_, p) => {
+      const relativePath = processPath(p, cwd, properties.root, true, true);
+      return ignore(relativePath) || exclude(relativePath);
+    },
     pathSeparator: '/',
     relativePaths: true,
     resolveSymlinks: true

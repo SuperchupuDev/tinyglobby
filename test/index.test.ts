@@ -36,6 +36,11 @@ test('empty array matches nothing', async () => {
   assert.deepEqual(files.sort(), []);
 });
 
+test('only double star', async () => {
+  const files = await glob({ patterns: ['**'], cwd });
+  assert.deepEqual(files.sort(), ['a/a.txt', 'a/b.txt', 'b/a.txt', 'b/b.txt']);
+});
+
 test('no directory expansion if expandDirectories is set to false', async () => {
   const files = await glob({ patterns: ['a'], expandDirectories: false, cwd });
   assert.deepEqual(files.sort(), []);
