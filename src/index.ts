@@ -1,8 +1,6 @@
-import assert from 'node:assert/strict';
 import path, { posix } from 'node:path';
 import { type Options as FdirOptions, fdir } from 'fdir';
 import picomatch from 'picomatch';
-import { globOld, globOldSync } from './old.ts';
 import { isDynamicPattern } from './utils.ts';
 
 export interface GlobOptions {
@@ -258,12 +256,7 @@ export async function glob(
       : patternsOrOptions;
   const cwd = opts.cwd ? path.resolve(opts.cwd).replace(/\\/g, '/') : process.cwd().replace(/\\/g, '/');
 
-  const files = await crawl(opts, cwd, false);
-  const files2 = await globOld(opts);
-
-  assert.deepStrictEqual(files.sort(), files2.sort());
-
-  return files;
+  return crawl(opts, cwd, false);
 }
 
 export function globSync(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): string[];
@@ -279,12 +272,7 @@ export function globSync(patternsOrOptions: string | string[] | GlobOptions, opt
       : patternsOrOptions;
   const cwd = opts.cwd ? path.resolve(opts.cwd).replace(/\\/g, '/') : process.cwd().replace(/\\/g, '/');
 
-  const files = crawl(opts, cwd, true);
-  const files2 = globOldSync(opts);
-
-  assert.deepStrictEqual(files.sort(), files2.sort());
-
-  return files;
+  return crawl(opts, cwd, true);
 }
 
 export { convertPathToPattern, escapePath, isDynamicPattern } from './utils.ts';
