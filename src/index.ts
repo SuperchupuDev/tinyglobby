@@ -15,6 +15,7 @@ export interface GlobOptions {
   expandDirectories?: boolean;
   onlyDirectories?: boolean;
   onlyFiles?: boolean;
+  debug?: boolean;
 }
 
 interface InternalProperties {
@@ -191,13 +192,41 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     ignore: processed.transformed
   });
 
+  if (process.env.TINYGLOBBY_DEBUG) {
+    options.debug = true;
+  }
+
   const fdirOptions: Partial<FdirOptions> = {
     // use relative paths in the matcher
-    filters: [(p, isDirectory) => matcher(processPath(p, cwd, properties.root, isDirectory, options.absolute))],
-    exclude: (_, p) => {
-      const relativePath = processPath(p, cwd, properties.root, true, true);
-      return ignore(relativePath) || exclude(relativePath);
-    },
+    filters: [
+      options.debug
+        ? (p, isDirectory) => {
+            const path = processPath(p, cwd, properties.root, isDirectory, options.absolute);
+            const matches = matcher(path);
+
+            if (matches) {
+              console.log(`[tinyglobby ${new Date().toLocaleTimeString('es')}] matched ${path}`);
+            }
+
+            return matches;
+          }
+        : (p, isDirectory) => matcher(processPath(p, cwd, properties.root, isDirectory, options.absolute))
+    ],
+    exclude: options.debug
+      ? (_, p) => {
+          const relativePath = processPath(p, cwd, properties.root, true, true);
+          const skipped = ignore(relativePath) || exclude(relativePath);
+
+          if (!skipped) {
+            console.log(`[tinyglobby ${new Date().toLocaleTimeString('es')}] crawling ${p}`);
+          }
+
+          return skipped;
+        }
+      : (_, p) => {
+          const relativePath = processPath(p, cwd, properties.root, true, true);
+          return ignore(relativePath) || exclude(relativePath);
+        },
     pathSeparator: '/',
     relativePaths: true,
     resolveSymlinks: true
