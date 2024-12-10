@@ -50,6 +50,7 @@ globSync(['src/**/*.ts'], { ignore: ['**/*.d.ts'] });
 - [`vite`](https://github.com/vitejs/vite)
 - [`vitest`](https://github.com/vitest-dev/vitest)
 - [`ts-morph`](https://github.com/dsherret/ts-morph)
+- [`nx`](https://github.com/nrwl/nx)
 - [`sort-package-json`](https://github.com/keithamus/sort-package-json)
 - [`tsup`](https://github.com/egoist/tsup)
 - [`cspell`](https://github.com/streetsidesoftware/cspell)
