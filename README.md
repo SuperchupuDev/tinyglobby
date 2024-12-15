@@ -47,6 +47,7 @@ globSync(['src/**/*.ts'], { ignore: ['**/*.d.ts'] });
 `tinyglobby` is downloaded many times by projects all around the world. Here's a list of notable projects that use it:
 
 <!-- should be sorted by weekly download count -->
+- [`eslint-import-resolver-typescript`](https://github.com/import-js/eslint-import-resolver-typescript)
 - [`vite`](https://github.com/vitejs/vite)
 - [`vitest`](https://github.com/vitest-dev/vitest)
 - [`ts-morph`](https://github.com/dsherret/ts-morph)
