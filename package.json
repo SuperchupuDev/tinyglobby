@@ -45,12 +45,11 @@
   },
   "dependencies": {
     "fdir": "^6.4.3",
-    "picomatch": "^4.0.2"
+    "unmatch": "^1.0.1"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@types/node": "^22.13.4",
-    "@types/picomatch": "^3.0.2",
     "fs-fixture": "^2.7.0",
     "tsup": "^8.3.6",
     "typescript": "^5.7.3"
@@ -62,10 +61,5 @@
     "access": "public",
     "provenance": true
   },
-  "packageManager": "pnpm@10.4.1",
-  "pnpm": {
-    "patchedDependencies": {
-      "picomatch@4.0.2": "patches/picomatch@4.0.2.patch"
-    }
-  }
+  "packageManager": "pnpm@10.4.1"
 }

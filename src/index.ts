@@ -1,6 +1,6 @@
 import path, { posix } from 'node:path';
 import { type Options as FdirOptions, fdir } from 'fdir';
-import picomatch from 'picomatch';
+import match from 'unmatch';
 import { escapePath, getPartialMatcher, isDynamicPattern, log, splitPattern } from './utils.ts';
 
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
@@ -184,16 +184,16 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     log('internal processing patterns:', processed);
   }
 
-  const unignoreMatcher = processed.unignore.length === 0 ? undefined : picomatch(processed.unignore);
+  const unignoreMatcher = processed.unignore.length === 0 ? undefined : match(processed.unignore);
 
-  const matcher = picomatch(processed.match, {
+  const matcher = match(processed.match, {
     dot: options.dot,
     nocase,
     ignore: processed.ignore,
-    onIgnore: unignoreMatcher ? result => unignoreMatcher(result.output) : undefined
+    onIgnore: unignoreMatcher ? result => unignoreMatcher(result.output) && match.constants.UNIGNORE : undefined
   });
 
-  const ignore = picomatch(processed.ignore, {
+  const ignore = match(processed.ignore, {
     dot: options.dot,
     nocase
   });
