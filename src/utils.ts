@@ -1,4 +1,4 @@
-import picomatch from 'picomatch';
+import match from 'unmatch';
 
 // #region convertPathToPattern
 const ESCAPED_WIN32_BACKSLASHES = /\\(?![()[\]{}!+@])/g;
@@ -49,7 +49,7 @@ export function isDynamicPattern(pattern: string, options?: { caseSensitiveMatch
     return true;
   }
 
-  const scan = picomatch.scan(pattern);
+  const scan = match.scan(pattern);
   return scan.isGlob || scan.negated;
 }
 // #endregion

@@ -330,11 +330,9 @@ test('negative absolute patterns in options', async () => {
   assert.deepEqual(files2.sort(), ['a/b.txt', 'b/b.txt']);
 });
 
-// can't easily make them properly work right now
-// but at least it's consistent with fast-glob this way
 test('negative patterns in ignore are ignored', async () => {
   const files = await glob({ patterns: ['**/*'], ignore: ['**/b.txt', '!a/b.txt'], cwd });
-  assert.deepEqual(files.sort(), ['a/a.txt', 'b/a.txt']);
+  assert.deepEqual(files.sort(), ['a/a.txt', 'a/b.txt', 'b/a.txt']);
 
   const files2 = await glob({ patterns: ['**/*', '!**/b.txt', '!!a/b.txt'], cwd });
   assert.deepEqual(files2.sort(), ['a/a.txt', 'b/a.txt']);
