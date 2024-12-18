@@ -364,3 +364,18 @@ test('sync with empty array matches nothing', () => {
   const files = globSync({ patterns: [] });
   assert.deepEqual(files.sort(), []);
 });
+
+test('*', async () => {
+  const files = await glob({ patterns: ['./*'], cwd, onlyDirectories: true, expandDirectories: false });
+  assert.deepEqual(files.sort(), ['a/', 'b/']);
+});
+
+test('.a/*', async () => {
+  const files = await glob({ patterns: ['.a/*'], cwd, onlyDirectories: true, expandDirectories: false });
+  assert.deepEqual(files.sort(), ['.a/a/']);
+});
+
+test('. + .a/*', async () => {
+  const files = await glob({ patterns: ['.', '.a/*'], cwd, onlyDirectories: true, expandDirectories: false });
+  assert.deepEqual(files.sort(), ['.', '.a/a/']);
+});
