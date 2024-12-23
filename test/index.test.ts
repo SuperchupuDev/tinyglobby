@@ -14,6 +14,7 @@ const fixture = await createFixture({
     'b.txt': 'b'
   },
   '.a/a/a.txt': 'a',
+  '.[a]/a.txt': 'a',
   '.deep/a/a/a.txt': 'a',
   '.symlink': {
     file: ({ symlink }) => symlink('../a/a.txt'),
@@ -142,6 +143,15 @@ test('fully handle absolute patterns', async () => {
   assert.deepEqual(files.sort(), ['../b/a.txt', 'a.txt']);
 });
 
+test('escaped absolute patterns', async () => {
+  const files = await glob({
+    patterns: [`${cwd.replaceAll('\\', '/')}.\\[a\\]/a.txt`],
+    absolute: true,
+    cwd: path.join(cwd, '.[a]')
+  });
+  assert.deepEqual(files.sort(), [`${cwd.replaceAll('\\', '/')}.[a]/a.txt`]);
+});
+
 test('leading ../', async () => {
   const files = await glob({ patterns: ['../b/*.txt'], cwd: path.join(cwd, 'a') });
   assert.deepEqual(files.sort(), ['../b/a.txt', '../b/b.txt']);
@@ -221,6 +231,7 @@ test('handle recursive symlinks', async () => {
     cwd
   });
   assert.deepEqual(files.sort(), [
+    '.symlink/.recursive/.[a]/a.txt',
     '.symlink/.recursive/.symlink/file',
     '.symlink/.recursive/a/a.txt',
     '.symlink/.recursive/a/b.txt',
@@ -246,6 +257,7 @@ test('handle recursive symlinks (absolute)', async () => {
     cwd
   });
   assert.deepEqual(files.sort(), [
+    `${cwd.replaceAll('\\', '/')}.symlink/.recursive/.[a]/a.txt`,
     `${cwd.replaceAll('\\', '/')}.symlink/.recursive/.symlink/file`,
     `${cwd.replaceAll('\\', '/')}.symlink/.recursive/a/a.txt`,
     `${cwd.replaceAll('\\', '/')}.symlink/.recursive/a/b.txt`,

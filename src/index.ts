@@ -1,7 +1,7 @@
 import path, { posix } from 'node:path';
 import { type Options as FdirOptions, fdir } from 'fdir';
 import picomatch from 'picomatch';
-import { isDynamicPattern } from './utils.ts';
+import { escapePath, isDynamicPattern } from './utils.ts';
 
 export interface GlobOptions {
   absolute?: boolean;
@@ -41,7 +41,7 @@ function normalizePattern(
   }
 
   if (path.isAbsolute(result.replace(/\\(?=[()[\]{}!*+?@|])/g, ''))) {
-    result = posix.relative(cwd, result);
+    result = posix.relative(escapePath(cwd), result);
   } else {
     result = posix.normalize(result);
   }
