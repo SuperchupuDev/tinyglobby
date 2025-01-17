@@ -116,26 +116,17 @@ function processPatterns(
       const newPattern = normalizePattern(pattern, expandDirectories, cwd, properties, false);
       matchPatterns.push(newPattern);
       const split = newPattern.split('/');
-      if (split[split.length - 1] === '**') {
-        if (split[split.length - 2] !== '..') {
-          split[split.length - 2] = '**';
-          split.pop();
-        }
-        transformed.push(split.length ? split.join('/') : '*');
-      } else {
-        transformed.push(split.length > 1 ? split.slice(0, -1).join('/') : split.join('/'));
-      }
 
-      for (let i = split.length - 2; i > 0; i--) {
-        const part = split.slice(0, i);
-        if (part[part.length - 1] === '**') {
-          part.pop();
-          if (part.length > 1) {
-            part.pop();
-          }
-        }
-        transformed.push(part.join('/'));
-      }
+      transformed.push(
+        split
+          .map((part, index) => {
+            if (index === 0) {
+              return part;
+            }
+            return `?(/${part}`;
+          })
+          .join('') + ')'.repeat(Math.max(split.length - 1, 0))
+      );
     } else if (pattern[1] !== '!' || pattern[2] === '(') {
       const newPattern = normalizePattern(pattern.slice(1), expandDirectories, cwd, properties, true);
       ignorePatterns.push(newPattern);
@@ -147,7 +138,7 @@ function processPatterns(
 
 // TODO: this is slow, find a better way to do this
 function getRelativePath(path: string, cwd: string, root: string) {
-  return posix.relative(cwd, `${root}/${path}`);
+  return posix.relative(cwd, `${root}/${path}`) || '.';
 }
 
 function processPath(path: string, cwd: string, root: string, isDirectory: boolean, absolute?: boolean) {
