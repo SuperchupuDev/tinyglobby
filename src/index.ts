@@ -54,20 +54,20 @@ function normalizePattern(
       properties.depthOffset = -(parentDirectoryMatch[0].length + 1) / 3;
     }
   } else if (!isIgnore && properties.depthOffset >= 0) {
-    const current = result.split('/');
-    properties.commonPath ??= current;
+    const parts = splitPattern(result);
+    properties.commonPath ??= parts;
 
     const newCommonPath = [];
 
-    for (let i = 0; i < Math.min(properties.commonPath.length, current.length); i++) {
-      const part = current[i];
+    for (let i = 0; i < Math.min(properties.commonPath.length, parts.length); i++) {
+      const part = parts[i];
 
-      if (part === '**' && !current[i + 1]) {
+      if (part === '**' && !parts[i + 1]) {
         newCommonPath.pop();
         break;
       }
 
-      if (part !== properties.commonPath[i] || isDynamicPattern(part) || i === current.length - 1) {
+      if (part !== properties.commonPath[i] || isDynamicPattern(part) || i === parts.length - 1) {
         break;
       }
 
@@ -115,7 +115,7 @@ function processPatterns(
     if (!pattern.startsWith('!') || pattern[1] === '(') {
       const newPattern = normalizePattern(pattern, expandDirectories, cwd, properties, false);
       matchPatterns.push(newPattern);
-      const split = newPattern.split('/');
+      const split = splitPattern(newPattern);
 
       transformed.push(
         split
@@ -134,6 +134,12 @@ function processPatterns(
   }
 
   return { match: matchPatterns, ignore: ignorePatterns, transformed };
+}
+
+// if a pattern has no slashes outside glob symbols, results.parts is []
+function splitPattern(path: string) {
+  const result = picomatch.scan(path, { parts: true });
+  return result.parts?.length ? result.parts : [path];
 }
 
 // TODO: this is slow, find a better way to do this
