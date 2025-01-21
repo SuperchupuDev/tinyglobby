@@ -1,7 +1,7 @@
 import path, { posix } from 'node:path';
 import { type Options as FdirOptions, fdir } from 'fdir';
 import picomatch from 'picomatch';
-import { escapePath, isDynamicPattern } from './utils.ts';
+import { escapePath, isDynamicPattern, log } from './utils.ts';
 
 export interface GlobOptions {
   absolute?: boolean;
@@ -208,7 +208,7 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
             const matches = matcher(path);
 
             if (matches) {
-              console.log(`[tinyglobby ${new Date().toLocaleTimeString('es')}] matched ${path}`);
+              log(`matched ${path}`)
             }
 
             return matches;
@@ -221,7 +221,7 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
           const skipped = ignore(relativePath) || exclude(relativePath);
 
           if (!skipped) {
-            console.log(`[tinyglobby ${new Date().toLocaleTimeString('es')}] crawling ${p}`);
+            log(`crawling ${p}`)
           }
 
           return skipped;

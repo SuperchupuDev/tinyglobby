@@ -55,3 +55,13 @@ export function isDynamicPattern(pattern: string, options?: { caseSensitiveMatch
   return scan.isGlob || scan.negated;
 }
 // #endregion
+// #region log
+/**
+ *  Logs out the current task.
+ *
+ *  @param task - the current task.
+ */
+export function log(task: string): void {
+  console.log(`[tinyglobby ${new Date().toLocaleTimeString('es')}] ${task}`)
+}
+// #endregion
