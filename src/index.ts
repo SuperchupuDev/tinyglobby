@@ -105,7 +105,7 @@ function processPatterns(
 
   for (const pattern of ignore) {
     // don't handle negated patterns here for consistency with fast-glob
-    if (!pattern.startsWith('!') || pattern[1] === '(') {
+    if (pattern[0] !== '!'  || pattern[1] === '(') {
       const newPattern = normalizePattern(pattern, expandDirectories, cwd, properties, true);
       ignorePatterns.push(newPattern);
     }
@@ -113,23 +113,25 @@ function processPatterns(
 
   const transformed: string[] = [];
   for (const pattern of patterns) {
-    if (!pattern.startsWith('!') || pattern[1] === '(') {
+    if (pattern[0] !== '!' || pattern[1] === '(') {
       const newPattern = normalizePattern(pattern, expandDirectories, cwd, properties, false);
       matchPatterns.push(newPattern);
       const split = newPattern.split('/');
-      if (split[split.length - 1] === '**') {
-        if (split[split.length - 2] !== '..') {
-          split[split.length - 2] = '**';
+      let splitSize = split.length
+      if (split.at(-1) === '**') {
+        if (split.at(-2) !== '..') {
+          split[splitSize - 2] = '**';
           split.pop();
+          splitSize--
         }
-        transformed.push(split.length ? split.join('/') : '*');
+        transformed.push(splitSize ? split.join('/') : '*');
       } else {
-        transformed.push(split.length > 1 ? split.slice(0, -1).join('/') : split.join('/'));
+        transformed.push(splitSize > 1 ? split.slice(0, -1).join('/') : split.join('/'));
       }
 
-      for (let i = split.length - 2; i > 0; i--) {
+      for (let i = splitSize - 2; i > 0; i--) {
         const part = split.slice(0, i);
-        if (part[part.length - 1] === '**') {
+        if (part.at(-1) === '**') {
           part.pop();
           if (part.length > 1) {
             part.pop();
