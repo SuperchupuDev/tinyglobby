@@ -58,8 +58,9 @@ function normalizePattern(
     properties.commonPath ??= parts;
 
     const newCommonPath = [];
+    const length = Math.min(properties.commonPath.length, parts.length)
 
-    for (let i = 0; i < Math.min(properties.commonPath.length, parts.length); i++) {
+    for (let i = 0; i < length; i++) {
       const part = parts[i];
 
       if (part === '**' && !parts[i + 1]) {
