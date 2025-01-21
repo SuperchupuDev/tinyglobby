@@ -108,7 +108,7 @@ function processPatterns(
       continue;
     }
     // don't handle negated patterns here for consistency with fast-glob
-    if (!pattern.startsWith('!') || pattern[1] === '(') {
+    if (pattern[0] !== '!'  || pattern[1] === '(') {
       const newPattern = normalizePattern(pattern, expandDirectories, cwd, properties, true);
       ignorePatterns.push(newPattern);
     }
@@ -118,7 +118,7 @@ function processPatterns(
     if (!pattern) {
       continue;
     }
-    if (!pattern.startsWith('!') || pattern[1] === '(') {
+    if (pattern[0] !== '!' || pattern[1] === '(') {
       const newPattern = normalizePattern(pattern, expandDirectories, cwd, properties, false);
       matchPatterns.push(newPattern);
     } else if (pattern[1] !== '!' || pattern[2] === '(') {
