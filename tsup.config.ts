@@ -7,6 +7,5 @@ export default defineConfig({
   format: ['esm', 'cjs'],
   platform: 'node',
   sourcemap: !process.env.IS_RELEASE,
-  target: 'node12',
-  minify: true
+  target: 'node12'
 }) as Options;
