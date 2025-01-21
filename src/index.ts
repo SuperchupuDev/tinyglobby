@@ -32,11 +32,11 @@ function normalizePattern(
   isIgnore: boolean
 ) {
   let result: string = pattern;
-  if (pattern.endsWith('/')) {
+  if (pattern.at(-1) === '/') {
     result = pattern.slice(0, -1);
   }
   // using a directory as entry should match all files inside it
-  if (!result.endsWith('*') && expandDirectories) {
+  if (result.at(-1) !== '*' && expandDirectories) {
     result += '/**';
   }
 
@@ -266,10 +266,10 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
   }
 
   return sync
-    ? api.sync().map(p => getRelativePath(p, cwd, properties.root) + (!p || p.endsWith('/') ? '/' : ''))
+    ? api.sync().map(p => getRelativePath(p, cwd, properties.root) + (!p || p.at(-1) === '/' ? '/' : ''))
     : api
         .withPromise()
-        .then(paths => paths.map(p => getRelativePath(p, cwd, properties.root) + (!p || p.endsWith('/') ? '/' : '')));
+        .then(paths => paths.map(p => getRelativePath(p, cwd, properties.root) + (!p || p.at(-1) === '/' ? '/' : '')));
 }
 
 export function glob(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): Promise<string[]>;
