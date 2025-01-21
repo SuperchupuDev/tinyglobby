@@ -32,11 +32,11 @@ function normalizePattern(
   isIgnore: boolean
 ) {
   let result: string = pattern;
-  if (pattern.at(-1) === '/') {
+  if (pattern.endsWith('/')) {
     result = pattern.slice(0, -1);
   }
   // using a directory as entry should match all files inside it
-  if (result.at(-1) !== '*' && expandDirectories) {
+  if (!result.endsWith('*') && expandDirectories) {
     result += '/**';
   }
 
@@ -58,7 +58,7 @@ function normalizePattern(
     properties.commonPath ??= current;
 
     const newCommonPath: string[] = [];
-    const length = Math.min(properties.commonPath.length, current.length)
+    const length = Math.min(properties.commonPath.length, current.length);
 
     for (let i = 0; i < length; i++) {
       const part = current[i];
@@ -105,7 +105,7 @@ function processPatterns(
 
   for (const pattern of ignore) {
     // don't handle negated patterns here for consistency with fast-glob
-    if (pattern[0] !== '!'  || pattern[1] === '(') {
+    if (pattern[0] !== '!' || pattern[1] === '(') {
       const newPattern = normalizePattern(pattern, expandDirectories, cwd, properties, true);
       ignorePatterns.push(newPattern);
     }
@@ -118,8 +118,8 @@ function processPatterns(
       matchPatterns.push(newPattern);
       const split = newPattern.split('/');
       let splitSize = split.length
-      if (split.at(-1) === '**') {
-        if (split.at(-2) !== '..') {
+      if (split[splitSize - 1] === '**') {
+        if (split[splitSize - 2] !== '..') {
           split[splitSize - 2] = '**';
           split.pop();
           splitSize--
@@ -131,7 +131,7 @@ function processPatterns(
 
       for (let i = splitSize - 2; i > 0; i--) {
         const part = split.slice(0, i);
-        if (part.at(-1) === '**') {
+        if (part[part.length - 1] === '**') {
           part.pop();
           if (part.length > 1) {
             part.pop();
@@ -164,14 +164,13 @@ function processPath(path: string, cwd: string, root: string, isDirectory: boole
 }
 
 function formatPaths(paths: string[], cwd: string, root: string) {
-  const length = paths.length
-  const formattedPaths: string[] = new Array(length)
+  const length = paths.length;
 
   for (let i = 0; i < length; i++) {
-    const path = paths[i]
-    formattedPaths[i] = getRelativePath(path, cwd, root) + (!path || path.at(-1) === '/' ? '/' : '')
+    const path = paths[i];
+    paths[i] = getRelativePath(path, cwd, root) + (!path || path.endsWith('/') ? '/' : '');
   }
-  return formattedPaths
+  return paths;
 }
 
 
