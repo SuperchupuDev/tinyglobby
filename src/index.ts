@@ -163,6 +163,18 @@ function processPath(path: string, cwd: string, root: string, isDirectory: boole
   return getRelativePath(relativePath, cwd, root);
 }
 
+function formatPaths(paths: string[], cwd: string, root: string) {
+  const length = paths.length
+  const formattedPaths: string[] = new Array(length)
+
+  for (let i = 0; i < length; i++) {
+    const path = paths[i]
+    formattedPaths[i] = getRelativePath(path, cwd, root) + (!path || path.at(-1) === '/' ? '/' : '')
+  }
+  return formattedPaths
+}
+
+
 function crawl(options: GlobOptions, cwd: string, sync: false): Promise<string[]>;
 function crawl(options: GlobOptions, cwd: string, sync: true): string[];
 function crawl(options: GlobOptions, cwd: string, sync: boolean) {
@@ -258,18 +270,18 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
   }
 
   // backslashes are removed so that inferred roots like `C:/New folder \\(1\\)` work
-  properties.root = properties.root.replace(/\\/g, '');
-  const api = new fdir(fdirOptions).crawl(properties.root);
+  const root = properties.root = properties.root.replace(/\\/g, '');
+  const api = new fdir(fdirOptions).crawl(root);
 
-  if (cwd === properties.root || options.absolute) {
+  if (cwd === root || options.absolute) {
     return sync ? api.sync() : api.withPromise();
   }
 
   return sync
-    ? api.sync().map(p => getRelativePath(p, cwd, properties.root) + (!p || p.at(-1) === '/' ? '/' : ''))
+    ? formatPaths(api.sync(), cwd, root)
     : api
         .withPromise()
-        .then(paths => paths.map(p => getRelativePath(p, cwd, properties.root) + (!p || p.at(-1) === '/' ? '/' : '')));
+        .then(paths => formatPaths(paths, cwd, root));
 }
 
 export function glob(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): Promise<string[]>;
