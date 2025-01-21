@@ -189,21 +189,22 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
   };
 
   const processed = processPatterns(options, cwd, properties);
+  const nocase = options.caseSensitiveMatch === false
 
   const matcher = picomatch(processed.match, {
     dot: options.dot,
-    nocase: options.caseSensitiveMatch === false,
+    nocase,
     ignore: processed.ignore
   });
 
   const ignore = picomatch(processed.ignore, {
     dot: options.dot,
-    nocase: options.caseSensitiveMatch === false
+    nocase
   });
 
   const exclude = picomatch('*(../)**', {
     dot: true,
-    nocase: options.caseSensitiveMatch === false,
+    nocase,
     ignore: processed.transformed
   });
 
