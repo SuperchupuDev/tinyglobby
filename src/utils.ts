@@ -60,6 +60,8 @@ export function splitPattern(path: string): string[] {
 }
 // #endregion
 
+const isWin = process.platform === 'win32'
+
 // #region convertPathToPattern
 const ESCAPED_WIN32_BACKSLASHES = /\\(?![()[\]{}!+@])/g;
 export function convertPosixPathToPattern(path: string): string {
@@ -71,7 +73,7 @@ export function convertWin32PathToPattern(path: string): string {
 }
 
 export const convertPathToPattern: (path: string) => string =
-  process.platform === 'win32' ? convertWin32PathToPattern : convertPosixPathToPattern;
+  isWin ? convertWin32PathToPattern : convertPosixPathToPattern;
 // #endregion
 
 // #region escapePath
@@ -88,7 +90,7 @@ const WIN32_UNESCAPED_GLOB_SYMBOLS = /(?<!\\)([()[\]{}]|^!|[!+@](?=\())/g;
 export const escapePosixPath = (path: string): string => path.replace(POSIX_UNESCAPED_GLOB_SYMBOLS, '\\$&');
 export const escapeWin32Path = (path: string): string => path.replace(WIN32_UNESCAPED_GLOB_SYMBOLS, '\\$&');
 
-export const escapePath: (path: string) => string = process.platform === 'win32' ? escapeWin32Path : escapePosixPath;
+export const escapePath: (path: string) => string = isWin ? escapeWin32Path : escapePosixPath;
 // #endregion
 
 // #region isDynamicPattern
