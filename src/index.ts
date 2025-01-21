@@ -57,9 +57,10 @@ function normalizePattern(
     const current = result.split('/');
     properties.commonPath ??= current;
 
-    const newCommonPath = [];
+    const newCommonPath: string[] = [];
+    const length = Math.min(properties.commonPath.length, current.length)
 
-    for (let i = 0; i < Math.min(properties.commonPath.length, current.length); i++) {
+    for (let i = 0; i < length; i++) {
       const part = current[i];
 
       if (part === '**' && !current[i + 1]) {
