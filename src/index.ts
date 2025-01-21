@@ -106,8 +106,7 @@ function processPatterns(
   for (const pattern of ignore) {
     // don't handle negated patterns here for consistency with fast-glob
     if (pattern[0] !== '!' || pattern[1] === '(') {
-      const newPattern = normalizePattern(pattern, expandDirectories, cwd, properties, true);
-      ignorePatterns.push(newPattern);
+      ignorePatterns.push(normalizePattern(pattern, expandDirectories, cwd, properties, true));
     }
   }
 
@@ -140,8 +139,7 @@ function processPatterns(
         transformed.push(part.join('/'));
       }
     } else if (pattern[1] !== '!' || pattern[2] === '(') {
-      const newPattern = normalizePattern(pattern.slice(1), expandDirectories, cwd, properties, true);
-      ignorePatterns.push(newPattern);
+      ignorePatterns.push(normalizePattern(pattern.slice(1), expandDirectories, cwd, properties, true));
     }
   }
 
@@ -164,9 +162,7 @@ function processPath(path: string, cwd: string, root: string, isDirectory: boole
 }
 
 function formatPaths(paths: string[], cwd: string, root: string) {
-  const length = paths.length;
-
-  for (let i = 0; i < length; i++) {
+  for (let i = paths.length - 1; i >= 0; i--) {
     const path = paths[i];
     paths[i] = getRelativePath(path, cwd, root) + (!path || path.endsWith('/') ? '/' : '');
   }
