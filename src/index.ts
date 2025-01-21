@@ -32,11 +32,11 @@ function normalizePattern(
   isIgnore: boolean
 ) {
   let result: string = pattern;
-  if (pattern.at(-1) === '/') {
+  if (pattern.endsWith('/')) {
     result = pattern.slice(0, -1);
   }
   // using a directory as entry should match all files inside it
-  if (result.at(-1) !== '*' && expandDirectories) {
+  if (!result.endsWith('*') && expandDirectories) {
     result += '/**';
   }
 
@@ -57,8 +57,8 @@ function normalizePattern(
     const parts = splitPattern(result);
     properties.commonPath ??= parts;
 
-    const newCommonPath = [];
-    const length = Math.min(properties.commonPath.length, parts.length)
+    const newCommonPath: string[] = [];
+    const length = Math.min(properties.commonPath.length, parts.length);
 
     for (let i = 0; i < length; i++) {
       const part = parts[i];
@@ -108,7 +108,7 @@ function processPatterns(
       continue;
     }
     // don't handle negated patterns here for consistency with fast-glob
-    if (pattern[0] !== '!'  || pattern[1] === '(') {
+    if (pattern[0] !== '!' || pattern[1] === '(') {
       const newPattern = normalizePattern(pattern, expandDirectories, cwd, properties, true);
       ignorePatterns.push(newPattern);
     }
@@ -146,14 +146,13 @@ function processPath(path: string, cwd: string, root: string, isDirectory: boole
 }
 
 function formatPaths(paths: string[], cwd: string, root: string) {
-  const length = paths.length
-  const formattedPaths: string[] = new Array(length)
+  const length = paths.length;
 
   for (let i = 0; i < length; i++) {
-    const path = paths[i]
-    formattedPaths[i] = getRelativePath(path, cwd, root) + (!path || path.at(-1) === '/' ? '/' : '')
+    const path = paths[i];
+    paths[i] = getRelativePath(path, cwd, root) + (!path || path.endsWith('/') ? '/' : '');
   }
-  return formattedPaths
+  return paths;
 }
 
 
