@@ -1,6 +1,6 @@
 import picomatch from 'picomatch';
 
-const isWin = process.platform === 'win32'
+const isWin = process.platform === 'win32';
 
 // #region convertPathToPattern
 const ESCAPED_WIN32_BACKSLASHES = /\\(?![()[\]{}!+@])/g;
@@ -12,8 +12,9 @@ export function convertWin32PathToPattern(path: string): string {
   return escapeWin32Path(path).replace(ESCAPED_WIN32_BACKSLASHES, '/');
 }
 
-export const convertPathToPattern: (path: string) => string =
-  isWin ? convertWin32PathToPattern : convertPosixPathToPattern;
+export const convertPathToPattern: (path: string) => string = isWin
+  ? convertWin32PathToPattern
+  : convertPosixPathToPattern;
 // #endregion
 
 // #region escapePath
@@ -62,6 +63,6 @@ export function isDynamicPattern(pattern: string, options?: { caseSensitiveMatch
  *  @param task - the current task.
  */
 export function log(task: string): void {
-  console.log(`[tinyglobby ${new Date().toLocaleTimeString('es')}] ${task}`)
+  console.log(`[tinyglobby ${new Date().toLocaleTimeString('es')}] ${task}`);
 }
 // #endregion
