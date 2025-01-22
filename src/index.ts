@@ -169,7 +169,6 @@ function formatPaths(paths: string[], cwd: string, root: string) {
   return paths;
 }
 
-
 function crawl(options: GlobOptions, cwd: string, sync: false): Promise<string[]>;
 function crawl(options: GlobOptions, cwd: string, sync: true): string[];
 function crawl(options: GlobOptions, cwd: string, sync: boolean) {
