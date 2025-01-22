@@ -166,7 +166,7 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
   };
 
   const processed = processPatterns(options, cwd, properties);
-  const nocase = options.caseSensitiveMatch === false
+  const nocase = options.caseSensitiveMatch === false;
 
   const matcher = picomatch(processed.match, {
     dot: options.dot,
@@ -197,7 +197,7 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
             const matches = matcher(path);
 
             if (matches) {
-              log(`matched ${path}`)
+              log(`matched ${path}`);
             }
 
             return matches;
@@ -210,7 +210,7 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
           const skipped = (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
 
           if (!skipped) {
-            log(`crawling ${p}`)
+            log(`crawling ${p}`);
           }
 
           return skipped;
@@ -247,18 +247,15 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
   }
 
   // backslashes are removed so that inferred roots like `C:/New folder \\(1\\)` work
-  const root = properties.root = properties.root.replace(/\\/g, '');
+  properties.root = properties.root.replace(/\\/g, '');
+  const root = properties.root;
   const api = new fdir(fdirOptions).crawl(root);
 
   if (cwd === root || options.absolute) {
     return sync ? api.sync() : api.withPromise();
   }
 
-  return sync
-    ? formatPaths(api.sync(), cwd, root)
-    : api
-        .withPromise()
-        .then(paths => formatPaths(paths, cwd, root));
+  return sync ? formatPaths(api.sync(), cwd, root) : api.withPromise().then(paths => formatPaths(paths, cwd, root));
 }
 
 export function glob(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): Promise<string[]>;
