@@ -117,16 +117,29 @@ function processPatterns(
       matchPatterns.push(newPattern);
       const split = splitPattern(newPattern);
 
-      transformed.push(
-        split
-          .map((part, index) => {
-            if (index === 0) {
-              return part;
-            }
-            return `?(/${part}`;
-          })
-          .join('') + ')'.repeat(Math.max(split.length - 1, 0))
-      );
+      let brackets = 0;
+      let finalPattern = '';
+      for (let i = 0; i < split.length; i++) {
+        const part = split[i];
+        // we can't easily optimize patterns that contain parts with slashes such as `*(a/b)`
+        // so we just convert them to `**` for now. any optimizations here would are welcome
+        if (part.includes('/')) {
+          if (i > 0) {
+            brackets++;
+          }
+          finalPattern += '**';
+          break;
+        }
+
+        if (i === 0) {
+          finalPattern += part;
+          continue;
+        }
+
+        brackets++;
+        finalPattern += `?(/${part}`;
+      }
+      transformed.push(finalPattern + ')'.repeat(Math.max(brackets, 0)));
     } else if (pattern[1] !== '!' || pattern[2] === '(') {
       const newPattern = normalizePattern(pattern.slice(1), expandDirectories, cwd, properties, true);
       ignorePatterns.push(newPattern);
