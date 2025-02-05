@@ -103,7 +103,9 @@ function processPatterns(
   const ignorePatterns: string[] = [];
 
   for (const pattern of ignore) {
-    if (!pattern) continue;
+    if (!pattern) {
+      continue;
+    }
     // don't handle negated patterns here for consistency with fast-glob
     if (!pattern.startsWith('!') || pattern[1] === '(') {
       const newPattern = normalizePattern(pattern, expandDirectories, cwd, properties, true);
@@ -113,7 +115,9 @@ function processPatterns(
 
   const transformed: string[] = [];
   for (const pattern of patterns) {
-    if (!pattern) continue;
+    if (!pattern) {
+      continue;
+    }
     if (!pattern.startsWith('!') || pattern[1] === '(') {
       const newPattern = normalizePattern(pattern, expandDirectories, cwd, properties, false);
       matchPatterns.push(newPattern);
