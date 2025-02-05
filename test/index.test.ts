@@ -80,6 +80,11 @@ test('ignore option as string', async () => {
   assert.deepEqual(files.sort(), ['a/a.txt']);
 });
 
+test('ignore option with an empty string array', async () => {
+  const files = await glob({ patterns: ['**/a.txt'], ignore: [''], cwd });
+  assert.deepEqual(files.sort(), ['a/a.txt', 'b/a.txt']);
+});
+
 test('caseSensitiveMatch', async () => {
   const files = await glob({ patterns: ['**/A.TXT'], caseSensitiveMatch: false, cwd });
   assert.deepEqual(files.sort(), ['a/a.txt', 'b/a.txt']);
