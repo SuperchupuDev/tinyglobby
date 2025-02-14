@@ -1,4 +1,63 @@
-import picomatch from 'picomatch';
+import picomatch, { type Matcher } from 'picomatch';
+
+// #region PARTIAL MATCHER
+export interface PartialMatcherOptions {
+  dot?: boolean;
+  nocase?: boolean;
+}
+
+// the result of over 4 months of figuring stuff out and a LOT of help
+export function getPartialMatcher(patterns: string[], options?: PartialMatcherOptions): Matcher {
+  const regexes = patterns.map(pattern => splitPattern(pattern).map(part => picomatch.makeRe(part, options)));
+  return (input: string) => {
+    // no need to `splitPattern` as this is indeed not a pattern
+    const inputParts = input.split('/');
+    for (let i = 0; i < patterns.length; i++) {
+      const patternParts = splitPattern(patterns[i]);
+      const regex = regexes[i];
+      let j = 0;
+      while (j < inputParts.length) {
+        const part = patternParts[j];
+
+        // handling slashes in parts is very hard, not even fast-glob does it
+        // unlike fast-glob we should return true in this case
+        // for us, better to have a false positive than a false negative here
+        if (part.includes('/')) {
+          return true;
+        }
+
+        const match = regex[j].test(inputParts[j]);
+
+        if (!match) {
+          break;
+        }
+
+        // unlike popular belief, `**` doesn't return true in *all* cases
+        // some examples are when matching it to `.a` with dot: false or `..`
+        // so it needs to match to return early
+        if (part === '**' && match) {
+          return true;
+        }
+
+        j++;
+      }
+      if (j === inputParts.length) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+}
+// #endregion
+
+// #region splitPattern
+// if a pattern has no slashes outside glob symbols, results.parts is []
+export function splitPattern(path: string): string[] {
+  const result = picomatch.scan(path, { parts: true });
+  return result.parts?.length ? result.parts : [path];
+}
+// #endregion
 
 // #region convertPathToPattern
 const ESCAPED_WIN32_BACKSLASHES = /\\(?![()[\]{}!+@])/g;

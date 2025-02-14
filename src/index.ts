@@ -1,7 +1,7 @@
 import path, { posix } from 'node:path';
 import { type Options as FdirOptions, fdir } from 'fdir';
 import picomatch from 'picomatch';
-import { escapePath, isDynamicPattern } from './utils.ts';
+import { escapePath, getPartialMatcher, isDynamicPattern, splitPattern } from './utils.ts';
 
 export interface GlobOptions {
   absolute?: boolean;
@@ -110,49 +110,17 @@ function processPatterns(
     }
   }
 
-  const transformed: string[] = [];
   for (const pattern of patterns) {
     if (!pattern.startsWith('!') || pattern[1] === '(') {
       const newPattern = normalizePattern(pattern, expandDirectories, cwd, properties, false);
       matchPatterns.push(newPattern);
-      const split = splitPattern(newPattern);
-
-      let brackets = 0;
-      let finalPattern = '';
-      for (let i = 0; i < split.length; i++) {
-        const part = split[i];
-        // we can't easily optimize patterns that contain parts with slashes such as `*(a/b)`
-        // so we just convert them to `**` for now. any optimizations here would are welcome
-        if (part.includes('/')) {
-          if (i > 0) {
-            brackets++;
-          }
-          finalPattern += '**';
-          break;
-        }
-
-        if (i === 0) {
-          finalPattern += part;
-          continue;
-        }
-
-        brackets++;
-        finalPattern += `?(/${part}`;
-      }
-      transformed.push(finalPattern + ')'.repeat(Math.max(brackets, 0)));
     } else if (pattern[1] !== '!' || pattern[2] === '(') {
       const newPattern = normalizePattern(pattern.slice(1), expandDirectories, cwd, properties, true);
       ignorePatterns.push(newPattern);
     }
   }
 
-  return { match: matchPatterns, ignore: ignorePatterns, transformed };
-}
-
-// if a pattern has no slashes outside glob symbols, results.parts is []
-function splitPattern(path: string) {
-  const result = picomatch.scan(path, { parts: true });
-  return result.parts?.length ? result.parts : [path];
+  return { match: matchPatterns, ignore: ignorePatterns };
 }
 
 // TODO: this is slow, find a better way to do this
@@ -196,10 +164,9 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     nocase: options.caseSensitiveMatch === false
   });
 
-  const exclude = picomatch('*(../)**', {
-    dot: true,
-    nocase: options.caseSensitiveMatch === false,
-    ignore: processed.transformed
+  const partialMatcher = getPartialMatcher(processed.match, {
+    dot: options.dot,
+    nocase: options.caseSensitiveMatch === false
   });
 
   if (process.env.TINYGLOBBY_DEBUG) {
@@ -225,7 +192,7 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     exclude: options.debug
       ? (_, p) => {
           const relativePath = processPath(p, cwd, properties.root, true, true);
-          const skipped = ignore(relativePath) || exclude(relativePath);
+          const skipped = (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
 
           if (!skipped) {
             console.log(`[tinyglobby ${new Date().toLocaleTimeString('es')}] crawling ${p}`);
@@ -235,7 +202,7 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
         }
       : (_, p) => {
           const relativePath = processPath(p, cwd, properties.root, true, true);
-          return ignore(relativePath) || exclude(relativePath);
+          return (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
         },
     pathSeparator: '/',
     relativePaths: true,
