@@ -15,8 +15,9 @@ export function getPartialMatcher(patterns: string[], options?: PartialMatcherOp
     for (let i = 0; i < patterns.length; i++) {
       const patternParts = splitPattern(patterns[i]);
       const regex = regexes[i];
+      const minParts = Math.min(inputParts.length, patternParts.length);
       let j = 0;
-      while (j < inputParts.length) {
+      while (j < minParts) {
         const part = patternParts[j];
 
         // handling slashes in parts is very hard, not even fast-glob does it

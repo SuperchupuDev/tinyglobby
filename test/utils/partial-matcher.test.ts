@@ -87,4 +87,37 @@ describe('getPartialMatcher', () => {
     assert.ok(!matcher('test/utils/.a/c'));
     assert.ok(matcher('test/utils'));
   });
+
+  test('path initially matching pattern but more input than pattern parts', () => {
+    const matcher = getPartialMatcher(['test/utils/a']);
+    assert.ok(!matcher('test/utils/a/c'));
+  });
+
+  test('multiple patterns', () => {
+    const matcher = getPartialMatcher(['test/util?/a', 'test/utils/a/c']);
+    assert.ok(matcher('test/utils/a/c'));
+    assert.ok(matcher('test/utilg/a'));
+    assert.ok(matcher('test/utilg'));
+    assert.ok(!matcher('test/utilg/a/c'));
+  });
+
+  test('..', () => {
+    const matcher = getPartialMatcher(['../test/util?/a']);
+    assert.ok(matcher('..'));
+    assert.ok(matcher('../test/utilg/a'));
+    assert.ok(!matcher('a/test/utilg/a'));
+    assert.ok(!matcher('test/utilg/a'));
+  });
+
+  test('.. mixed with normal pattern', () => {
+    const matcher = getPartialMatcher(['../test/util?/a', 'src/utils/a']);
+    assert.ok(matcher('..'));
+    assert.ok(matcher('../test/utilg/a'));
+    assert.ok(!matcher('a/test/utilg/a'));
+    assert.ok(!matcher('test/utilg/a'));
+
+    assert.ok(matcher('src'));
+    assert.ok(matcher('src/utils'));
+    assert.ok(!matcher('src/gaming'));
+  });
 });
