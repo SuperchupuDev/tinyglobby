@@ -1,7 +1,7 @@
 import path, { posix } from 'node:path';
 import { type Options as FdirOptions, fdir } from 'fdir';
 import picomatch from 'picomatch';
-import { escapePath, isDynamicPattern } from './utils.ts';
+import { escapePath, getPartialMatcher, isDynamicPattern, splitPattern } from './utils.ts';
 
 export interface GlobOptions {
   absolute?: boolean;
@@ -54,20 +54,20 @@ function normalizePattern(
       properties.depthOffset = -(parentDirectoryMatch[0].length + 1) / 3;
     }
   } else if (!isIgnore && properties.depthOffset >= 0) {
-    const current = result.split('/');
-    properties.commonPath ??= current;
+    const parts = splitPattern(result);
+    properties.commonPath ??= parts;
 
     const newCommonPath = [];
 
-    for (let i = 0; i < Math.min(properties.commonPath.length, current.length); i++) {
-      const part = current[i];
+    for (let i = 0; i < Math.min(properties.commonPath.length, parts.length); i++) {
+      const part = parts[i];
 
-      if (part === '**' && !current[i + 1]) {
+      if (part === '**' && !parts[i + 1]) {
         newCommonPath.pop();
         break;
       }
 
-      if (part !== properties.commonPath[i] || isDynamicPattern(part) || i === current.length - 1) {
+      if (part !== properties.commonPath[i] || isDynamicPattern(part) || i === parts.length - 1) {
         break;
       }
 
@@ -113,7 +113,6 @@ function processPatterns(
     }
   }
 
-  const transformed: string[] = [];
   for (const pattern of patterns) {
     if (!pattern) {
       continue;
@@ -121,39 +120,18 @@ function processPatterns(
     if (!pattern.startsWith('!') || pattern[1] === '(') {
       const newPattern = normalizePattern(pattern, expandDirectories, cwd, properties, false);
       matchPatterns.push(newPattern);
-      const split = newPattern.split('/');
-      if (split[split.length - 1] === '**') {
-        if (split[split.length - 2] !== '..') {
-          split[split.length - 2] = '**';
-          split.pop();
-        }
-        transformed.push(split.length ? split.join('/') : '*');
-      } else {
-        transformed.push(split.length > 1 ? split.slice(0, -1).join('/') : split.join('/'));
-      }
-
-      for (let i = split.length - 2; i > 0; i--) {
-        const part = split.slice(0, i);
-        if (part[part.length - 1] === '**') {
-          part.pop();
-          if (part.length > 1) {
-            part.pop();
-          }
-        }
-        transformed.push(part.join('/'));
-      }
     } else if (pattern[1] !== '!' || pattern[2] === '(') {
       const newPattern = normalizePattern(pattern.slice(1), expandDirectories, cwd, properties, true);
       ignorePatterns.push(newPattern);
     }
   }
 
-  return { match: matchPatterns, ignore: ignorePatterns, transformed };
+  return { match: matchPatterns, ignore: ignorePatterns };
 }
 
 // TODO: this is slow, find a better way to do this
 function getRelativePath(path: string, cwd: string, root: string) {
-  return posix.relative(cwd, `${root}/${path}`);
+  return posix.relative(cwd, `${root}/${path}`) || '.';
 }
 
 function processPath(path: string, cwd: string, root: string, isDirectory: boolean, absolute?: boolean) {
@@ -192,10 +170,9 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     nocase: options.caseSensitiveMatch === false
   });
 
-  const exclude = picomatch('*(../)**', {
-    dot: true,
-    nocase: options.caseSensitiveMatch === false,
-    ignore: processed.transformed
+  const partialMatcher = getPartialMatcher(processed.match, {
+    dot: options.dot,
+    nocase: options.caseSensitiveMatch === false
   });
 
   if (process.env.TINYGLOBBY_DEBUG) {
@@ -221,7 +198,7 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     exclude: options.debug
       ? (_, p) => {
           const relativePath = processPath(p, cwd, properties.root, true, true);
-          const skipped = ignore(relativePath) || exclude(relativePath);
+          const skipped = (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
 
           if (!skipped) {
             console.log(`[tinyglobby ${new Date().toLocaleTimeString('es')}] crawling ${p}`);
@@ -231,7 +208,7 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
         }
       : (_, p) => {
           const relativePath = processPath(p, cwd, properties.root, true, true);
-          return ignore(relativePath) || exclude(relativePath);
+          return (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
         },
     pathSeparator: '/',
     relativePaths: true,

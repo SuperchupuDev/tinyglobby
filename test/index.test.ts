@@ -312,6 +312,11 @@ test('matching files with specific naming pattern', async () => {
   assert.deepEqual(files.sort(), ['a/a.txt', 'a/b.txt', 'b/a.txt', 'b/b.txt']);
 });
 
+test('dynamic patterns that include slashes inside parts', async () => {
+  const files = await glob({ patterns: ['{.a/a,a}/a.txt'], cwd });
+  assert.deepEqual(files.sort(), ['.a/a/a.txt', 'a/a.txt']);
+});
+
 test('using extglob patterns', async () => {
   const files = await glob({ patterns: ['a/*(a|b).txt'], cwd });
   assert.deepEqual(files.sort(), ['a/a.txt', 'a/b.txt']);
