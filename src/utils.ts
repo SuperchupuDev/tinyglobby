@@ -8,14 +8,32 @@ export interface PartialMatcherOptions {
 
 // the result of over 4 months of figuring stuff out and a LOT of help
 export function getPartialMatcher(patterns: string[], options?: PartialMatcherOptions): Matcher {
-  const regexes = patterns.map(pattern => splitPattern(pattern).map(part => picomatch.makeRe(part, options)));
+  const patternCount = patterns.length
+  // Cache splitted patterns to reuse them when parsing input paths
+  const splittedPatterns: string[][] = new Array(patternCount)
+  const regexes: RegExp[][] = new Array(patternCount)
+
+  for (let i = 0; i < patternCount; i++) {
+    const pattern = patterns[i]
+    const splittedPattern = splitPattern(pattern)
+    splittedPatterns[i] = splittedPattern
+    const partCount = splittedPattern.length
+    const partRegexes: RegExp[] = new Array(partCount)
+
+    for (let j = 0; j < partCount; j++) {
+      partRegexes[j] = picomatch.makeRe(splittedPattern[j], options)
+    }
+
+    regexes[i] = partRegexes
+  }
   return (input: string) => {
     // no need to `splitPattern` as this is indeed not a pattern
     const inputParts = input.split('/');
-    for (let i = 0; i < patterns.length; i++) {
-      const patternParts = splitPattern(patterns[i]);
+    const inputPatternCount = inputParts.length
+    for (let i = 0; i < patternCount; i++) {
+      const patternParts = splittedPatterns[i];
       const regex = regexes[i];
-      const minParts = Math.min(inputParts.length, patternParts.length);
+      const minParts = Math.min(inputPatternCount, patternParts.length);
       let j = 0;
       while (j < minParts) {
         const part = patternParts[j];
@@ -42,7 +60,7 @@ export function getPartialMatcher(patterns: string[], options?: PartialMatcherOp
 
         j++;
       }
-      if (j === inputParts.length) {
+      if (j === inputPatternCount) {
         return true;
       }
     }
@@ -53,9 +71,19 @@ export function getPartialMatcher(patterns: string[], options?: PartialMatcherOp
 // #endregion
 
 // #region splitPattern
+// Make the options a global constant to reduce GC work
+const SplitPatternOptions = { parts: true }
+
 // if a pattern has no slashes outside glob symbols, results.parts is []
+/**
+ * Splits a path pattern to its parts.
+ * If the given path has no slashes outside glob symbols, the given path will be interpreted as the only part.
+ *
+ * @param path - target path to split.
+ * @returns the parts of the path.
+ */
 export function splitPattern(path: string): string[] {
-  const result = picomatch.scan(path, { parts: true });
+  const result = picomatch.scan(path, SplitPatternOptions);
   return result.parts?.length ? result.parts : [path];
 }
 // #endregion
