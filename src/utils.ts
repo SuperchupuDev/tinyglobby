@@ -117,7 +117,7 @@ export function isDynamicPattern(pattern: string, options?: { caseSensitiveMatch
 // #endregion
 // #region log
 /**
- *  Logs out the current task.
+ *  Logs the current task.
  *
  *  @param task - the current task.
  */
