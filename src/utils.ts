@@ -59,7 +59,6 @@ export function splitPattern(path: string): string[] {
   return result.parts?.length ? result.parts : [path];
 }
 // #endregion
-
 const isWin = process.platform === 'win32';
 
 // #region convertPathToPattern
