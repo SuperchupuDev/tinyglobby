@@ -135,7 +135,7 @@ export function isDynamicPattern(pattern: string, options?: { caseSensitiveMatch
 // #endregion
 
 // #region log
-export function log(task: string): void {
-  console.log(`[tinyglobby ${new Date().toLocaleTimeString('es')}] ${task}`);
+export function log(...tasks: unknown[]): void {
+  console.log(`[tinyglobby ${new Date().toLocaleTimeString('es')}]`, ...tasks);
 }
 // #endregion

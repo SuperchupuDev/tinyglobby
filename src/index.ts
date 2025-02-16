@@ -157,6 +157,14 @@ function formatPaths(paths: string[], cwd: string, root: string) {
 function crawl(options: GlobOptions, cwd: string, sync: false): Promise<string[]>;
 function crawl(options: GlobOptions, cwd: string, sync: true): string[];
 function crawl(options: GlobOptions, cwd: string, sync: boolean) {
+  if (process.env.TINYGLOBBY_DEBUG) {
+    options.debug = true;
+  }
+
+  if (options.debug) {
+    log('globbing with options:', options, 'cwd:', cwd);
+  }
+
   if (Array.isArray(options.patterns) && options.patterns.length === 0) {
     return sync ? [] : Promise.resolve([]);
   }
@@ -169,6 +177,10 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
 
   const processed = processPatterns(options, cwd, props);
   const nocase = options.caseSensitiveMatch === false;
+
+  if (options.debug) {
+    log('internal processing patterns:', processed);
+  }
 
   const matcher = picomatch(processed.match, {
     dot: options.dot,
@@ -185,10 +197,6 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     dot: options.dot,
     nocase
   });
-
-  if (process.env.TINYGLOBBY_DEBUG) {
-    options.debug = true;
-  }
 
   const fdirOptions: Partial<FdirOptions> = {
     // use relative paths in the matcher
@@ -250,6 +258,11 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
 
   props.root = props.root.replace(BACKSLASHES, '');
   const root = props.root;
+
+  if (options.debug) {
+    log('internal properties:', props);
+  }
+
   const api = new fdir(fdirOptions).crawl(root);
 
   if (cwd === root || options.absolute) {
