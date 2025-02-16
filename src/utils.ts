@@ -21,6 +21,7 @@ export function getPartialMatcher(patterns: string[], options?: PartialMatcherOp
     for (let i = 0; i < patterns.length; i++) {
       const patternParts = patternsParts[i];
       const regex = regexes[i];
+      const inputPatternCount = inputParts.length;
       const minParts = Math.min(inputPatternCount, patternParts.length);
       let j = 0;
       while (j < minParts) {
