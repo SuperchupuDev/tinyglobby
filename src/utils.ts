@@ -1,10 +1,5 @@
 import picomatch, { type Matcher } from 'picomatch';
-
-// #region PARTIAL MATCHER
-export interface PartialMatcherOptions {
-  dot?: boolean;
-  nocase?: boolean;
-}
+import type { PartialMatcherOptions } from './types';
 
 const ONLY_PARENT_DIRECTORIES = /^(\/?\.\.)+$/;
 
