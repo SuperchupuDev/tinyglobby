@@ -201,7 +201,7 @@ function processPatterns(
   { patterns = ['**/*'], ignore = [], expandDirectories = true }: GlobOptions,
   cwd: string,
   props: InternalProps
-) {
+): ProcessedPatterns {
   if (typeof patterns === 'string') {
     patterns = [patterns];
   }
@@ -275,7 +275,7 @@ function getCrawler(patterns?: string | readonly string[], inputOptions: Omit<Gl
     ] as const;
   }
 
-  const props = {
+  const props: InternalProps = {
     root: cwd,
     commonPath: null,
     depthOffset: 0
@@ -377,6 +377,7 @@ function getCrawler(patterns?: string | readonly string[], inputOptions: Omit<Gl
   const root = props.root;
 
   if (options.debug) {
+    log('internal processing patterns:', processed);
     log('internal properties:', props);
   }
 
