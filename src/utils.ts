@@ -61,7 +61,7 @@ export function getPartialMatcher(patterns: string[], options?: PartialMatcherOp
 
 // #region splitPattern
 // Make the options a global constant to reduce GC work
-const SplitPatternOptions = { parts: true }
+const SplitPatternOptions = { parts: true };
 
 // if a pattern has no slashes outside glob symbols, results.parts is []
 /**
