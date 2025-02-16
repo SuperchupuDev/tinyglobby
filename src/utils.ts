@@ -8,30 +8,18 @@ export interface PartialMatcherOptions {
 
 // the result of over 4 months of figuring stuff out and a LOT of help
 export function getPartialMatcher(patterns: string[], options?: PartialMatcherOptions): Matcher {
-  const patternCount = patterns.length
-  // Cache splitted patterns to reuse them when parsing input paths
-  const splittedPatterns: string[][] = new Array(patternCount)
-  const regexes: RegExp[][] = new Array(patternCount)
-
-  for (let i = 0; i < patternCount; i++) {
-    const pattern = patterns[i]
-    const splittedPattern = splitPattern(pattern)
-    splittedPatterns[i] = splittedPattern
-    const partCount = splittedPattern.length
-    const partRegexes: RegExp[] = new Array(partCount)
-
-    for (let j = 0; j < partCount; j++) {
-      partRegexes[j] = picomatch.makeRe(splittedPattern[j], options)
-    }
-
-    regexes[i] = partRegexes
+  const regexes: RegExp[][] = [];
+  const patternsParts: string[][] = [];
+  for (const pattern of patterns) {
+    const parts = splitPattern(pattern);
+    patternsParts.push(parts);
+    regexes.push(parts.map(part => picomatch.makeRe(part, options)));
   }
   return (input: string) => {
     // no need to `splitPattern` as this is indeed not a pattern
     const inputParts = input.split('/');
-    const inputPatternCount = inputParts.length
-    for (let i = 0; i < patternCount; i++) {
-      const patternParts = splittedPatterns[i];
+    for (let i = 0; i < patterns.length; i++) {
+      const patternParts = patternsParts[i];
       const regex = regexes[i];
       const minParts = Math.min(inputPatternCount, patternParts.length);
       let j = 0;
@@ -54,7 +42,7 @@ export function getPartialMatcher(patterns: string[], options?: PartialMatcherOp
         // unlike popular belief, `**` doesn't return true in *all* cases
         // some examples are when matching it to `.a` with dot: false or `..`
         // so it needs to match to return early
-        if (part === '**' && match) {
+        if (part === '**') {
           return true;
         }
 
