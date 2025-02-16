@@ -60,22 +60,16 @@ export function getPartialMatcher(patterns: string[], options?: PartialMatcherOp
 // #endregion
 
 // #region splitPattern
-// Make the options a global constant to reduce GC work
-const SplitPatternOptions = { parts: true };
+// make options a global constant to reduce GC work
+const splitPatternOptions = { parts: true };
 
 // if a pattern has no slashes outside glob symbols, results.parts is []
-/**
- * Splits a path pattern to its parts.
- * If the given path has no slashes outside glob symbols, the given path will be interpreted as the only part.
- *
- * @param path - target path to split.
- * @returns the parts of the path.
- */
 export function splitPattern(path: string): string[] {
-  const result = picomatch.scan(path, SplitPatternOptions);
+  const result = picomatch.scan(path, splitPatternOptions);
   return result.parts?.length ? result.parts : [path];
 }
 // #endregion
+
 const isWin = process.platform === 'win32';
 
 // #region convertPathToPattern
@@ -132,12 +126,8 @@ export function isDynamicPattern(pattern: string, options?: { caseSensitiveMatch
   return scan.isGlob || scan.negated;
 }
 // #endregion
+
 // #region log
-/**
- *  Logs the current task.
- *
- *  @param task - the current task.
- */
 export function log(task: string): void {
   console.log(`[tinyglobby ${new Date().toLocaleTimeString('es')}] ${task}`);
 }
