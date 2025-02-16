@@ -8,12 +8,19 @@ export interface PartialMatcherOptions {
 
 // the result of over 4 months of figuring stuff out and a LOT of help
 export function getPartialMatcher(patterns: string[], options?: PartialMatcherOptions): Matcher {
-  const regexes: RegExp[][] = [];
-  const patternsParts: string[][] = [];
-  for (const pattern of patterns) {
-    const parts = splitPattern(pattern);
-    patternsParts.push(parts);
-    regexes.push(parts.map(part => picomatch.makeRe(part, options)));
+  // you might find this code pattern odd, but apparently it's faster than using `.push()`
+  const patternsCount = patterns.length;
+  const patternsParts: string[][] = Array(patternsCount);
+  const regexes: RegExp[][] = Array(patternsCount);
+  for (let i = 0; i < patternsCount; i++) {
+    const parts = splitPattern(patterns[i]);
+    patternsParts[i] = parts;
+    const partsCount = parts.length;
+    const partRegexes = Array(partsCount);
+    for (let j = 0; j < partsCount; j++) {
+      partRegexes[j] = picomatch.makeRe(parts[j], options);
+    }
+    regexes[i] = partRegexes;
   }
   return (input: string) => {
     // no need to `splitPattern` as this is indeed not a pattern
