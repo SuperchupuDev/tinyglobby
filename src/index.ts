@@ -3,6 +3,10 @@ import { type Options as FdirOptions, fdir } from 'fdir';
 import picomatch from 'picomatch';
 import { escapePath, getPartialMatcher, isDynamicPattern, splitPattern } from './utils.ts';
 
+const PARENT_DIRECTORY = /^(\/?\.\.)+/;
+const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
+const BACKSLASHES = /\\/g;
+
 export interface GlobOptions {
   absolute?: boolean;
   cwd?: string;
@@ -40,13 +44,13 @@ function normalizePattern(
     result += '/**';
   }
 
-  if (path.isAbsolute(result.replace(/\\(?=[()[\]{}!*+?@|])/g, ''))) {
+  if (path.isAbsolute(result.replace(ESCAPING_BACKSLASHES, ''))) {
     result = posix.relative(escapePath(cwd), result);
   } else {
     result = posix.normalize(result);
   }
 
-  const parentDirectoryMatch = /^(\/?\.\.)+/.exec(result);
+  const parentDirectoryMatch = PARENT_DIRECTORY.exec(result);
   if (parentDirectoryMatch?.[0]) {
     const potentialRoot = posix.join(cwd, parentDirectoryMatch[0]);
     if (properties.root.length > potentialRoot.length) {
@@ -238,7 +242,7 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
   }
 
   // backslashes are removed so that inferred roots like `C:/New folder \\(1\\)` work
-  properties.root = properties.root.replace(/\\/g, '');
+  properties.root = properties.root.replace(BACKSLASHES, '');
   const api = new fdir(fdirOptions).crawl(properties.root);
 
   if (cwd === properties.root || options.absolute) {
@@ -266,7 +270,7 @@ export async function glob(
     Array.isArray(patternsOrOptions) || typeof patternsOrOptions === 'string'
       ? { ...options, patterns: patternsOrOptions }
       : patternsOrOptions;
-  const cwd = opts.cwd ? path.resolve(opts.cwd).replace(/\\/g, '/') : process.cwd().replace(/\\/g, '/');
+  const cwd = opts.cwd ? path.resolve(opts.cwd).replace(BACKSLASHES, '/') : process.cwd().replace(BACKSLASHES, '/');
 
   return crawl(opts, cwd, false);
 }
@@ -282,7 +286,7 @@ export function globSync(patternsOrOptions: string | string[] | GlobOptions, opt
     Array.isArray(patternsOrOptions) || typeof patternsOrOptions === 'string'
       ? { ...options, patterns: patternsOrOptions }
       : patternsOrOptions;
-  const cwd = opts.cwd ? path.resolve(opts.cwd).replace(/\\/g, '/') : process.cwd().replace(/\\/g, '/');
+  const cwd = opts.cwd ? path.resolve(opts.cwd).replace(BACKSLASHES, '/') : process.cwd().replace(BACKSLASHES, '/');
 
   return crawl(opts, cwd, true);
 }

@@ -8,12 +8,18 @@ export interface PartialMatcherOptions {
 
 // the result of over 4 months of figuring stuff out and a LOT of help
 export function getPartialMatcher(patterns: string[], options?: PartialMatcherOptions): Matcher {
-  const regexes = patterns.map(pattern => splitPattern(pattern).map(part => picomatch.makeRe(part, options)));
+  const regexes: RegExp[][] = [];
+  const patternsParts: string[][] = [];
+  for (const pattern of patterns) {
+    const parts = splitPattern(pattern);
+    patternsParts.push(parts);
+    regexes.push(parts.map(part => picomatch.makeRe(part, options)));
+  }
   return (input: string) => {
     // no need to `splitPattern` as this is indeed not a pattern
     const inputParts = input.split('/');
     for (let i = 0; i < patterns.length; i++) {
-      const patternParts = splitPattern(patterns[i]);
+      const patternParts = patternsParts[i];
       const regex = regexes[i];
       const minParts = Math.min(inputParts.length, patternParts.length);
       let j = 0;
@@ -36,7 +42,7 @@ export function getPartialMatcher(patterns: string[], options?: PartialMatcherOp
         // unlike popular belief, `**` doesn't return true in *all* cases
         // some examples are when matching it to `.a` with dot: false or `..`
         // so it needs to match to return early
-        if (part === '**' && match) {
+        if (part === '**') {
           return true;
         }
 
