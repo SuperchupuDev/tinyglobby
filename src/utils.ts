@@ -8,12 +8,19 @@ export interface PartialMatcherOptions {
 
 // the result of over 4 months of figuring stuff out and a LOT of help
 export function getPartialMatcher(patterns: string[], options?: PartialMatcherOptions): Matcher {
-  const regexes: RegExp[][] = [];
-  const patternsParts: string[][] = [];
-  for (const pattern of patterns) {
-    const parts = splitPattern(pattern);
-    patternsParts.push(parts);
-    regexes.push(parts.map(part => picomatch.makeRe(part, options)));
+  // you might find this code pattern odd, but apparently it's faster than using `.push()`
+  const patternsCount = patterns.length;
+  const patternsParts: string[][] = Array(patternsCount);
+  const regexes: RegExp[][] = Array(patternsCount);
+  for (let i = 0; i < patternsCount; i++) {
+    const parts = splitPattern(patterns[i]);
+    patternsParts[i] = parts;
+    const partsCount = parts.length;
+    const partRegexes = Array(partsCount);
+    for (let j = 0; j < partsCount; j++) {
+      partRegexes[j] = picomatch.makeRe(parts[j], options);
+    }
+    regexes[i] = partRegexes;
   }
   return (input: string) => {
     // no need to `splitPattern` as this is indeed not a pattern
@@ -21,7 +28,8 @@ export function getPartialMatcher(patterns: string[], options?: PartialMatcherOp
     for (let i = 0; i < patterns.length; i++) {
       const patternParts = patternsParts[i];
       const regex = regexes[i];
-      const minParts = Math.min(inputParts.length, patternParts.length);
+      const inputPatternCount = inputParts.length;
+      const minParts = Math.min(inputPatternCount, patternParts.length);
       let j = 0;
       while (j < minParts) {
         const part = patternParts[j];
@@ -48,7 +56,7 @@ export function getPartialMatcher(patterns: string[], options?: PartialMatcherOp
 
         j++;
       }
-      if (j === inputParts.length) {
+      if (j === inputPatternCount) {
         return true;
       }
     }
@@ -59,12 +67,17 @@ export function getPartialMatcher(patterns: string[], options?: PartialMatcherOp
 // #endregion
 
 // #region splitPattern
+// make options a global constant to reduce GC work
+const splitPatternOptions = { parts: true };
+
 // if a pattern has no slashes outside glob symbols, results.parts is []
 export function splitPattern(path: string): string[] {
-  const result = picomatch.scan(path, { parts: true });
+  const result = picomatch.scan(path, splitPatternOptions);
   return result.parts?.length ? result.parts : [path];
 }
 // #endregion
+
+const isWin = process.platform === 'win32';
 
 // #region convertPathToPattern
 const ESCAPED_WIN32_BACKSLASHES = /\\(?![()[\]{}!+@])/g;
@@ -76,8 +89,9 @@ export function convertWin32PathToPattern(path: string): string {
   return escapeWin32Path(path).replace(ESCAPED_WIN32_BACKSLASHES, '/');
 }
 
-export const convertPathToPattern: (path: string) => string =
-  process.platform === 'win32' ? convertWin32PathToPattern : convertPosixPathToPattern;
+export const convertPathToPattern: (path: string) => string = isWin
+  ? convertWin32PathToPattern
+  : convertPosixPathToPattern;
 // #endregion
 
 // #region escapePath
@@ -94,7 +108,7 @@ const WIN32_UNESCAPED_GLOB_SYMBOLS = /(?<!\\)([()[\]{}]|^!|[!+@](?=\())/g;
 export const escapePosixPath = (path: string): string => path.replace(POSIX_UNESCAPED_GLOB_SYMBOLS, '\\$&');
 export const escapeWin32Path = (path: string): string => path.replace(WIN32_UNESCAPED_GLOB_SYMBOLS, '\\$&');
 
-export const escapePath: (path: string) => string = process.platform === 'win32' ? escapeWin32Path : escapePosixPath;
+export const escapePath: (path: string) => string = isWin ? escapeWin32Path : escapePosixPath;
 // #endregion
 
 // #region isDynamicPattern
@@ -117,5 +131,11 @@ export function isDynamicPattern(pattern: string, options?: { caseSensitiveMatch
 
   const scan = picomatch.scan(pattern);
   return scan.isGlob || scan.negated;
+}
+// #endregion
+
+// #region log
+export function log(task: string): void {
+  console.log(`[tinyglobby ${new Date().toLocaleTimeString('es')}] ${task}`);
 }
 // #endregion
