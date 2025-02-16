@@ -25,7 +25,7 @@ export function getPartialMatcher(patterns: string[], options?: PartialMatcherOp
   return (input: string) => {
     // no need to `splitPattern` as this is indeed not a pattern
     const inputParts = input.split('/');
-    for (let i = 0; i < patterns.length; i++) {
+    for (let i = 0; i < patternsCount; i++) {
       const patternParts = patternsParts[i];
       const regex = regexes[i];
       const inputPatternCount = inputParts.length;
