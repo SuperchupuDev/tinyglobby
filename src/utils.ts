@@ -1,10 +1,5 @@
 import picomatch, { type Matcher } from 'picomatch';
-
-// #region PARTIAL MATCHER
-export interface PartialMatcherOptions {
-  dot?: boolean;
-  nocase?: boolean;
-}
+import type { PartialMatcherOptions } from './types';
 
 // the result of over 4 months of figuring stuff out and a LOT of help
 export function getPartialMatcher(patterns: string[], options?: PartialMatcherOptions): Matcher {

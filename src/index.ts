@@ -1,32 +1,11 @@
 import path, { posix } from 'node:path';
-import { type Options as FdirOptions, fdir } from 'fdir';
-import picomatch from 'picomatch';
-import { escapePath, getPartialMatcher, isDynamicPattern, log, splitPattern } from './utils.ts';
+import { escapePath, isDynamicPattern, log, splitPattern } from './utils.ts';
+import type { GlobOptions, InternalProps, ProcessedPatterns } from './types.ts';
+import { buildFdir, formatPaths } from './fdir.ts';
 
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
 const BACKSLASHES = /\\/g;
-
-export interface GlobOptions {
-  absolute?: boolean;
-  cwd?: string;
-  patterns?: string | string[];
-  ignore?: string | string[];
-  dot?: boolean;
-  deep?: number;
-  followSymbolicLinks?: boolean;
-  caseSensitiveMatch?: boolean;
-  expandDirectories?: boolean;
-  onlyDirectories?: boolean;
-  onlyFiles?: boolean;
-  debug?: boolean;
-}
-
-interface InternalProps {
-  root: string;
-  commonPath: string[] | null;
-  depthOffset: number;
-}
 
 function normalizePattern(
   pattern: string,
@@ -92,7 +71,7 @@ function processPatterns(
   { patterns, ignore = [], expandDirectories = true }: GlobOptions,
   cwd: string,
   props: InternalProps
-) {
+): ProcessedPatterns {
   if (typeof patterns === 'string') {
     patterns = [patterns];
   } else if (!patterns) {
@@ -131,29 +110,6 @@ function processPatterns(
   return { match: matchPatterns, ignore: ignorePatterns };
 }
 
-// TODO: this is slow, find a better way to do this
-function getRelativePath(path: string, cwd: string, root: string) {
-  return posix.relative(cwd, `${root}/${path}`) || '.';
-}
-
-function processPath(path: string, cwd: string, root: string, isDirectory: boolean, absolute?: boolean) {
-  const relativePath = absolute ? path.slice(root.length + 1) || '.' : path;
-
-  if (root === cwd) {
-    return isDirectory && relativePath !== '.' ? relativePath.slice(0, -1) : relativePath;
-  }
-
-  return getRelativePath(relativePath, cwd, root);
-}
-
-function formatPaths(paths: string[], cwd: string, root: string) {
-  for (let i = paths.length - 1; i >= 0; i--) {
-    const path = paths[i];
-    paths[i] = getRelativePath(path, cwd, root) + (!path || path.endsWith('/') ? '/' : '');
-  }
-  return paths;
-}
-
 function crawl(options: GlobOptions, cwd: string, sync: false): Promise<string[]>;
 function crawl(options: GlobOptions, cwd: string, sync: true): string[];
 function crawl(options: GlobOptions, cwd: string, sync: boolean) {
@@ -169,101 +125,22 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     return sync ? [] : Promise.resolve([]);
   }
 
-  const props = {
+  const props: InternalProps = {
     root: cwd,
     commonPath: null,
     depthOffset: 0
   };
 
   const processed = processPatterns(options, cwd, props);
-  const nocase = options.caseSensitiveMatch === false;
-
-  if (options.debug) {
-    log('internal processing patterns:', processed);
-  }
-
-  const matcher = picomatch(processed.match, {
-    dot: options.dot,
-    nocase,
-    ignore: processed.ignore
-  });
-
-  const ignore = picomatch(processed.ignore, {
-    dot: options.dot,
-    nocase
-  });
-
-  const partialMatcher = getPartialMatcher(processed.match, {
-    dot: options.dot,
-    nocase
-  });
-
-  const fdirOptions: Partial<FdirOptions> = {
-    // use relative paths in the matcher
-    filters: [
-      options.debug
-        ? (p, isDirectory) => {
-            const path = processPath(p, cwd, props.root, isDirectory, options.absolute);
-            const matches = matcher(path);
-
-            if (matches) {
-              log(`matched ${path}`);
-            }
-
-            return matches;
-          }
-        : (p, isDirectory) => matcher(processPath(p, cwd, props.root, isDirectory, options.absolute))
-    ],
-    exclude: options.debug
-      ? (_, p) => {
-          const relativePath = processPath(p, cwd, props.root, true, true);
-          const skipped = (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
-
-          if (!skipped) {
-            log(`crawling ${p}`);
-          }
-
-          return skipped;
-        }
-      : (_, p) => {
-          const relativePath = processPath(p, cwd, props.root, true, true);
-          return (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
-        },
-    pathSeparator: '/',
-    relativePaths: true,
-    resolveSymlinks: true
-  };
-
-  if (options.deep) {
-    fdirOptions.maxDepth = Math.round(options.deep - props.depthOffset);
-  }
-
-  if (options.absolute) {
-    fdirOptions.relativePaths = false;
-    fdirOptions.resolvePaths = true;
-    fdirOptions.includeBasePath = true;
-  }
-
-  if (options.followSymbolicLinks === false) {
-    fdirOptions.resolveSymlinks = false;
-    fdirOptions.excludeSymlinks = true;
-  }
-
-  if (options.onlyDirectories) {
-    fdirOptions.excludeFiles = true;
-    fdirOptions.includeDirs = true;
-  } else if (options.onlyFiles === false) {
-    fdirOptions.includeDirs = true;
-  }
-
   props.root = props.root.replace(BACKSLASHES, '');
   const root = props.root;
 
   if (options.debug) {
+    log('internal processing patterns:', processed);
     log('internal properties:', props);
   }
 
-  const api = new fdir(fdirOptions).crawl(root);
+  const api = buildFdir(options, props, processed, cwd, root);
 
   if (cwd === root || options.absolute) {
     return sync ? api.sync() : api.withPromise();
