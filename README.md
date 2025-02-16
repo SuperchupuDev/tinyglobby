@@ -54,6 +54,7 @@ globSync(['src/**/*.ts'], { ignore: ['**/*.d.ts'] });
 - [`nx`](https://github.com/nrwl/nx)
 - [`sort-package-json`](https://github.com/keithamus/sort-package-json)
 - [`tsup`](https://github.com/egoist/tsup)
+- [`vite-plugin-checker`](https://github.com/fi3ework/vite-plugin-checker)
 - [`cspell`](https://github.com/streetsidesoftware/cspell)
 - [`nuxt`](https://github.com/nuxt/nuxt)
 - [`json-schema-to-typescript`](https://github.com/bcherny/json-schema-to-typescript)
