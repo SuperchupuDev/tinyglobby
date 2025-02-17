@@ -47,14 +47,18 @@ globSync(['src/**/*.ts'], { ignore: ['**/*.d.ts'] });
 `tinyglobby` is downloaded many times by projects all around the world. Here's a list of notable projects that use it:
 
 <!-- should be sorted by weekly download count -->
+- [`eslint-import-resolver-typescript`](https://github.com/import-js/eslint-import-resolver-typescript)
+- [`vite`](https://github.com/vitejs/vite)
 - [`vitest`](https://github.com/vitest-dev/vitest)
 - [`ts-morph`](https://github.com/dsherret/ts-morph)
+- [`nx`](https://github.com/nrwl/nx)
 - [`sort-package-json`](https://github.com/keithamus/sort-package-json)
 - [`tsup`](https://github.com/egoist/tsup)
+- [`vite-plugin-checker`](https://github.com/fi3ework/vite-plugin-checker)
 - [`cspell`](https://github.com/streetsidesoftware/cspell)
 - [`nuxt`](https://github.com/nuxt/nuxt)
+- [`json-schema-to-typescript`](https://github.com/bcherny/json-schema-to-typescript)
 - [`vite-plugin-pwa`](https://github.com/vite-pwa/vite-plugin-pwa)
-- [`size-limit`](https://github.com/ai/size-limit)
 - [`postcss-mixins`](https://github.com/postcss/postcss-mixins)
 - [`unocss`](https://github.com/unocss/unocss)
 - [`vitepress`](https://github.com/vuejs/vitepress)
