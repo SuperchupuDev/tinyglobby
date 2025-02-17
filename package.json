@@ -1,6 +1,6 @@
 {
   "name": "tinyglobby",
-  "version": "0.2.10",
+  "version": "0.2.11",
   "description": "A fast and minimal alternative to globby and fast-glob",
   "scripts": {
     "build": "tsup",
@@ -40,6 +40,9 @@
     "url": "https://github.com/SuperchupuDev/tinyglobby/issues"
   },
   "homepage": "https://github.com/SuperchupuDev/tinyglobby#readme",
+  "funding": {
+    "url": "https://github.com/sponsors/SuperchupuDev"
+  },
   "dependencies": {
     "fdir": "^6.4.3",
     "picomatch": "^4.0.2"

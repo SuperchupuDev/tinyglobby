@@ -8,8 +8,8 @@ A fast and minimal alternative to globby and fast-glob, meant to behave the same
 Both globby and fast-glob present some behavior no other globbing lib has,
 which makes it hard to manually replace with something smaller and better.
 
-This library uses only two subdependencies, compared to `globby`'s [23](https://npmgraph.js.org/?q=globby@14.0.2)
-and `fast-glob`'s [17](https://npmgraph.js.org/?q=fast-glob@3.3.2).
+This library uses only two subdependencies, compared to `globby`'s [23](https://npmgraph.js.org/?q=globby@14.1.0)
+and `fast-glob`'s [17](https://npmgraph.js.org/?q=fast-glob@3.3.3).
 
 ## Usage
 
@@ -41,6 +41,7 @@ globSync(['src/**/*.ts'], { ignore: ['**/*.d.ts'] });
 - `expandDirectories`: Whether to expand directories. Disable to best match `fast-glob`. Defaults to `true`.
 - `onlyDirectories`: Enable to only return directories. Disables `onlyFiles` if set. Defaults to `false`.
 - `onlyFiles`: Enable to only return files. Defaults to `true`.
+- `debug`: Enable debug logs. Useful for development purposes.
 
 ## Used by
 
