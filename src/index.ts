@@ -237,6 +237,12 @@ function processPatterns(
   return { match: matchPatterns, ignore: ignorePatterns };
 }
 
+function validateInput(input: Input, options?: Partial<GlobOptions>) {
+  if (input && options?.patterns) {
+    throw new Error('Cannot pass patterns as both an argument and an option.')
+  }
+}
+
 // Only the literal type doesn't emit any typescript errors
 const defaultOptions = {
   expandDirectories: true,
