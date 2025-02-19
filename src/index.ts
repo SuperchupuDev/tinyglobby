@@ -90,12 +90,6 @@ function processPatterns(opts: GlobOptions, props: InternalProps): ProcessedPatt
   return { match: matchPatterns, ignore: ignorePatterns };
 }
 
-function validateInput(input: Input, options?: Partial<GlobOptions>) {
-  if (input && options?.patterns) {
-    throw new Error('Cannot pass patterns as both an argument and an option.')
-  }
-}
-
 function getOptions(input: Input, options?: Partial<GlobOptions>): GlobOptions {
   const opts = {
      // patterns: ['**/*'] is tinyglobby exclusive behavior, should be considered deprecated
@@ -111,7 +105,10 @@ function getOptions(input: Input, options?: Partial<GlobOptions>): GlobOptions {
 function crawl(input: Input, options: Partial<GlobOptions> | undefined, sync: false): Promise<string[]>;
 function crawl(input: Input, options: Partial<GlobOptions> | undefined, sync: true): string[];
 function crawl(input: Input, options: Partial<GlobOptions> | undefined, sync: boolean) {
-  validateInput(input, options);
+  if (input && options?.patterns) {
+    throw new Error('Cannot pass patterns as both an argument and an option.')
+  }
+
   const opts = getOptions(input, options);
   const cwd = opts.cwd;
 
