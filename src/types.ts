@@ -1,7 +1,7 @@
 export interface GlobOptions {
   absolute?: boolean;
-  cwd?: string;
-  patterns?: string | string[];
+  cwd: string;
+  patterns: string | string[];
   ignore?: string | string[];
   dot?: boolean;
   deep?: number;
@@ -20,11 +20,13 @@ export interface InternalProps {
 }
 
 export interface ProcessedPatterns {
-    match: string[];
-    ignore: string[];
+  match: string[];
+  ignore: string[];
 }
 
 export interface PartialMatcherOptions {
   dot?: boolean;
   nocase?: boolean;
 }
+
+export type Input = string | string[] | Partial<GlobOptions>;
