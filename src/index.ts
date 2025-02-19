@@ -1,6 +1,6 @@
 import path, { posix } from 'node:path';
 import { escapePath, isDynamicPattern, log, splitPattern } from './utils.ts';
-import type { GlobOptions, InternalProps, ProcessedPatterns } from './types.ts';
+import type { GlobOptions, Input, InternalProps, ProcessedPatterns } from './types.ts';
 import { buildFdir, formatPaths } from './fdir.ts';
 
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
@@ -110,18 +110,27 @@ function processPatterns(
   return { match: matchPatterns, ignore: ignorePatterns };
 }
 
-function crawl(options: GlobOptions, cwd: string, sync: false): Promise<string[]>;
-function crawl(options: GlobOptions, cwd: string, sync: true): string[];
-function crawl(options: GlobOptions, cwd: string, sync: boolean) {
+function getOptions(input: Input, options?: Partial<GlobOptions>): GlobOptions {
+  const opts = Array.isArray(input) || typeof input === 'string' ? { ...options, patterns: input } : input;
+  opts.cwd = (opts.cwd ? path.resolve(opts.cwd) : process.cwd()).replace(BACKSLASHES, '/');
+  return opts as GlobOptions
+}
+
+function crawl(input: Input, options: Partial<GlobOptions> | undefined, sync: false): Promise<string[]>;
+function crawl(input: Input, options: Partial<GlobOptions> | undefined, sync: true): string[];
+function crawl(input: Input, options: Partial<GlobOptions> | undefined, sync: boolean) {
+  const opts = getOptions(input, options);
+  const cwd = opts.cwd;
+
   if (process.env.TINYGLOBBY_DEBUG) {
-    options.debug = true;
+    opts.debug = true;
   }
 
-  if (options.debug) {
-    log('globbing with options:', options, 'cwd:', cwd);
+  if (opts.debug) {
+    log('globbing with options:', opts, 'cwd:', cwd);
   }
 
-  if (Array.isArray(options.patterns) && options.patterns.length === 0) {
+  if (Array.isArray(opts.patterns) && opts.patterns.length === 0) {
     return sync ? [] : Promise.resolve([]);
   }
 
@@ -131,57 +140,42 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     depthOffset: 0
   };
 
-  const processed = processPatterns(options, cwd, props);
+  const processed = processPatterns(opts, cwd, props);
   props.root = props.root.replace(BACKSLASHES, '');
   const root = props.root;
 
-  if (options.debug) {
+  if (opts.debug) {
     log('internal processing patterns:', processed);
     log('internal properties:', props);
   }
 
-  const api = buildFdir(options, props, processed, cwd, root);
+  const api = buildFdir(opts, props, processed, cwd, root);
 
-  if (cwd === root || options.absolute) {
+  if (cwd === root || opts.absolute) {
     return sync ? api.sync() : api.withPromise();
   }
 
   return sync ? formatPaths(api.sync(), cwd, root) : api.withPromise().then(paths => formatPaths(paths, cwd, root));
 }
 
-export function glob(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): Promise<string[]>;
-export function glob(options: GlobOptions): Promise<string[]>;
-export async function glob(
-  patternsOrOptions: string | string[] | GlobOptions,
-  options?: GlobOptions
-): Promise<string[]> {
-  if (patternsOrOptions && options?.patterns) {
-    throw new Error('Cannot pass patterns as both an argument and an option');
+function validateInput(input: Input, options?: Partial<GlobOptions>) {
+  if (input && options?.patterns) {
+    throw new Error('Cannot pass patterns as both an argument and an option.')
   }
-
-  const opts =
-    Array.isArray(patternsOrOptions) || typeof patternsOrOptions === 'string'
-      ? { ...options, patterns: patternsOrOptions }
-      : patternsOrOptions;
-  const cwd = opts.cwd ? path.resolve(opts.cwd).replace(BACKSLASHES, '/') : process.cwd().replace(BACKSLASHES, '/');
-
-  return crawl(opts, cwd, false);
 }
 
-export function globSync(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): string[];
-export function globSync(options: GlobOptions): string[];
-export function globSync(patternsOrOptions: string | string[] | GlobOptions, options?: GlobOptions): string[] {
-  if (patternsOrOptions && options?.patterns) {
-    throw new Error('Cannot pass patterns as both an argument and an option');
-  }
+export function glob(patterns: string | string[], options?: Omit<Partial<GlobOptions>, 'patterns'>): Promise<string[]>;
+export function glob(options: Partial<GlobOptions>): Promise<string[]>;
+export async function glob(input: Input, options?: Partial<GlobOptions>): Promise<string[]> {
+  validateInput(input, options);
+  return crawl(input, options, false);
+}
 
-  const opts =
-    Array.isArray(patternsOrOptions) || typeof patternsOrOptions === 'string'
-      ? { ...options, patterns: patternsOrOptions }
-      : patternsOrOptions;
-  const cwd = opts.cwd ? path.resolve(opts.cwd).replace(BACKSLASHES, '/') : process.cwd().replace(BACKSLASHES, '/');
-
-  return crawl(opts, cwd, true);
+export function globSync(patterns: string | string[], options?: Omit<Partial<GlobOptions>, 'patterns'>): string[];
+export function globSync(options: Partial<GlobOptions>): string[];
+export function globSync(input: Input, options?: Partial<GlobOptions>): string[] {
+  validateInput(input, options);
+  return crawl(input, options, true);
 }
 
 export { convertPathToPattern, escapePath, isDynamicPattern } from './utils.ts';
