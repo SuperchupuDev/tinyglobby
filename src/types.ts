@@ -8,6 +8,7 @@ export interface GlobOptions {
    * @default false
    */
   absolute?: boolean;
+<<<<<<< HEAD
   /**
    * Enables support for brace expansion syntax, like `{a,b}` or `{1..9}`.
    * @default true
@@ -17,6 +18,14 @@ export interface GlobOptions {
    * Whether to match in case-sensitive mode.
    * @default true
    */
+=======
+  cwd: string;
+  patterns: string | string[];
+  ignore?: string | string[];
+  dot?: boolean;
+  deep?: number;
+  followSymbolicLinks?: boolean;
+>>>>>>> 7b92ffa (perf: overhaul tinyglobby options building)
   caseSensitiveMatch?: boolean;
   /**
    * The working directory in which to search. Results will be returned relative to this directory, unless
