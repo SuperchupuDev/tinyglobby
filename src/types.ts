@@ -21,7 +21,7 @@ export interface GlobOptions {
 =======
   cwd: string;
   patterns: string | string[];
-  ignore?: string | string[];
+  ignore: string | string[];
   dot?: boolean;
   deep?: number;
   followSymbolicLinks?: boolean;
@@ -107,8 +107,10 @@ export interface GlobOptions {
 }
 
 export interface InternalProps {
+  cwd: string
   root: string;
   commonPath: string[] | null;
+  expandDirs: boolean,
   depthOffset: number;
 }
 

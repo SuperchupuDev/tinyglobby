@@ -300,6 +300,8 @@ function getCrawler(patterns?: string | readonly string[], inputOptions: Omit<Gl
   }
 
   const props: InternalProps = {
+    cwd,
+    expandDirs: opts.expandDirectories,
     root: cwd,
     commonPath: null,
     depthOffset: 0
