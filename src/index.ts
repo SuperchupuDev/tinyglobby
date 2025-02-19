@@ -112,12 +112,11 @@ function crawl(input: Input, options: Partial<GlobOptions> | undefined, sync: bo
   const opts = getOptions(input, options);
   const cwd = opts.cwd;
 
-
   if (opts.debug) {
     log('globbing with options:', opts, 'cwd:', cwd);
   }
 
-  if (Array.isArray(opts.patterns) && opts.patterns.length === 0) {
+  if (!opts.patterns.length) {
     return sync ? [] : Promise.resolve([]);
   }
 
