@@ -133,7 +133,7 @@ function normalizePattern(
     result = pattern.slice(0, -1);
   }
   // using a directory as entry should match all files inside it
-  if (!result.endsWith('*') && props.expandDirs) {
+  if (!result.endsWith('*') && opts.expandDirectories) {
     result += '/**';
   }
 
@@ -219,7 +219,7 @@ function processPatterns(
     }
     // don't handle negated patterns here for consistency with fast-glob
     if (pattern[0] !== '!' || pattern[1] === '(') {
-      ignorePatterns.push(normalizePattern(pattern, props, true));
+      ignorePatterns.push(normalizePattern(pattern, props, opts, true));
     }
   }
 
@@ -228,9 +228,9 @@ function processPatterns(
       continue;
     }
     if (pattern[0] !== '!' || pattern[1] === '(') {
-      matchPatterns.push(normalizePattern(pattern, props, false));
+      matchPatterns.push(normalizePattern(pattern, props, opts, false));
     } else if (pattern[1] !== '!' || pattern[2] === '(') {
-      ignorePatterns.push(normalizePattern(pattern.slice(1), props, true));
+      ignorePatterns.push(normalizePattern(pattern.slice(1), props, opts, true));
     }
   }
 
@@ -282,8 +282,6 @@ function getCrawler(patterns?: string | readonly string[], inputOptions: Omit<Gl
   }
 
   const props: InternalProps = {
-    cwd,
-    expandDirs: opts.expandDirectories,
     root: cwd,
     commonPath: null,
     depthOffset: 0
