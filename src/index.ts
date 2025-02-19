@@ -237,6 +237,18 @@ function processPatterns(
   return { match: matchPatterns, ignore: ignorePatterns };
 }
 
+// Only the literal type doesn't emit any typescript errors
+const defaultOptions = {
+  expandDirectories: true,
+  debug: !!process.env.TINYGLOBBY_DEBUG,
+  ignore: [],
+  // tinyglobby exclusive behavior, should be considered deprecated
+  patterns: ['**/*'],
+  caseSensitiveMatch: true,
+  followSymbolicLinks: true,
+  onlyFiles: true
+}
+
 function validateInput(input: Input, options?: Partial<GlobOptions>) {
   if (input && options?.patterns) {
     throw new Error('Cannot pass patterns as both an argument and an option.')

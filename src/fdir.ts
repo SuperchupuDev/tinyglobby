@@ -36,7 +36,8 @@ export function formatPaths(paths: string[], cwd: string, root: string): string[
 
 // #region buildFdir
 export function buildFdir(options: GlobOptions, props: InternalProps, processed: ProcessedPatterns, cwd: string, root: string): APIBuilder<PathsOutput> {
-  const nocase = options.caseSensitiveMatch === false;
+  const { absolute, debug, followSymbolicLinks, onlyDirectories } = options
+  const nocase = !options.caseSensitiveMatch;
 
   const matcher = picomatch(processed.match, {
     dot: options.dot,
@@ -47,9 +48,6 @@ export function buildFdir(options: GlobOptions, props: InternalProps, processed:
   const partialMatcherOptions: PartialMatcherOptions = { dot: options.dot, nocase };
   const ignore = picomatch(processed.ignore, partialMatcherOptions);
   const partialMatcher = getPartialMatcher(processed.match, partialMatcherOptions);
-
-  const { absolute, onlyDirectories, debug } = options
-  const followSymlinks = options.followSymbolicLinks === false;
 
   return new fdir({
     filters: [(p, isDirectory) => {
@@ -72,10 +70,10 @@ export function buildFdir(options: GlobOptions, props: InternalProps, processed:
     relativePaths: !absolute,
     resolvePaths: absolute,
     includeBasePath: absolute,
-    resolveSymlinks: !followSymlinks,
-    excludeSymlinks: followSymlinks,
+    resolveSymlinks: followSymbolicLinks,
+    excludeSymlinks: !followSymbolicLinks,
     excludeFiles: onlyDirectories,
-    includeDirs: onlyDirectories || options.onlyFiles === false,
+    includeDirs: onlyDirectories || !options.onlyFiles,
     maxDepth: options.deep && Math.round(options.deep - props.depthOffset)
   }).crawl(root);
 }
