@@ -237,6 +237,12 @@ function processPatterns(
   return { match: matchPatterns, ignore: ignorePatterns };
 }
 
+function validateInput(input: Input, options?: Partial<GlobOptions>) {
+  if (input && options?.patterns) {
+    throw new Error('Cannot pass patterns as both an argument and an option.')
+  }
+}
+
 function formatPaths(paths: string[], relative: (p: string) => string) {
   for (let i = paths.length - 1; i >= 0; i--) {
     const path = paths[i];
