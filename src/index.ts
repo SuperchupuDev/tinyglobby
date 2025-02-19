@@ -110,6 +110,12 @@ function processPatterns(
   return { match: matchPatterns, ignore: ignorePatterns };
 }
 
+function validateInput(input: Input, options?: Partial<GlobOptions>) {
+  if (input && options?.patterns) {
+    throw new Error('Cannot pass patterns as both an argument and an option.')
+  }
+}
+
 function getOptions(input: Input, options?: Partial<GlobOptions>): GlobOptions {
   const opts = Array.isArray(input) || typeof input === 'string' ? { ...options, patterns: input } : input;
   opts.cwd = (opts.cwd ? path.resolve(opts.cwd) : process.cwd()).replace(BACKSLASHES, '/');
@@ -119,6 +125,7 @@ function getOptions(input: Input, options?: Partial<GlobOptions>): GlobOptions {
 function crawl(input: Input, options: Partial<GlobOptions> | undefined, sync: false): Promise<string[]>;
 function crawl(input: Input, options: Partial<GlobOptions> | undefined, sync: true): string[];
 function crawl(input: Input, options: Partial<GlobOptions> | undefined, sync: boolean) {
+  validateInput(input, options);
   const opts = getOptions(input, options);
   const cwd = opts.cwd;
 
@@ -158,23 +165,15 @@ function crawl(input: Input, options: Partial<GlobOptions> | undefined, sync: bo
   return sync ? formatPaths(api.sync(), cwd, root) : api.withPromise().then(paths => formatPaths(paths, cwd, root));
 }
 
-function validateInput(input: Input, options?: Partial<GlobOptions>) {
-  if (input && options?.patterns) {
-    throw new Error('Cannot pass patterns as both an argument and an option.')
-  }
-}
-
 export function glob(patterns: string | string[], options?: Omit<Partial<GlobOptions>, 'patterns'>): Promise<string[]>;
 export function glob(options: Partial<GlobOptions>): Promise<string[]>;
 export async function glob(input: Input, options?: Partial<GlobOptions>): Promise<string[]> {
-  validateInput(input, options);
   return crawl(input, options, false);
 }
 
 export function globSync(patterns: string | string[], options?: Omit<Partial<GlobOptions>, 'patterns'>): string[];
 export function globSync(options: Partial<GlobOptions>): string[];
 export function globSync(input: Input, options?: Partial<GlobOptions>): string[] {
-  validateInput(input, options);
   return crawl(input, options, true);
 }
 
