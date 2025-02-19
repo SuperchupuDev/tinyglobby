@@ -49,6 +49,7 @@ globSync(['src/**/*.ts'], { ignore: ['**/*.d.ts'] });
 
 <!-- should be sorted by weekly download count -->
 - [`vite`](https://github.com/vitejs/vite)
+- [`node-gyp`](https://github.com/nodejs/node-gyp)
 - [`eslint-import-resolver-typescript`](https://github.com/import-js/eslint-import-resolver-typescript)
 - [`vitest`](https://github.com/vitest-dev/vitest)
 - [`ts-morph`](https://github.com/dsherret/ts-morph)
@@ -59,8 +60,6 @@ globSync(['src/**/*.ts'], { ignore: ['**/*.d.ts'] });
 - [`vite-plugin-checker`](https://github.com/fi3ework/vite-plugin-checker)
 - [`cspell`](https://github.com/streetsidesoftware/cspell)
 - [`nuxt`](https://github.com/nuxt/nuxt)
-- [`json-schema-to-typescript`](https://github.com/bcherny/json-schema-to-typescript)
-- [`vite-plugin-pwa`](https://github.com/vite-pwa/vite-plugin-pwa)
 - [`postcss-mixins`](https://github.com/postcss/postcss-mixins)
 - [`unocss`](https://github.com/unocss/unocss)
 - [`vitepress`](https://github.com/vuejs/vitepress)
