@@ -107,10 +107,8 @@ export interface GlobOptions {
 }
 
 export interface InternalProps {
-  cwd: string
   root: string;
   commonPath: string[] | null;
-  expandDirs: boolean,
   depthOffset: number;
 }
 
