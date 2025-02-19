@@ -104,8 +104,8 @@ export interface InternalProps {
 }
 
 export interface ProcessedPatterns {
-    match: string[];
-    ignore: string[];
+  match: string[];
+  ignore: string[];
 }
 
 // temporary workaround for https://github.com/rolldown/tsdown/issues/391
@@ -117,3 +117,5 @@ export interface PartialMatcherOptions {
   noglobstar?: boolean;
   posix?: boolean;
 }
+
+export type Input = string | string[] | Partial<GlobOptions>;

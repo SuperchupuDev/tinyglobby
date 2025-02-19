@@ -376,7 +376,7 @@ function getCrawler(patterns?: string | readonly string[], inputOptions: Omit<Gl
   props.root = props.root.replace(BACKSLASHES, '');
   const root = props.root;
 
-  if (options.debug) {
+  if (opts.debug) {
     log('internal processing patterns:', processed);
     log('internal properties:', props);
   }
