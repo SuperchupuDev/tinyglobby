@@ -90,10 +90,21 @@ function processPatterns(opts: GlobOptions, props: InternalProps): ProcessedPatt
   return { match: matchPatterns, ignore: ignorePatterns };
 }
 
+// Only the literal type doesn't emit any typescript errors
+const defaultOptions = {
+  expandDirectories: true,
+  debug: !!process.env.TINYGLOBBY_DEBUG,
+  ignore: [],
+  // tinyglobby exclusive behavior, should be considered deprecated
+  patterns: ['**/*'],
+  caseSensitiveMatch: true,
+  followSymbolicLinks: true,
+  onlyFiles: true
+}
+
 function getOptions(input: Input, options?: Partial<GlobOptions>): GlobOptions {
   const opts = {
-     // patterns: ['**/*'] is tinyglobby exclusive behavior, should be considered deprecated
-    ...{ expandDirectories: true, debug: !!process.env.TINYGLOBBY_DEBUG, ignore: [], patterns: ['**/*'] },
+    ...defaultOptions,
     ...(Array.isArray(input) || typeof input === 'string' ? { ...options, patterns: input } : input)
   };
   opts.cwd = (opts.cwd ? path.resolve(opts.cwd) : process.cwd()).replace(BACKSLASHES, '/');
