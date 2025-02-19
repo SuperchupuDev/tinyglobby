@@ -7,14 +7,14 @@ const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
 const BACKSLASHES = /\\/g;
 
-function normalizePattern(pattern: string, props: InternalProps, isIgnore: boolean): string {
-  const cwd = props.cwd
+function normalizePattern(pattern: string, props: InternalProps, opts: GlobOptions, isIgnore: boolean): string {
+  const cwd = opts.cwd
   let result: string = pattern;
   if (pattern.endsWith('/')) {
     result = pattern.slice(0, -1);
   }
   // using a directory as entry should match all files inside it
-  if (!result.endsWith('*') && props.expandDirs) {
+  if (!result.endsWith('*') && opts.expandDirectories) {
     result += '/**';
   }
 
@@ -72,7 +72,7 @@ function processPatterns(opts: GlobOptions, props: InternalProps): ProcessedPatt
     }
     // don't handle negated patterns here for consistency with fast-glob
     if (pattern[0] !== '!' || pattern[1] === '(') {
-      ignorePatterns.push(normalizePattern(pattern, props, true));
+      ignorePatterns.push(normalizePattern(pattern, props, opts, true));
     }
   }
 
@@ -81,9 +81,9 @@ function processPatterns(opts: GlobOptions, props: InternalProps): ProcessedPatt
       continue;
     }
     if (pattern[0] !== '!' || pattern[1] === '(') {
-      matchPatterns.push(normalizePattern(pattern, props, false));
+      matchPatterns.push(normalizePattern(pattern, props, opts, false));
     } else if (pattern[1] !== '!' || pattern[2] === '(') {
-      ignorePatterns.push(normalizePattern(pattern.slice(1), props, true));
+      ignorePatterns.push(normalizePattern(pattern.slice(1), props, opts, true));
     }
   }
 
@@ -125,8 +125,6 @@ function crawl(input: Input, options: Partial<GlobOptions> | undefined, sync: bo
   }
 
   const props: InternalProps = {
-    cwd,
-    expandDirs: opts.expandDirectories,
     root: cwd,
     commonPath: null,
     depthOffset: 0
