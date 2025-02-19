@@ -2,20 +2,22 @@ export interface GlobOptions {
   absolute?: boolean;
   cwd: string;
   patterns: string | string[];
-  ignore?: string | string[];
+  ignore: string | string[];
   dot?: boolean;
   deep?: number;
   followSymbolicLinks?: boolean;
   caseSensitiveMatch?: boolean;
-  expandDirectories?: boolean;
+  expandDirectories: boolean;
   onlyDirectories?: boolean;
   onlyFiles?: boolean;
   debug?: boolean;
 }
 
 export interface InternalProps {
+  cwd: string
   root: string;
   commonPath: string[] | null;
+  expandDirs: boolean,
   depthOffset: number;
 }
 

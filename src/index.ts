@@ -1,5 +1,5 @@
 import path, { posix } from 'node:path';
-import { escapePath, isDynamicPattern, log, splitPattern } from './utils.ts';
+import { ensureStringArray, escapePath, isDynamicPattern, log, splitPattern } from './utils.ts';
 import type { GlobOptions, Input, InternalProps, ProcessedPatterns } from './types.ts';
 import { buildFdir, formatPaths } from './fdir.ts';
 
@@ -7,19 +7,14 @@ const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
 const BACKSLASHES = /\\/g;
 
-function normalizePattern(
-  pattern: string,
-  expandDirectories: boolean,
-  cwd: string,
-  props: InternalProps,
-  isIgnore: boolean
-) {
+function normalizePattern(pattern: string, props: InternalProps, isIgnore: boolean): string {
+  const cwd = props.cwd
   let result: string = pattern;
   if (pattern.endsWith('/')) {
     result = pattern.slice(0, -1);
   }
   // using a directory as entry should match all files inside it
-  if (!result.endsWith('*') && expandDirectories) {
+  if (!result.endsWith('*') && props.expandDirs) {
     result += '/**';
   }
 
@@ -29,12 +24,12 @@ function normalizePattern(
     result = posix.normalize(result);
   }
 
-  const parentDirectoryMatch = PARENT_DIRECTORY.exec(result);
-  if (parentDirectoryMatch?.[0]) {
-    const potentialRoot = posix.join(cwd, parentDirectoryMatch[0]);
+  const parentDir = PARENT_DIRECTORY.exec(result)?.[0];
+  if (parentDir) {
+    const potentialRoot = posix.join(cwd, parentDir);
     if (props.root.length > potentialRoot.length) {
       props.root = potentialRoot;
-      props.depthOffset = -(parentDirectoryMatch[0].length + 1) / 3;
+      props.depthOffset = -(parentDir.length + 1) / 3;
     }
   } else if (!isIgnore && props.depthOffset >= 0) {
     const parts = splitPattern(result);
@@ -67,43 +62,28 @@ function normalizePattern(
   return result;
 }
 
-function processPatterns(
-  { patterns, ignore = [], expandDirectories = true }: GlobOptions,
-  cwd: string,
-  props: InternalProps
-): ProcessedPatterns {
-  if (typeof patterns === 'string') {
-    patterns = [patterns];
-  } else if (!patterns) {
-    // tinyglobby exclusive behavior, should be considered deprecated
-    patterns = ['**/*'];
-  }
-
-  if (typeof ignore === 'string') {
-    ignore = [ignore];
-  }
-
+function processPatterns(opts: GlobOptions, props: InternalProps): ProcessedPatterns {
   const matchPatterns: string[] = [];
   const ignorePatterns: string[] = [];
 
-  for (const pattern of ignore) {
+  for (const pattern of opts.ignore) {
     if (!pattern) {
       continue;
     }
     // don't handle negated patterns here for consistency with fast-glob
     if (pattern[0] !== '!' || pattern[1] === '(') {
-      ignorePatterns.push(normalizePattern(pattern, expandDirectories, cwd, props, true));
+      ignorePatterns.push(normalizePattern(pattern, props, true));
     }
   }
 
-  for (const pattern of patterns) {
+  for (const pattern of opts.patterns) {
     if (!pattern) {
       continue;
     }
     if (pattern[0] !== '!' || pattern[1] === '(') {
-      matchPatterns.push(normalizePattern(pattern, expandDirectories, cwd, props, false));
+      matchPatterns.push(normalizePattern(pattern, props, false));
     } else if (pattern[1] !== '!' || pattern[2] === '(') {
-      ignorePatterns.push(normalizePattern(pattern.slice(1), expandDirectories, cwd, props, true));
+      ignorePatterns.push(normalizePattern(pattern.slice(1), props, true));
     }
   }
 
@@ -117,8 +97,14 @@ function validateInput(input: Input, options?: Partial<GlobOptions>) {
 }
 
 function getOptions(input: Input, options?: Partial<GlobOptions>): GlobOptions {
-  const opts = Array.isArray(input) || typeof input === 'string' ? { ...options, patterns: input } : input;
+  const opts = {
+     // patterns: ['**/*'] is tinyglobby exclusive behavior, should be considered deprecated
+    ...{ expandDirectories: true, debug: !!process.env.TINYGLOBBY_DEBUG, ignore: [], patterns: ['**/*'] },
+    ...(Array.isArray(input) || typeof input === 'string' ? { ...options, patterns: input } : input)
+  };
   opts.cwd = (opts.cwd ? path.resolve(opts.cwd) : process.cwd()).replace(BACKSLASHES, '/');
+  opts.ignore = ensureStringArray(opts.ignore)
+  opts.patterns = ensureStringArray(opts.patterns)
   return opts as GlobOptions
 }
 
@@ -129,9 +115,6 @@ function crawl(input: Input, options: Partial<GlobOptions> | undefined, sync: bo
   const opts = getOptions(input, options);
   const cwd = opts.cwd;
 
-  if (process.env.TINYGLOBBY_DEBUG) {
-    opts.debug = true;
-  }
 
   if (opts.debug) {
     log('globbing with options:', opts, 'cwd:', cwd);
@@ -142,12 +125,14 @@ function crawl(input: Input, options: Partial<GlobOptions> | undefined, sync: bo
   }
 
   const props: InternalProps = {
+    cwd,
+    expandDirs: opts.expandDirectories,
     root: cwd,
     commonPath: null,
     depthOffset: 0
   };
 
-  const processed = processPatterns(opts, cwd, props);
+  const processed = processPatterns(opts, props);
   props.root = props.root.replace(BACKSLASHES, '');
   const root = props.root;
 
