@@ -1,14 +1,14 @@
 import path, { posix } from 'node:path';
-import { ensureStringArray, escapePath, isDynamicPattern, log, splitPattern } from './utils.ts';
-import type { GlobOptions, Input, InternalProps, ProcessedPatterns } from './types.ts';
 import { buildFdir, formatPaths } from './fdir.ts';
+import type { GlobOptions, Input, InternalProps, ProcessedPatterns } from './types.ts';
+import { ensureStringArray, escapePath, isDynamicPattern, log, splitPattern } from './utils.ts';
 
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
 const BACKSLASHES = /\\/g;
 
 function normalizePattern(pattern: string, props: InternalProps, opts: GlobOptions, isIgnore: boolean): string {
-  const cwd = opts.cwd
+  const cwd = opts.cwd;
   let result: string = pattern;
   if (pattern.endsWith('/')) {
     result = pattern.slice(0, -1);
@@ -100,7 +100,7 @@ const defaultOptions = {
   caseSensitiveMatch: true,
   followSymbolicLinks: true,
   onlyFiles: true
-}
+};
 
 function getOptions(input: Input, options?: Partial<GlobOptions>): GlobOptions {
   const opts = {
@@ -108,16 +108,16 @@ function getOptions(input: Input, options?: Partial<GlobOptions>): GlobOptions {
     ...(Array.isArray(input) || typeof input === 'string' ? { ...options, patterns: input } : input)
   };
   opts.cwd = (opts.cwd ? path.resolve(opts.cwd) : process.cwd()).replace(BACKSLASHES, '/');
-  opts.ignore = ensureStringArray(opts.ignore)
-  opts.patterns = ensureStringArray(opts.patterns)
-  return opts as GlobOptions
+  opts.ignore = ensureStringArray(opts.ignore);
+  opts.patterns = ensureStringArray(opts.patterns);
+  return opts as GlobOptions;
 }
 
 function crawl(input: Input, options: Partial<GlobOptions> | undefined, sync: false): Promise<string[]>;
 function crawl(input: Input, options: Partial<GlobOptions> | undefined, sync: true): string[];
 function crawl(input: Input, options: Partial<GlobOptions> | undefined, sync: boolean) {
   if (input && options?.patterns) {
-    throw new Error('Cannot pass patterns as both an argument and an option.')
+    throw new Error('Cannot pass patterns as both an argument and an option.');
   }
 
   const opts = getOptions(input, options);
