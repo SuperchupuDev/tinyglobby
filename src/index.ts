@@ -246,7 +246,8 @@ const defaultOptions = {
   patterns: ['**/*'],
   caseSensitiveMatch: true,
   followSymbolicLinks: true,
-  onlyFiles: true
+  onlyFiles: true,
+  dot: false
 };
 
 function validateInput(input: Input, options?: Partial<GlobOptions>) {
