@@ -40,8 +40,9 @@ export function buildFdir(
   props: InternalProps,
   processed: ProcessedPatterns,
   cwd: string,
-  root: string): APIBuilder<PathsOutput> {
-  const { absolute, debug, followSymbolicLinks, onlyDirectories } = options
+  root: string
+): APIBuilder<PathsOutput> {
+  const { absolute, debug, followSymbolicLinks, onlyDirectories } = options;
   const nocase = !options.caseSensitiveMatch;
 
   const matcher = picomatch(processed.match, {
