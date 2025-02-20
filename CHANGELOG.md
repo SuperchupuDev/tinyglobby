@@ -1,3 +1,13 @@
+### [0.2.12](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.11...0.2.12)
+
+#### Fixed
+
+- Using `..` inside ignore patterns could sometimes make the optimizer ignore parent directories
+
+#### Changed
+
+- The `debug` option now logs skipped directories
+
 ### [0.2.11](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.10...0.2.11)
 
 I've opened a sponsorships page! Consider sponsoring at https://github.com/sponsors/SuperchupuDev
