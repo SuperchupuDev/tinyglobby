@@ -1,4 +1,4 @@
-import picomatch, { type Matcher } from 'picomatch';
+import match, { type Matcher } from 'unmatch';
 
 // #region PARTIAL MATCHER
 export interface PartialMatcherOptions {
@@ -20,7 +20,7 @@ export function getPartialMatcher(patterns: string[], options?: PartialMatcherOp
     const partsCount = parts.length;
     const partRegexes = Array(partsCount);
     for (let j = 0; j < partsCount; j++) {
-      partRegexes[j] = picomatch.makeRe(parts[j], options);
+      partRegexes[j] = match.makeRe(parts[j], options);
     }
     regexes[i] = partRegexes;
   }
@@ -81,7 +81,7 @@ const splitPatternOptions = { parts: true };
 
 // if a pattern has no slashes outside glob symbols, results.parts is []
 export function splitPattern(path: string): string[] {
-  const result = picomatch.scan(path, splitPatternOptions);
+  const result = match.scan(path, splitPatternOptions);
   return result.parts?.length ? result.parts : [path];
 }
 // #endregion
@@ -138,7 +138,7 @@ export function isDynamicPattern(pattern: string, options?: { caseSensitiveMatch
     return true;
   }
 
-  const scan = picomatch.scan(pattern);
+  const scan = match.scan(pattern);
   return scan.isGlob || scan.negated;
 }
 // #endregion

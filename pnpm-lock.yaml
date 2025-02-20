@@ -11,9 +11,9 @@ importers:
       fdir:
         specifier: ^6.4.3
         version: 6.4.3(picomatch@4.0.2)
-      picomatch:
-        specifier: ^4.0.2
-        version: 4.0.2
+      unmatch:
+        specifier: ^1.0.1
+        version: 1.0.1
     devDependencies:
       '@biomejs/biome':
         specifier: ^1.9.4
@@ -21,9 +21,6 @@ importers:
       '@types/node':
         specifier: ^22.13.4
         version: 22.13.4
-      '@types/picomatch':
-        specifier: ^3.0.2
-        version: 3.0.2
       fs-fixture:
         specifier: ^2.7.0
         version: 2.7.0
@@ -366,9 +363,6 @@ packages:
   '@types/node@22.13.4':
     resolution: {integrity: sha512-ywP2X0DYtX3y08eFVx5fNIw7/uIv8hYUKgXoK8oayJlLnKcRfEYCxWMVE1XagUdVtCJlZT1AU4LXEABW+L1Peg==}
 
-  '@types/picomatch@3.0.2':
-    resolution: {integrity: sha512-n0i8TD3UDB7paoMMxA3Y65vUncFJXjcUf7lQY7YyKGl6031FNjfsLs6pdLFCy2GNFxItPJG8GvvpbZc2skH7WA==}
-
   ansi-regex@5.0.1:
     resolution: {integrity: sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ==}
     engines: {node: '>=8'}
@@ -669,6 +663,10 @@ packages:
   undici-types@6.20.0:
     resolution: {integrity: sha512-Ny6QZ2Nju20vw1SRHe3d9jVu6gJ+4e3+MMpqu7pqE5HT6WsTSlce++GQmK5UXS8mzV8DSYHrQH+Xrf2jVcuKNg==}
 
+  unmatch@1.0.1:
+    resolution: {integrity: sha512-Fe6Mi4RUci7pappunyfLbU0m+vq4xNkgjXXMmMzv58F3hQs3N4fg1oiAeGE7P6O8y6g+ck3RpbMn5CiLTHHysQ==}
+    engines: {node: '>=12'}
+
   webidl-conversions@4.0.2:
     resolution: {integrity: sha512-YQ+BmxuTgd6UXZW3+ICGfyqRyHXVlD5GtQr5+qjiNW7bF0cqrzX500HVXPBOvgXb5YnzDd+h0zqyv61KUD7+Sg==}
 
@@ -891,8 +889,6 @@ snapshots:
   '@types/node@22.13.4':
     dependencies:
       undici-types: 6.20.0
-
-  '@types/picomatch@3.0.2': {}
 
   ansi-regex@5.0.1: {}
 
@@ -1182,6 +1178,8 @@ snapshots:
   typescript@5.7.3: {}
 
   undici-types@6.20.0: {}
+
+  unmatch@1.0.1: {}
 
   webidl-conversions@4.0.2: {}
 
