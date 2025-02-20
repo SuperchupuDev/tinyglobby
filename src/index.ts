@@ -99,7 +99,8 @@ const defaultOptions = {
   patterns: ['**/*'],
   caseSensitiveMatch: true,
   followSymbolicLinks: true,
-  onlyFiles: true
+  onlyFiles: true,
+  dot: false
 };
 
 function getOptions(input: Input, options?: Partial<GlobOptions>): GlobOptions {
