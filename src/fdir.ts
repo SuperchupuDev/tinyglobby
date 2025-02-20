@@ -1,5 +1,5 @@
 import { posix } from 'node:path';
-import { fdir, type PathsOutput } from 'fdir';
+import { type PathsOutput, fdir } from 'fdir';
 import type { APIBuilder } from 'fdir/dist/builder/api-builder';
 import picomatch from "picomatch";
 import type { GlobOptions, InternalProps, PartialMatcherOptions, ProcessedPatterns } from "./types.ts";
@@ -35,7 +35,12 @@ export function formatPaths(paths: string[], cwd: string, root: string): string[
 // #endregion formatPaths
 
 // #region buildFdir
-export function buildFdir(options: GlobOptions, props: InternalProps, processed: ProcessedPatterns, cwd: string, root: string): APIBuilder<PathsOutput> {
+export function buildFdir(
+  options: GlobOptions,
+  props: InternalProps,
+  processed: ProcessedPatterns,
+  cwd: string,
+  root: string): APIBuilder<PathsOutput> {
   const { absolute, debug, followSymbolicLinks, onlyDirectories } = options
   const nocase = !options.caseSensitiveMatch;
 
@@ -50,14 +55,16 @@ export function buildFdir(options: GlobOptions, props: InternalProps, processed:
   const partialMatcher = getPartialMatcher(processed.match, partialMatcherOptions);
 
   return new fdir({
-    filters: [(p, isDirectory) => {
-      const path = processPath(p, cwd, root, isDirectory, absolute);
-      const matches = matcher(path);
-      if (debug && matches) {
-        log(`matched ${path}`);
+    filters: [
+      (p, isDirectory) => {
+        const path = processPath(p, cwd, root, isDirectory, absolute);
+        const matches = matcher(path);
+        if (debug && matches) {
+          log(`matched ${path}`);
+        }
+        return matches;
       }
-      return matches;
-    }],
+    ],
     exclude: (_, p) => {
       const relativePath = processPath(p, cwd, root, true, true);
       const skipped = (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);

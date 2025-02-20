@@ -216,6 +216,6 @@ export function log(...tasks: unknown[]): void {
 
 // #region ensureStringArray
 export function ensureStringArray(value: string | string[]): string[] {
-  return typeof value === 'string' ? [value] : value
+  return typeof value === 'string' ? [value] : value;
 }
 // #endregion ensureStringArray
