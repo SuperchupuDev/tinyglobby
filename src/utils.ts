@@ -35,7 +35,7 @@ export function getPartialMatcher(patterns: string[], options: PartialMatcherOpt
     // normally the parent directory would not get crawled
     // and as such wrong results would be returned
     // to avoid this always return true if the input only consists of .. ../.. etc
-    if (input.startsWith('..') && ONLY_PARENT_DIRECTORIES.test(input)) {
+    if (input[0] === '.' && input[1] === '.' && ONLY_PARENT_DIRECTORIES.test(input)) {
       return true;
     }
     // no need to `splitPattern` as this is indeed not a pattern
