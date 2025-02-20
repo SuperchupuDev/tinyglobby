@@ -46,7 +46,12 @@ describe('getPartialMatcher', () => {
 
   test("** doesn't match ..", () => {
     const matcher = getPartialMatcher(['**']);
-    assert.ok(!matcher('..'));
+    assert.ok(!matcher('../hi'));
+  });
+
+  test('always match inputs with only parent directories', () => {
+    const matcher = getPartialMatcher(['**']);
+    assert.ok(matcher('../../..'));
   });
 
   test('for now treats parts with / as **', () => {

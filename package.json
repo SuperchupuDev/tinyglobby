@@ -1,6 +1,6 @@
 {
   "name": "tinyglobby",
-  "version": "0.2.10",
+  "version": "0.2.12",
   "description": "A fast and minimal alternative to globby and fast-glob",
   "scripts": {
     "build": "tsup",
@@ -40,16 +40,19 @@
     "url": "https://github.com/SuperchupuDev/tinyglobby/issues"
   },
   "homepage": "https://github.com/SuperchupuDev/tinyglobby#readme",
+  "funding": {
+    "url": "https://github.com/sponsors/SuperchupuDev"
+  },
   "dependencies": {
     "fdir": "^6.4.3",
     "picomatch": "^4.0.2"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@types/node": "^22.10.7",
+    "@types/node": "^22.13.4",
     "@types/picomatch": "^3.0.2",
-    "fs-fixture": "^2.6.0",
-    "tsup": "^8.3.5",
+    "fs-fixture": "^2.7.0",
+    "tsup": "^8.3.6",
     "typescript": "^5.7.3"
   },
   "engines": {
@@ -59,5 +62,5 @@
     "access": "public",
     "provenance": true
   },
-  "packageManager": "pnpm@9.15.4"
+  "packageManager": "pnpm@10.4.1"
 }

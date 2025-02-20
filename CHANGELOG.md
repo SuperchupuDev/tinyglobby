@@ -1,3 +1,46 @@
+### [0.2.12](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.11...0.2.12)
+
+#### Fixed
+
+- Using `..` inside ignore patterns could sometimes make the optimizer ignore parent directories
+
+#### Changed
+
+- The `debug` option now logs skipped directories
+
+### [0.2.11](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.10...0.2.11)
+
+I've opened a sponsorships page! Consider sponsoring at https://github.com/sponsors/SuperchupuDev
+if you'd like to support the development of this project. This is a huge release in a technical aspect
+that took many months to get right.
+
+#### Added
+
+- New optimizer to avoid crawling directories with entries that will never match.
+
+  This is a huge performance improvement and it should solve most if not all performance issues in the library.
+
+  This has taken many months to figure out and implement and has gotten through three different implementations
+  with the help and/or advice of many people, most from [e18e](https://e18e.dev):
+  - [benmccann](https://github.com/benmcann)
+  - [Fuzzyma](https://github.com/Fuzzyma)
+  - [43081j](https://github.com/43081j)
+  - [jviide](https://github.com/jviide)
+  - [pralkarz](https://github.com/pralkarz)
+  - [xiboon](https://github.com/xiboon)
+  - [xuanduc987](https://github.com/xuanduc987)
+  - [thecodrr](https://github.com/thecodrr) for merging a important upstream fix
+
+- Other performance improvements, such as early returning without patterns by [bluwy](https://github.com/bluwy)
+and micro-optimizations by [Torathion](https://github.com/Torathion)
+
+- `debug` option. Useful for development purposes
+
+#### Fixed
+
+- Usage of escaped patterns with a cwd that partially matches the pattern
+- Unsupported usages of backslashes making the library really slow. It should be way faster now thanks to the new optimizer
+
 ### [0.2.10](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.9...0.2.10)
 
 #### Added

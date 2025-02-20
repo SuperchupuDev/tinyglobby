@@ -219,7 +219,9 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
           const relativePath = processPath(p, cwd, props.root, true, true);
           const skipped = (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
 
-          if (!skipped) {
+          if (skipped) {
+            log(`skipped ${p}`);
+          } else {
             log(`crawling ${p}`);
           }
 
