@@ -61,8 +61,8 @@ export function buildFdir(options: GlobOptions, props: InternalProps, processed:
     exclude: (_, p) => {
       const relativePath = processPath(p, cwd, root, true, true);
       const skipped = (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
-      if (debug && !skipped) {
-        log(`crawling ${p}`);
+      if (debug) {
+        log(`${skipped ? 'skipped' : 'crawling'} ${p}`);
       }
       return skipped;
     },
