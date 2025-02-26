@@ -52,6 +52,7 @@ globSync(['src/**/*.ts'], { ignore: ['**/*.d.ts'] });
 - [`node-gyp`](https://github.com/nodejs/node-gyp)
 - [`eslint-import-resolver-typescript`](https://github.com/import-js/eslint-import-resolver-typescript)
 - [`vitest`](https://github.com/vitest-dev/vitest)
+- [`copy-webpack-plugin`](https://github.com/webpack-contrib/copy-webpack-plugin)
 - [`ts-morph`](https://github.com/dsherret/ts-morph)
 - [`nx`](https://github.com/nrwl/nx)
 - [`sort-package-json`](https://github.com/keithamus/sort-package-json)
