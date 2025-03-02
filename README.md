@@ -49,6 +49,7 @@ globSync(['src/**/*.ts'], { ignore: ['**/*.d.ts'] });
 
 <!-- should be sorted by weekly download count -->
 - [`vite`](https://github.com/vitejs/vite)
+- [`pnpm`](https://github.com/pnpm/pnpm)
 - [`node-gyp`](https://github.com/nodejs/node-gyp)
 - [`eslint-import-resolver-typescript`](https://github.com/import-js/eslint-import-resolver-typescript)
 - [`vitest`](https://github.com/vitest-dev/vitest)
