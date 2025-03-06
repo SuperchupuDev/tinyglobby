@@ -56,7 +56,7 @@ function normalizePattern(pattern: string, props: InternalProps, opts: GlobOptio
     props.depthOffset = newCommonPath.length;
     props.commonPath = newCommonPath;
 
-    props.root = newCommonPath.length > 0 ? path.posix.join(cwd, ...newCommonPath) : cwd;
+    props.root = newCommonPath.length > 0 ? posix.join(cwd, ...newCommonPath) : cwd;
   }
 
   return result;
