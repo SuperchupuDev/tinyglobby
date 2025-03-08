@@ -101,6 +101,12 @@ export function convertWin32PathToPattern(path: string): string {
   return escapeWin32Path(path).replace(ESCAPED_WIN32_BACKSLASHES, '/');
 }
 
+/**
+ * Converts a path to a pattern depending on the platform.
+ *
+ * @param path - The path to convert.
+ * @returns The converted pattern.
+ */
 export const convertPathToPattern: (path: string) => string = isWin
   ? convertWin32PathToPattern
   : convertPosixPathToPattern;
@@ -120,6 +126,12 @@ const WIN32_UNESCAPED_GLOB_SYMBOLS = /(?<!\\)([()[\]{}]|^!|[!+@](?=\())/g;
 export const escapePosixPath = (path: string): string => path.replace(POSIX_UNESCAPED_GLOB_SYMBOLS, '\\$&');
 export const escapeWin32Path = (path: string): string => path.replace(WIN32_UNESCAPED_GLOB_SYMBOLS, '\\$&');
 
+/**
+ * Escapes a path's special characters depending on the platform.
+ *
+ * @param path - The path to escape.
+ * @returns The escaped path.
+ */
 export const escapePath: (path: string) => string = isWin ? escapeWin32Path : escapePosixPath;
 // #endregion
 
@@ -136,6 +148,14 @@ export const escapePath: (path: string) => string = isWin ? escapeWin32Path : es
 
   Returns true for unfinished brace expansions as long as they include `,` or `..`.
 */
+
+/**
+ * Checks if a pattern is dynamic.
+ *
+ * @param pattern - The pattern to check.
+ * @param options - The options to use.
+ * @returns `true` if the pattern is dynamic, otherwise `false`.
+ */
 export function isDynamicPattern(pattern: string, options?: { caseSensitiveMatch: boolean }): boolean {
   if (options?.caseSensitiveMatch === false) {
     return true;

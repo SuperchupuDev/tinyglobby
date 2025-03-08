@@ -7,18 +7,93 @@ const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
 const BACKSLASHES = /\\/g;
 
+/**
+ * Options for the glob search.
+ */
 export interface GlobOptions {
+  /**
+   * Whether to return absolute paths.
+   *
+   * @default false
+   */
   absolute?: boolean;
+
+  /**
+   * The current working directory in which to search.
+   *
+   * @default process.cwd()
+   */
   cwd?: string;
+
+  /**
+   * An array of glob patterns to search for.
+   *
+   * @default ['**⁣/*']
+   */
   patterns?: string | string[];
+
+  /**
+   * An array of glob patterns to ignore.
+   *
+   * @default []
+   */
   ignore?: string | string[];
+
+  /**
+   * Whether to allow entries starting with a dot.
+   *
+   * @default false
+   */
   dot?: boolean;
+
+  /**
+   * Maximum depth of a directory.
+   *
+   * @default Infinity
+   */
   deep?: number;
+
+  /**
+   * Whether to traverse and include symbolic links.
+   *
+   * @default true
+   */
   followSymbolicLinks?: boolean;
+
+  /**
+   * Whether to match in case-sensitive mode.
+   *
+   * @default true
+   */
   caseSensitiveMatch?: boolean;
+
+  /**
+   * Whether to expand directories. Disable to best match
+   * {@linkcode https://github.com/mrmlnc/fast-glob | fast-glob}.
+   *
+   * @default true
+   */
   expandDirectories?: boolean;
+
+  /**
+   * Enable to only return directories. Disables {@linkcode onlyFiles} if set.
+   *
+   * @default false
+   */
   onlyDirectories?: boolean;
+
+  /**
+   * Enable to only return files.
+   *
+   * @default true
+   */
   onlyFiles?: boolean;
+
+  /**
+   * Enable debug logs. Useful for development purposes.
+   *
+   * @default false
+   */
   debug?: boolean;
 }
 
@@ -289,8 +364,30 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
   return sync ? formatPaths(api.sync(), cwd, root) : api.withPromise().then(paths => formatPaths(paths, cwd, root));
 }
 
+/**
+ * Asynchronously search for files and directories using glob patterns.
+ *
+ * @param patterns - An array of glob patterns to search for.
+ * @param options - The {@linkcode GlobOptions | options} for the glob search.
+ * @returns A {@linkcode Promise | promise} with an array of matches.
+ */
 export function glob(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): Promise<string[]>;
+
+/**
+ * Asynchronously search for files and directories using glob patterns.
+ *
+ * @param options - The {@linkcode GlobOptions | options} for the glob search.
+ * @returns A {@linkcode Promise | promise} with an array of matches.
+ */
 export function glob(options: GlobOptions): Promise<string[]>;
+
+/**
+ * Asynchronously search for files and directories using glob patterns.
+ *
+ * @param patternsOrOptions - An array of glob patterns to search for or the options for the search.
+ * @param options - The options for the search.
+ * @returns A {@linkcode Promise | promise} with an array of matches.
+ */
 export async function glob(
   patternsOrOptions: string | string[] | GlobOptions,
   options?: GlobOptions
@@ -308,8 +405,30 @@ export async function glob(
   return crawl(opts, cwd, false);
 }
 
+/**
+ * Synchronously search for files and directories using glob patterns.
+ *
+ * @param patterns - An array of glob patterns to search for.
+ * @param options - The {@linkcode GlobOptions | options} for the glob search.
+ * @returns An array of matches.
+ */
 export function globSync(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): string[];
+
+/**
+ * Synchronously search for files and directories using glob patterns.
+ *
+ * @param options - The {@linkcode GlobOptions | options} for the glob search.
+ * @returns An array of matches.
+ */
 export function globSync(options: GlobOptions): string[];
+
+/**
+ * Synchronously search for files and directories using glob patterns.
+ *
+ * @param patternsOrOptions - An array of glob patterns to search for or the options for the search.
+ * @param options - The {@linkcode GlobOptions | options} for the glob search.
+ * @returns An array of matches.
+ */
 export function globSync(patternsOrOptions: string | string[] | GlobOptions, options?: GlobOptions): string[] {
   if (patternsOrOptions && options?.patterns) {
     throw new Error('Cannot pass patterns as both an argument and an option');
