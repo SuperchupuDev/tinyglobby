@@ -63,6 +63,7 @@ globSync(['src/**/*.ts'], { ignore: ['**/*.d.ts'] });
 - [`cspell`](https://github.com/streetsidesoftware/cspell)
 - [`nuxt`](https://github.com/nuxt/nuxt)
 - [`postcss-mixins`](https://github.com/postcss/postcss-mixins)
+- [`astro`](https://github.com/withastro/astro)
 - [`unocss`](https://github.com/unocss/unocss)
 - [`vitepress`](https://github.com/vuejs/vitepress)
 - [`pkg-pr-new`](https://github.com/stackblitz-labs/pkg.pr.new)
