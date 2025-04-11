@@ -59,7 +59,7 @@ globSync(['src/**/*.ts'], { ignore: ['**/*.d.ts'] });
 - [`sort-package-json`](https://github.com/keithamus/sort-package-json)
 - [`unimport`](https://github.com/unjs/unimport)
 - [`tsup`](https://github.com/egoist/tsup)
-- [`vite-plugin-checker`](https://github.com/fi3ework/vite-plugin-checker)
+- [`lerna`](https://github.com/lerna/lerna)
 - [`cspell`](https://github.com/streetsidesoftware/cspell)
 - [`nuxt`](https://github.com/nuxt/nuxt)
 - [`postcss-mixins`](https://github.com/postcss/postcss-mixins)
