@@ -44,7 +44,7 @@
     "url": "https://github.com/sponsors/SuperchupuDev"
   },
   "dependencies": {
-    "fdir": "^6.4.3",
+    "fdir": "^6.4.4",
     "picomatch": "^4.0.2"
   },
   "devDependencies": {
@@ -62,5 +62,11 @@
     "access": "public",
     "provenance": true
   },
-  "packageManager": "pnpm@10.4.1"
+  "packageManager": "pnpm@10.4.1",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@biomejs/biome",
+      "esbuild"
+    ]
+  }
 }
