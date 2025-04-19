@@ -52,7 +52,7 @@ test('classic patterns as first argument', async () => {
   assert.deepEqual(files.sort(), ['a/a.txt', 'a/b.txt']);
 });
 
-test("cant have both classic patterns and options' patterns", async () => {
+test("can't have both classic patterns and options' patterns", async () => {
   // @ts-expect-error
   assert.rejects(glob(['a/*.txt'], { patterns: ['whoops!'], cwd }));
 
