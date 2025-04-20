@@ -52,7 +52,7 @@ function normalizePattern(
 
   const parentDirectoryMatch = PARENT_DIRECTORY.exec(result);
   if (parentDirectoryMatch?.[0]) {
-    const potentialRoot = posix.join(cwd, parentDirectoryMatch[0]);
+    const potentialRoot = path.join(cwd, parentDirectoryMatch[0]);
     if (props.root.length > potentialRoot.length) {
       props.root = potentialRoot;
       props.depthOffset = -(parentDirectoryMatch[0].length + 1) / 3;
@@ -82,7 +82,7 @@ function normalizePattern(
     props.depthOffset = newCommonPath.length;
     props.commonPath = newCommonPath;
 
-    props.root = newCommonPath.length > 0 ? path.posix.join(cwd, ...newCommonPath) : cwd;
+    props.root = newCommonPath.length > 0 ? path.join(cwd, ...newCommonPath) : cwd;
   }
 
   return result;
