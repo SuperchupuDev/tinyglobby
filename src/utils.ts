@@ -1,10 +1,13 @@
-import picomatch, { type Matcher } from 'picomatch';
+import picomatch from 'picomatch';
 import type { PartialMatcherOptions } from './types';
+
+// can't use `Matcher` from picomatch as it requires a second argument since @types/picomatch v4
+type PartialMatcher = (test: string) => boolean;
 
 const ONLY_PARENT_DIRECTORIES = /^(\/?\.\.)+$/;
 
 // the result of over 4 months of figuring stuff out and a LOT of help
-export function getPartialMatcher(patterns: string[], options?: PartialMatcherOptions): Matcher {
+export function getPartialMatcher(patterns: string[], options?: PartialMatcherOptions): PartialMatcher {
   // you might find this code pattern odd, but apparently it's faster than using `.push()`
   const patternsCount = patterns.length;
   const patternsParts: string[][] = Array(patternsCount);

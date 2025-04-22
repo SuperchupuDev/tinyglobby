@@ -1,3 +1,12 @@
+### [0.2.13](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.12...0.2.13)
+
+#### Fixed
+
+- Performance of crawling `/` thanks to an upstream `fdir` fix by [pralkarz](https://github.com/pralkarz)
+- Path joining when crawling from `/` by [benmccann](https://github.com/benmccann)
+- Paths no longer have their first character removed in some cases when crawling from `/`
+- Added compatibility with `@types/picomatch` 4.0.0
+
 ### [0.2.12](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.11...0.2.12)
 
 #### Fixed
