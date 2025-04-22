@@ -30,3 +30,5 @@ export interface PartialMatcherOptions {
 }
 
 export type Input = string | string[] | Partial<GlobOptions>;
+// can't use `Matcher` from picomatch as it requires a second argument since @types/picomatch v4
+export type PartialMatcher = (test: string) => boolean;

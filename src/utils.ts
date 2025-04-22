@@ -1,8 +1,5 @@
 import picomatch from 'picomatch';
-import type { PartialMatcherOptions } from './types';
-
-// can't use `Matcher` from picomatch as it requires a second argument since @types/picomatch v4
-type PartialMatcher = (test: string) => boolean;
+import type { PartialMatcher, PartialMatcherOptions } from './types';
 
 const ONLY_PARENT_DIRECTORIES = /^(\/?\.\.)+$/;
 
