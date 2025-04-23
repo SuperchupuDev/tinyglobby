@@ -1,7 +1,7 @@
 import path, { posix } from 'node:path';
 import { type Options as FdirOptions, fdir } from 'fdir';
 import picomatch from 'picomatch';
-import { chalkLog, escapePath, getPartialMatcher, isDynamicPattern, log, splitPattern } from './utils.ts';
+import { coloredLog, escapePath, getPartialMatcher, isDynamicPattern, log, splitPattern } from './utils.ts';
 
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
@@ -207,7 +207,7 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
             const matches = matcher(path);
 
             if (matches) {
-              chalkLog(`matched ${path}`, 'matched');
+              coloredLog(`matched ${path}`, 'matched');
             }
 
             return matches;
@@ -220,9 +220,9 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
           const skipped = (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
 
           if (skipped) {
-            chalkLog(`skipped ${p}`, 'skipped');
+            coloredLog(`skipped ${p}`, 'skipped');
           } else {
-            chalkLog(`crawling ${p}`, 'crawling');
+            coloredLog(`crawling ${p}`, 'crawling');
           }
 
           return skipped;

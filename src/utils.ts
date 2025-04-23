@@ -150,15 +150,15 @@ export function isDynamicPattern(pattern: string, options?: { caseSensitiveMatch
 export function log(...tasks: unknown[]): void {
   console.log(`[tinyglobby ${new Date().toLocaleTimeString('es')}]`, ...tasks);
 }
-export function chalkLog(msg: string, type: string): void {
-  const _chalk = {
+export function coloredLog(msg: string, type: 'matched' | 'skipped' | 'crawling'): void {
+  const colors = {
     matched: '\x1b[32m',
     skipped: '\x1b[90m',
     crawling: '\x1b[34m'
   };
-  const chalk = _chalk[type as keyof typeof _chalk];
-  if (chalk) {
-    console.log(`${chalk}%s\x1b[0m`, `[tinyglobby ${new Date().toLocaleTimeString('es')}]${msg}`);
+  const color = colors[type as keyof typeof colors];
+  if (color) {
+    console.log(`${color}%s\x1b[0m`, `[tinyglobby ${new Date().toLocaleTimeString('es')}]${msg}`);
     return;
   }
   console.log(`[tinyglobby ${new Date().toLocaleTimeString('es')}]`, msg);
