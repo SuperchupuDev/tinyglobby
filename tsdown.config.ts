@@ -1,4 +1,4 @@
-import { type Options, defineConfig } from 'tsup';
+import { type Options, defineConfig } from 'tsdown';
 
 export default defineConfig({
   clean: true,
