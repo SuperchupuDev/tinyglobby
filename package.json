@@ -3,7 +3,7 @@
   "version": "0.2.13",
   "description": "A fast and minimal alternative to globby and fast-glob",
   "scripts": {
-    "build": "tsup",
+    "build": "tsdown",
     "check": "biome check",
     "format": "biome format --write",
     "lint": "biome lint",
@@ -49,10 +49,10 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@types/node": "^22.14.1",
+    "@types/node": "^22.15.3",
     "@types/picomatch": "^4.0.0",
     "fs-fixture": "^2.7.1",
-    "tsup": "^8.4.0",
+    "tsdown": "^0.11.3",
     "typescript": "^5.8.3"
   },
   "engines": {
