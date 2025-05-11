@@ -1,13 +1,5 @@
 import picomatch from 'picomatch';
-
-// #region PARTIAL MATCHER
-export interface PartialMatcherOptions {
-  dot?: boolean;
-  nocase?: boolean;
-}
-
-// can't use `Matcher` from picomatch as it requires a second argument since @types/picomatch v4
-type PartialMatcher = (test: string) => boolean;
+import type { PartialMatcher, PartialMatcherOptions } from './types';
 
 const ONLY_PARENT_DIRECTORIES = /^(\/?\.\.)+$/;
 
@@ -28,16 +20,16 @@ export function getPartialMatcher(patterns: string[], options?: PartialMatcherOp
     regexes[i] = partRegexes;
   }
   return (input: string) => {
-    // no need to `splitPattern` as this is indeed not a pattern
-    const inputParts = input.split('/');
     // if we only have patterns like `src/*` but the input is `../..`
     // normally the parent directory would not get crawled
     // and as such wrong results would be returned
     // to avoid this always return true if the input only consists of .. ../.. etc
-    if (inputParts[0] === '..' && ONLY_PARENT_DIRECTORIES.test(input)) {
+    if (input[0] === '.' && input[1] === '.' && ONLY_PARENT_DIRECTORIES.test(input)) {
       return true;
     }
-    for (let i = 0; i < patterns.length; i++) {
+    // no need to `splitPattern` as this is indeed not a pattern
+    const inputParts = input.split('/');
+    for (let i = 0; i < patternsCount; i++) {
       const patternParts = patternsParts[i];
       const regex = regexes[i];
       const inputPatternCount = inputParts.length;
@@ -151,3 +143,9 @@ export function log(...tasks: unknown[]): void {
   console.log(`[tinyglobby ${new Date().toLocaleTimeString('es')}]`, ...tasks);
 }
 // #endregion
+
+// #region ensureStringArray
+export function ensureStringArray(value: string | string[]): string[] {
+  return typeof value === 'string' ? [value] : value;
+}
+// #endregion ensureStringArray
