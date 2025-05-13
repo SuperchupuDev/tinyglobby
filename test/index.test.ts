@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import fs from 'node:fs';
 import { after, test } from 'node:test';
 import { createFixture } from 'fs-fixture';
 import { glob, globSync } from '../src/index.ts';
@@ -400,4 +401,24 @@ test('.a/*', async () => {
 test('. + .a/*', async () => {
   const files = await glob({ patterns: ['.', '.a/*'], cwd, onlyDirectories: true, expandDirectories: false });
   assert.deepEqual(files.sort(), ['.', '.a/a/']);
+});
+
+
+test('Windows paths handling', async () => {
+  if (process.platform === 'win32') {
+    const testFilePath = path.join(process.cwd(), 'test.js');
+    try {
+      fs.writeFileSync('test.js', 'test content');
+      const result1 = await glob(testFilePath);
+      assert.deepEqual(result1, ['test.js'], 'Should handle paths from path.join()');
+    } finally {
+      try {
+        fs.unlinkSync('test.js');
+      } catch (err) {
+        // Ignore cleanup errors
+      }
+    }
+  } else {
+    console.log('Skipping Windows path test on non-Windows platform');
+  }
 });
