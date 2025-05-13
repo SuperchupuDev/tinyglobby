@@ -6,6 +6,8 @@ import { escapePath, getPartialMatcher, isDynamicPattern, log, splitPattern } fr
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
 const BACKSLASHES = /\\/g;
+// Regular expression to handle non-escaped backslashes (for Windows paths)
+const NON_ESCAPED_BACKSLASH = /(?<![\\])\\(?![\[\]])/g;
 
 export interface GlobOptions {
   absolute?: boolean;
@@ -28,6 +30,15 @@ interface InternalProps {
   depthOffset: number;
 }
 
+/**
+ * Normalizes Windows paths to use forward slashes while preserving escape sequences
+ * @param path The path to normalize
+ * @returns Normalized path with proper slashes
+ */
+function normalizeWindowsPath(path: string) {
+  return /^[a-zA-Z]:[\\\/]/.test(path) ? path.replace(NON_ESCAPED_BACKSLASH, '/') : path;
+}
+
 function normalizePattern(
   pattern: string,
   expandDirectories: boolean,
@@ -35,9 +46,12 @@ function normalizePattern(
   props: InternalProps,
   isIgnore: boolean
 ) {
-  let result: string = pattern;
-  if (pattern.endsWith('/')) {
-    result = pattern.slice(0, -1);
+
+  // Handle Windows paths but preserve escaped characters
+  let result: string = normalizeWindowsPath(pattern);
+
+  if (pattern.endsWith('/') || pattern.endsWith('\\')) {
+    result = result.slice(0, -1);
   }
   // using a directory as entry should match all files inside it
   if (!result.endsWith('*') && expandDirectories) {
@@ -45,7 +59,9 @@ function normalizePattern(
   }
 
   if (path.isAbsolute(result.replace(ESCAPING_BACKSLASHES, ''))) {
-    result = posix.relative(escapePath(cwd), result);
+    // Ensure cwd uses forward slashes while preserving escape sequences
+    const normalizedCwd = normalizeWindowsPath(cwd);
+    result = posix.relative(escapePath(normalizedCwd), result);
   } else {
     result = posix.normalize(result);
   }
@@ -258,7 +274,13 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     fdirOptions.includeDirs = true;
   }
 
-  props.root = props.root.replace(BACKSLASHES, '');
+  // Handle Windows paths specially for absolute paths 
+  if (/^[a-zA-Z]:[\\\/]/.test(props.root)) {
+    props.root = props.root.replace(NON_ESCAPED_BACKSLASH, '/');
+  } else {
+    props.root = props.root.replace(BACKSLASHES, '/');
+  }
+
   const root = props.root;
 
   if (options.debug) {
@@ -274,6 +296,61 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
   return sync ? formatPaths(api.sync(), cwd, root) : api.withPromise().then(paths => formatPaths(paths, cwd, root));
 }
 
+/**
+ * Helper function to normalize input patterns for Windows path compatibility
+ * Handles string, array, and object inputs, preserving other properties
+ */
+function normalizePatterns(patternsOrOptions: string | string[] | GlobOptions): string | string[] | GlobOptions {
+  if (typeof patternsOrOptions === 'string') {
+    return normalizeWindowsPath(patternsOrOptions);
+  } else if (Array.isArray(patternsOrOptions)) {
+    return patternsOrOptions.map(p => 
+      typeof p === 'string' ? normalizeWindowsPath(p) : p
+    );
+  } else if (typeof patternsOrOptions === 'object' && patternsOrOptions !== null) {
+    const optionsObj = {...patternsOrOptions} as GlobOptions;
+    if (optionsObj.patterns) {
+      if (typeof optionsObj.patterns === 'string') {
+        optionsObj.patterns = normalizeWindowsPath(optionsObj.patterns);
+      } else if (Array.isArray(optionsObj.patterns)) {
+        optionsObj.patterns = optionsObj.patterns.map((p: string) =>
+          typeof p === 'string' ? normalizeWindowsPath(p) : p
+        );
+      }
+    }
+    return optionsObj;
+  }
+  
+  return patternsOrOptions;
+}
+
+/**
+ * Normalizes a current working directory path to use forward slashes
+ * Handles Windows paths properly
+ */
+function normalizeCwd(cwd?: string): string {
+  if (!cwd) {
+    return process.cwd().replace(BACKSLASHES, '/');
+  }
+  
+  const resolvedPath = path.resolve(cwd);
+  return /^[a-zA-Z]:[\\\/]/.test(resolvedPath)
+    ? resolvedPath.replace(NON_ESCAPED_BACKSLASH, '/')
+    : resolvedPath.replace(BACKSLASHES, '/');
+}
+
+/**
+ * Creates options object from input patterns or options
+ */
+function createOptions(
+  normalizedInput: string | string[] | GlobOptions,
+  options?: GlobOptions
+): GlobOptions {
+  return Array.isArray(normalizedInput) || typeof normalizedInput === 'string'
+    ? { ...options, patterns: normalizedInput }
+    : normalizedInput;
+}
+
 export function glob(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): Promise<string[]>;
 export function glob(options: GlobOptions): Promise<string[]>;
 export async function glob(
@@ -284,13 +361,11 @@ export async function glob(
     throw new Error('Cannot pass patterns as both an argument and an option');
   }
 
-  const opts =
-    Array.isArray(patternsOrOptions) || typeof patternsOrOptions === 'string'
-      ? { ...options, patterns: patternsOrOptions }
-      : patternsOrOptions;
-  const cwd = opts.cwd ? path.resolve(opts.cwd).replace(BACKSLASHES, '/') : process.cwd().replace(BACKSLASHES, '/');
+  const normalizedInput = normalizePatterns(patternsOrOptions);
+  const opts = createOptions(normalizedInput, options);
+  const normalizedCwd = normalizeCwd(opts.cwd);
 
-  return crawl(opts, cwd, false);
+  return crawl(opts, normalizedCwd, false);
 }
 
 export function globSync(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): string[];
@@ -300,13 +375,11 @@ export function globSync(patternsOrOptions: string | string[] | GlobOptions, opt
     throw new Error('Cannot pass patterns as both an argument and an option');
   }
 
-  const opts =
-    Array.isArray(patternsOrOptions) || typeof patternsOrOptions === 'string'
-      ? { ...options, patterns: patternsOrOptions }
-      : patternsOrOptions;
-  const cwd = opts.cwd ? path.resolve(opts.cwd).replace(BACKSLASHES, '/') : process.cwd().replace(BACKSLASHES, '/');
+  const normalizedInput = normalizePatterns(patternsOrOptions);
+  const opts = createOptions(normalizedInput, options);
+  const normalizedCwd = normalizeCwd(opts.cwd);
 
-  return crawl(opts, cwd, true);
+  return crawl(opts, normalizedCwd, true);
 }
 
 export { convertPathToPattern, escapePath, isDynamicPattern } from './utils.ts';
