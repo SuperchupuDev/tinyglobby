@@ -65,6 +65,11 @@ test('negative patterns', async () => {
   assert.deepEqual(files.sort(), ['a/a.txt']);
 });
 
+test('negative patterns setting root as /', async () => {
+  const files = await glob({ patterns: ['**/a.txt', '!/b/a.txt'], cwd });
+  assert.deepEqual(files.sort(), ['a/a.txt', 'b/a.txt']);
+});
+
 test('patterns as string', async () => {
   const files = await glob('a/a.txt', { cwd });
   assert.deepEqual(files.sort(), ['a/a.txt']);
