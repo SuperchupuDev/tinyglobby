@@ -53,7 +53,8 @@ function normalizePattern(
   const parentDirectoryMatch = PARENT_DIRECTORY.exec(result);
   if (parentDirectoryMatch?.[0]) {
     const potentialRoot = posix.join(cwd, parentDirectoryMatch[0]);
-    if (props.root.length > potentialRoot.length) {
+    // windows can make the potential root something like ../C:, we don't want that
+    if (!potentialRoot.startsWith('.') && props.root.length > potentialRoot.length) {
       props.root = potentialRoot;
       props.depthOffset = -(parentDirectoryMatch[0].length + 1) / 3;
     }
