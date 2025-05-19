@@ -406,3 +406,8 @@ test('. + .a/*', async () => {
   const files = await glob({ patterns: ['.', '.a/*'], cwd, onlyDirectories: true, expandDirectories: false });
   assert.deepEqual(files.sort(), ['.', '.a/a/']);
 });
+
+test('relative self', () => {
+  const files = globSync(['../a/*'], {cwd: path.join(cwd, 'a')});
+  assert.deepEqual(files.sort(), ['../a/a.txt', '../a/b.txt']);
+})
