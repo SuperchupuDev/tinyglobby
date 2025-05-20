@@ -60,12 +60,12 @@ function normalizePattern(
     let i = 0;
     const cwdParts = escapedCwd.split('/');
     while (i < n && parts[i + n] === cwdParts[cwdParts.length + i - n]) {
-      result = result.substring(0, (n - i - 1) * 3) + result.substring((n - i) * 3 + parts[i + n].length + 1) || '.';
+      result = result.slice(0, (n - i - 1) * 3) + result.slice((n - i) * 3 + parts[i + n].length + 1) || '.';
       i++;
     }
 
     // move root `n` directories up
-    const potentialRoot = posix.join(cwd, parentDirectoryMatch[0].substring(i * 3));
+    const potentialRoot = posix.join(cwd, parentDirectoryMatch[0].slice(i * 3));
     // windows can make the potential root something like `../C:`, we don't want that
     if (!potentialRoot.startsWith('.') && props.root.length > potentialRoot.length) {
       props.root = potentialRoot;
