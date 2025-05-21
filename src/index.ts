@@ -237,7 +237,7 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     resolveSymlinks: true
   };
 
-  if (options.deep) {
+  if (options.deep !== undefined) {
     fdirOptions.maxDepth = Math.round(options.deep - props.depthOffset);
   }
 

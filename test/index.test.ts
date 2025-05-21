@@ -203,6 +203,14 @@ test('deep', async () => {
   assert.deepEqual(files3.sort(), []);
 });
 
+test('deep: 0', async () => {
+  const files = await glob({ patterns: ['a/*.txt'], deep: 0, cwd });
+  assert.deepEqual(files.sort(), []);
+
+  const files2 = await glob({ patterns: ['*.txt'], deep: 0, cwd: path.join(cwd, 'a') });
+  assert.deepEqual(files2.sort(), ['a.txt', 'b.txt']);
+});
+
 test('deep with ../', async () => {
   const files = await glob({ patterns: ['../.deep/a/a/*.txt', 'a.txt'], deep: 3, cwd: path.join(cwd, 'a') });
   assert.deepEqual(files.sort(), ['../.deep/a/a/a.txt', 'a.txt']);
