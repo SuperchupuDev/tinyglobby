@@ -421,3 +421,12 @@ test('relative self that points to .', () => {
   const files = globSync(['../a'], { cwd: path.join(cwd, 'a'), onlyDirectories: true, expandDirectories: false });
   assert.deepEqual(files.sort(), ['.']);
 });
+
+test('relative self + normal pattern', () => {
+  const files = globSync(['../.a', 'a/a.txt'], {
+    cwd: path.join(cwd, '.a'),
+    onlyFiles: false,
+    expandDirectories: false
+  });
+  assert.deepEqual(files.sort(), ['.', 'a/a.txt']);
+});

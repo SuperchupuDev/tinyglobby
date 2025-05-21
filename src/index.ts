@@ -71,7 +71,9 @@ function normalizePattern(
       props.root = potentialRoot;
       props.depthOffset = -n + i;
     }
-  } else if (!isIgnore && props.depthOffset >= 0) {
+  }
+
+  if (!isIgnore && props.depthOffset >= 0) {
     props.commonPath ??= parts;
 
     const newCommonPath: string[] = [];
