@@ -414,3 +414,27 @@ test('. + .a/*', async () => {
   const files = await glob({ patterns: ['.', '.a/*'], cwd, onlyDirectories: true, expandDirectories: false });
   assert.deepEqual(files.sort(), ['.', '.a/a/']);
 });
+
+test('relative self', () => {
+  const files = globSync(['../a/*'], { cwd: path.join(cwd, 'a'), expandDirectories: false });
+  assert.deepEqual(files.sort(), ['a.txt', 'b.txt']);
+});
+
+test('relative self (two layers)', () => {
+  const files = globSync(['../../.a/a/*'], { cwd: path.join(cwd, '.a/a'), expandDirectories: false });
+  assert.deepEqual(files.sort(), ['a.txt']);
+});
+
+test('relative self that points to .', () => {
+  const files = globSync(['../a'], { cwd: path.join(cwd, 'a'), onlyDirectories: true, expandDirectories: false });
+  assert.deepEqual(files.sort(), ['./']);
+});
+
+test('relative self + normal pattern', () => {
+  const files = globSync(['../.a', 'a/a.txt'], {
+    cwd: path.join(cwd, '.a'),
+    onlyFiles: false,
+    expandDirectories: false
+  });
+  assert.deepEqual(files.sort(), ['.', 'a/a.txt']);
+});
