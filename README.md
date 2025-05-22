@@ -45,7 +45,7 @@ globSync(['src/**/*.ts'], { ignore: ['**/*.d.ts'] });
 
 ## Used by
 
-`tinyglobby` is downloaded many times by projects all around the world. Here's a list of notable projects that use it:
+`tinyglobby` is downloaded many times by projects all around the world. Here's a partial list of notable projects that use it:
 
 <!-- should be sorted by weekly download count -->
 - [`vite`](https://github.com/vitejs/vite)
@@ -54,6 +54,7 @@ globSync(['src/**/*.ts'], { ignore: ['**/*.d.ts'] });
 - [`eslint-import-resolver-typescript`](https://github.com/import-js/eslint-import-resolver-typescript)
 - [`vitest`](https://github.com/vitest-dev/vitest)
 - [`copy-webpack-plugin`](https://github.com/webpack-contrib/copy-webpack-plugin)
+- [`storybook`](https://github.com/storybookjs/storybook)
 - [`ts-morph`](https://github.com/dsherret/ts-morph)
 - [`nx`](https://github.com/nrwl/nx)
 - [`sort-package-json`](https://github.com/keithamus/sort-package-json)
