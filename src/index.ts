@@ -25,10 +25,10 @@ function normalizePattern(pattern: string, props: InternalProps, opts: GlobOptio
     result = posix.normalize(result);
   }
 
-  const parentDirectoryMatch = PARENT_DIRECTORY.exec(result);
+  const parentDir = PARENT_DIRECTORY.exec(result)?.[0];
   const parts = splitPattern(result);
-  if (parentDirectoryMatch?.[0]) {
-    const n = (parentDirectoryMatch[0].length + 1) / 3;
+  if (parentDir) {
+    const n = (parentDir.length + 1) / 3;
 
     // normalize a pattern like `../foo/bar` to `bar` when cwd ends with `/foo`
     let i = 0;
@@ -39,9 +39,9 @@ function normalizePattern(pattern: string, props: InternalProps, opts: GlobOptio
     }
 
     // move root `n` directories up
-    const potentialRoot = posix.join(cwd, parentDirectoryMatch[0].slice(i * 3));
+    const potentialRoot = posix.join(cwd, parentDir.slice(i * 3));
     // windows can make the potential root something like `../C:`, we don't want that
-    if (!potentialRoot.startsWith('.') && props.root.length > potentialRoot.length) {
+    if (potentialRoot[0] !== '.' && props.root.length > potentialRoot.length) {
       props.root = potentialRoot;
       props.depthOffset = -n + i;
     }
