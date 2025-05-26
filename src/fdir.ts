@@ -55,7 +55,9 @@ export function buildFdir(
   const ignore = picomatch(processed.ignore, partialMatcherOptions);
   const partialMatcher = getPartialMatcher(processed.match, partialMatcherOptions);
   let maxDepth: number | undefined;
-  if (options.deep !== undefined) maxDepth = Math.round(options.deep - props.depthOffset);
+  if (options.deep !== undefined) {
+    maxDepth = Math.round(options.deep - props.depthOffset);
+  }
   return new fdir({
     filters: [
       (p, isDirectory) => {
