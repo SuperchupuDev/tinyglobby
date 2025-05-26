@@ -1,3 +1,15 @@
+### [0.2.14](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.13...0.2.14)
+
+#### Fixed
+
+- Root path joining on windows with help from [43081j](https://github.com/43081j) and [btea](https://github.com/btea)
+- `deep: 0` is no longer mistakenly interpreted as not set
+- Parent directories in patterns are now correctly normalized to `cwd`
+
+#### Changed
+
+- Switched bundler from [`tsup`](https://github.com/egoist/tsup) to [`tsdown`](https://github.com/rolldown/tsdown)
+
 ### [0.2.13](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.12...0.2.13)
 
 #### Fixed
