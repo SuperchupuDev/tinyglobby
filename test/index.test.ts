@@ -65,6 +65,11 @@ test('negative patterns', async () => {
   assert.deepEqual(files.sort(), ['a/a.txt']);
 });
 
+test('negative patterns setting root as /', async () => {
+  const files = await glob({ patterns: ['**/a.txt', '!/b/a.txt'], cwd });
+  assert.deepEqual(files.sort(), ['a/a.txt', 'b/a.txt']);
+});
+
 test('patterns as string', async () => {
   const files = await glob('a/a.txt', { cwd });
   assert.deepEqual(files.sort(), ['a/a.txt']);
@@ -196,6 +201,14 @@ test('deep', async () => {
 
   const files3 = await glob({ patterns: ['.deep/a/a/*.txt'], deep: 1, cwd });
   assert.deepEqual(files3.sort(), []);
+});
+
+test('deep: 0', async () => {
+  const files = await glob({ patterns: ['a/*.txt'], deep: 0, cwd });
+  assert.deepEqual(files.sort(), []);
+
+  const files2 = await glob({ patterns: ['*.txt'], deep: 0, cwd: path.join(cwd, 'a') });
+  assert.deepEqual(files2.sort(), ['a.txt', 'b.txt']);
 });
 
 test('deep with ../', async () => {
@@ -400,4 +413,28 @@ test('.a/*', async () => {
 test('. + .a/*', async () => {
   const files = await glob({ patterns: ['.', '.a/*'], cwd, onlyDirectories: true, expandDirectories: false });
   assert.deepEqual(files.sort(), ['.', '.a/a/']);
+});
+
+test('relative self', () => {
+  const files = globSync(['../a/*'], { cwd: path.join(cwd, 'a'), expandDirectories: false });
+  assert.deepEqual(files.sort(), ['a.txt', 'b.txt']);
+});
+
+test('relative self (two layers)', () => {
+  const files = globSync(['../../.a/a/*'], { cwd: path.join(cwd, '.a/a'), expandDirectories: false });
+  assert.deepEqual(files.sort(), ['a.txt']);
+});
+
+test('relative self that points to .', () => {
+  const files = globSync(['../a'], { cwd: path.join(cwd, 'a'), onlyDirectories: true, expandDirectories: false });
+  assert.deepEqual(files.sort(), ['./']);
+});
+
+test('relative self + normal pattern', () => {
+  const files = globSync(['../.a', 'a/a.txt'], {
+    cwd: path.join(cwd, '.a'),
+    onlyFiles: false,
+    expandDirectories: false
+  });
+  assert.deepEqual(files.sort(), ['.', 'a/a.txt']);
 });

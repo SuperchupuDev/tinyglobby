@@ -18,21 +18,36 @@ function normalizePattern(pattern: string, props: InternalProps, opts: GlobOptio
     result += '/**';
   }
 
+  const escapedCwd = escapePath(cwd);
   if (path.isAbsolute(result.replace(ESCAPING_BACKSLASHES, ''))) {
-    result = posix.relative(escapePath(cwd), result);
+    result = posix.relative(escapedCwd, result);
   } else {
     result = posix.normalize(result);
   }
 
-  const parentDir = PARENT_DIRECTORY.exec(result)?.[0];
-  if (parentDir) {
-    const potentialRoot = posix.join(cwd, parentDir);
-    if (props.root.length > potentialRoot.length) {
-      props.root = potentialRoot;
-      props.depthOffset = -(parentDir.length + 1) / 3;
+  const parentDirectoryMatch = PARENT_DIRECTORY.exec(result);
+  const parts = splitPattern(result);
+  if (parentDirectoryMatch?.[0]) {
+    const n = (parentDirectoryMatch[0].length + 1) / 3;
+
+    // normalize a pattern like `../foo/bar` to `bar` when cwd ends with `/foo`
+    let i = 0;
+    const cwdParts = escapedCwd.split('/');
+    while (i < n && parts[i + n] === cwdParts[cwdParts.length + i - n]) {
+      result = result.slice(0, (n - i - 1) * 3) + result.slice((n - i) * 3 + parts[i + n].length + 1) || '.';
+      i++;
     }
-  } else if (!isIgnore && props.depthOffset >= 0) {
-    const parts = splitPattern(result);
+
+    // move root `n` directories up
+    const potentialRoot = posix.join(cwd, parentDirectoryMatch[0].slice(i * 3));
+    // windows can make the potential root something like `../C:`, we don't want that
+    if (!potentialRoot.startsWith('.') && props.root.length > potentialRoot.length) {
+      props.root = potentialRoot;
+      props.depthOffset = -n + i;
+    }
+  }
+
+  if (!isIgnore && props.depthOffset >= 0) {
     props.commonPath ??= parts;
 
     const newCommonPath: string[] = [];

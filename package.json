@@ -1,9 +1,9 @@
 {
   "name": "tinyglobby",
-  "version": "0.2.13",
+  "version": "0.2.14",
   "description": "A fast and minimal alternative to globby and fast-glob",
   "scripts": {
-    "build": "tsup",
+    "build": "tsdown",
     "check": "biome check",
     "format": "biome format --write",
     "lint": "biome lint",
@@ -49,10 +49,10 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@types/node": "^22.14.1",
+    "@types/node": "^22.15.21",
     "@types/picomatch": "^4.0.0",
     "fs-fixture": "^2.7.1",
-    "tsup": "^8.4.0",
+    "tsdown": "^0.12.3",
     "typescript": "^5.8.3"
   },
   "engines": {
@@ -62,5 +62,5 @@
     "access": "public",
     "provenance": true
   },
-  "packageManager": "pnpm@10.8.1"
+  "packageManager": "pnpm@10.11.0"
 }
