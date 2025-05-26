@@ -10,11 +10,11 @@ const BACKSLASHES = /\\/g;
 function normalizePattern(pattern: string, props: InternalProps, opts: GlobOptions, isIgnore: boolean): string {
   const cwd = opts.cwd;
   let result: string = pattern;
-  if (pattern.endsWith('/')) {
+  if (pattern[pattern.length - 1] === '/') {
     result = pattern.slice(0, -1);
   }
   // using a directory as entry should match all files inside it
-  if (!result.endsWith('*') && opts.expandDirectories) {
+  if (result[result.length - 1] !== '*' && opts.expandDirectories) {
     result += '/**';
   }
 
