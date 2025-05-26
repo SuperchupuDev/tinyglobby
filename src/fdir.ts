@@ -28,7 +28,7 @@ function processPath(path: string, cwd: string, root: string, isDirectory: boole
 export function formatPaths(paths: string[], cwd: string, root: string): string[] {
   for (let i = paths.length - 1; i >= 0; i--) {
     const path = paths[i];
-    paths[i] = getRelativePath(path, cwd, root) + (!path || path.endsWith('/') ? '/' : '');
+    paths[i] = getRelativePath(path, cwd, root) + (!path || path[path.length - 1] === '/' ? '/' : '');
   }
   return paths;
 }
