@@ -1,5 +1,5 @@
 import picomatch from 'picomatch';
-import type { PartialMatcher, PartialMatcherOptions } from './types';
+import type { PartialMatcher, PartialMatcherOptions } from './types.ts';
 
 const ONLY_PARENT_DIRECTORIES = /^(\/?\.\.)+$/;
 

@@ -2,7 +2,7 @@ import { posix } from 'node:path';
 import { type PathsOutput, fdir } from 'fdir';
 import type { APIBuilder } from 'fdir/dist/builder/api-builder';
 import picomatch from 'picomatch';
-import type { GlobOptions, InternalProps, PartialMatcherOptions, ProcessedPatterns } from './types';
+import type { GlobOptions, InternalProps, PartialMatcherOptions, ProcessedPatterns } from './types.ts';
 import { getPartialMatcher, log } from './utils.ts';
 
 // #region getRelativePath
