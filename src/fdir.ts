@@ -54,7 +54,8 @@ export function buildFdir(
   const partialMatcherOptions: PartialMatcherOptions = { dot: options.dot, nocase };
   const ignore = picomatch(processed.ignore, partialMatcherOptions);
   const partialMatcher = getPartialMatcher(processed.match, partialMatcherOptions);
-
+  let maxDepth: number | undefined;
+  if (options.deep !== undefined) maxDepth = Math.round(options.deep - props.depthOffset);
   return new fdir({
     filters: [
       (p, isDirectory) => {
@@ -82,7 +83,7 @@ export function buildFdir(
     excludeSymlinks: !followSymbolicLinks,
     excludeFiles: onlyDirectories,
     includeDirs: onlyDirectories || !options.onlyFiles,
-    maxDepth: options.deep && Math.round(options.deep - props.depthOffset)
+    maxDepth
   }).crawl(root);
 }
 // #endregion buildFdir
