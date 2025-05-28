@@ -3,6 +3,8 @@
   "version": "0.2.14",
   "description": "A fast and minimal alternative to globby and fast-glob",
   "scripts": {
+    "bench": "node benchmark/bench.mts",
+    "bench:setup": "node benchmark/setup.mts",
     "build": "tsdown",
     "check": "biome check",
     "format": "biome format --write",
@@ -51,7 +53,10 @@
     "@biomejs/biome": "^1.9.4",
     "@types/node": "^22.15.21",
     "@types/picomatch": "^4.0.0",
+    "fast-glob": "^3.3.3",
     "fs-fixture": "^2.7.1",
+    "glob": "^11.0.2",
+    "tinybench": "^4.0.1",
     "tsdown": "^0.12.3",
     "typescript": "^5.8.3"
   },
