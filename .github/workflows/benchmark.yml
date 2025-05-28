@@ -1,12 +1,12 @@
-name: CI
+name: Benchmark
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
 jobs:
-  benchmark:
-    name: Benchmark
+  benchmarks:
+    name: Benchmarks
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
