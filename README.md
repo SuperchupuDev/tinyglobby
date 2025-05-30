@@ -60,6 +60,7 @@ globSync(['src/**/*.ts'], { ignore: ['**/*.d.ts'] });
 - [`sort-package-json`](https://github.com/keithamus/sort-package-json)
 - [`unimport`](https://github.com/unjs/unimport)
 - [`tsup`](https://github.com/egoist/tsup)
+- [`@swc/cli`](https://github.com/swc-project/pkgs)
 - [`@angular/build`](https://github.com/angular/angular-cli), [`@angular/localize`](https://github.com/angular/angular), etc.
 - [`cspell`](https://github.com/streetsidesoftware/cspell)
 - [`nuxt`](https://github.com/nuxt/nuxt)
