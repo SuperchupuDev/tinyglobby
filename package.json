@@ -44,15 +44,15 @@
     "url": "https://github.com/sponsors/SuperchupuDev"
   },
   "dependencies": {
-    "fdir": "^6.4.4",
+    "fdir": "^6.4.6",
     "picomatch": "^4.0.2"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@types/node": "^22.15.21",
+    "@types/node": "^22.15.31",
     "@types/picomatch": "^4.0.0",
     "fs-fixture": "^2.7.1",
-    "tsdown": "^0.12.3",
+    "tsdown": "^0.12.7",
     "typescript": "^5.8.3"
   },
   "engines": {
@@ -62,5 +62,5 @@
     "access": "public",
     "provenance": true
   },
-  "packageManager": "pnpm@10.11.0"
+  "packageManager": "pnpm@10.12.1"
 }
