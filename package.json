@@ -4,8 +4,8 @@
   "description": "A fast and minimal alternative to globby and fast-glob",
   "type": "module",
   "scripts": {
-    "bench": "node benchmark/bench.mts",
-    "bench:setup": "node benchmark/setup.mts",
+    "bench": "node benchmark/bench.ts",
+    "bench:setup": "node benchmark/setup.ts",
     "build": "tsdown",
     "check": "biome check",
     "format": "biome format --write",
