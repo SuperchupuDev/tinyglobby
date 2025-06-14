@@ -17,6 +17,9 @@ pids
 # Dist
 dist/
 
+# Benchmark fixtures
+benchmark/typescript-eslint
+
 # Miscellaneous
 .tmp/
 .vscode/*
