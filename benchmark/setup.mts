@@ -11,9 +11,3 @@ try {
   });
   console.log('Cloned typescript-eslint');
 }
-
-console.log('Building...');
-
-spawn('node', ['--run', 'build'], {
-  cwd: join(import.meta.dirname, '..')
-});

@@ -4,7 +4,7 @@ import { Bench } from 'tinybench';
 import { glob as native } from 'node:fs/promises';
 import fastGlob from 'fast-glob';
 import { glob } from 'glob';
-import { glob as tinyglobby } from '../dist/index.mjs';
+import { glob as tinyglobby } from '../src/index.ts';
 
 const bench = new Bench({ name: '**/* (typescript-eslint)' });
 
