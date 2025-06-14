@@ -2,6 +2,7 @@
   "name": "tinyglobby",
   "version": "0.2.14",
   "description": "A fast and minimal alternative to globby and fast-glob",
+  "type": "module",
   "scripts": {
     "build": "tsdown",
     "check": "biome check",
@@ -13,12 +14,12 @@
     "test:only": "node --test --test-only \"test/**/*.ts\"",
     "typecheck": "tsc --noEmit"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "exports": {
     "import": "./dist/index.mjs",
-    "require": "./dist/index.js"
+    "require": "./dist/index.cjs"
   },
   "sideEffects": false,
   "files": [

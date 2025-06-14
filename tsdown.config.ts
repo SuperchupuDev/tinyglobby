@@ -1,12 +1,11 @@
-import { type Options, defineConfig } from 'tsdown';
+import { type UserConfig, defineConfig } from 'tsdown/config';
 
 export default defineConfig({
-  clean: true,
   dts: true,
   entry: ['src/index.ts'],
+  fixedExtension: true,
   format: ['esm', 'cjs'],
-  platform: 'node',
   removeNodeProtocol: true,
   sourcemap: !process.env.IS_RELEASE,
   target: 'node12'
-}) as Options;
+}) as UserConfig;
