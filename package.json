@@ -52,7 +52,7 @@
     "@biomejs/biome": "^1.9.4",
     "@types/node": "^22.15.31",
     "@types/picomatch": "^4.0.0",
-    "fs-fixture": "^2.7.1",
+    "fs-fixture": "^2.8.0",
     "tsdown": "^0.12.7",
     "typescript": "^5.8.3"
   },
