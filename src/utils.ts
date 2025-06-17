@@ -5,6 +5,7 @@ import picomatch from 'picomatch';
 export interface PartialMatcherOptions {
   dot?: boolean;
   nocase?: boolean;
+  noglobstar?: boolean;
 }
 
 // can't use `Matcher` from picomatch as it requires a second argument since @types/picomatch v4
