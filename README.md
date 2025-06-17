@@ -30,18 +30,19 @@ globSync(['src/**/*.ts'], { ignore: ['**/*.d.ts'] });
 
 ## Options
 
-- `patterns`: An array of glob patterns to search for. Defaults to `['**/*']`.
-- `ignore`: An array of glob patterns to ignore.
-- `cwd`: The current working directory in which to search. Defaults to `process.cwd()`.
 - `absolute`: Whether to return absolute paths. Defaults to `false`.
+- `caseSensitiveMatch`: Whether to match in case-sensitive mode. Defaults to `true`.
+- `cwd`: The current working directory in which to search. Defaults to `process.cwd()`.
+- `debug`: Enable debug logs. Useful for development purposes.
 - `dot`: Whether to allow entries starting with a dot. Defaults to `false`.
 - `deep`: Maximum depth of a directory. Defaults to `Infinity`.
-- `followSymbolicLinks`: Whether to traverse and include symbolic links. Defaults to `true`.
-- `caseSensitiveMatch`: Whether to match in case-sensitive mode. Defaults to `true`.
 - `expandDirectories`: Whether to expand directories. Disable to best match `fast-glob`. Defaults to `true`.
+- `followSymbolicLinks`: Whether to traverse and include symbolic links. Defaults to `true`.
+- `globstar`: Enables support for matching nested directories with globstars (`**`). If false, `**` behaves exactly like `*`. Defaults to `true`.
+- `ignore`: An array of glob patterns to ignore.
 - `onlyDirectories`: Enable to only return directories. Disables `onlyFiles` if set. Defaults to `false`.
 - `onlyFiles`: Enable to only return files. Defaults to `true`.
-- `debug`: Enable debug logs. Useful for development purposes.
+- `patterns`: An array of glob patterns to search for. Defaults to `['**/*']`.
 
 ## Used by
 
