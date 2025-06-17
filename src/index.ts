@@ -146,11 +146,6 @@ function processPatterns(
   return { match: matchPatterns, ignore: ignorePatterns };
 }
 
-// TODO: this is slow, find a better way to do this
-function getRelativePath(path: string, cwd: string, root: string) {
-  return posix.relative(cwd, `${root}/${path}`) || '.';
-}
-
 function processPath(path: string, cwd: string, root: string, isDirectory: boolean, absolute?: boolean) {
   const relativePath = absolute ? path.slice(root === '/' ? 1 : root.length + 1) || '.' : path;
 
@@ -158,13 +153,14 @@ function processPath(path: string, cwd: string, root: string, isDirectory: boole
     return isDirectory && relativePath !== '.' ? relativePath.slice(0, -1) : relativePath;
   }
 
-  return getRelativePath(relativePath, cwd, root);
+  return posix.relative(cwd, root + '/' + relativePath) || '.';
 }
 
 function formatPaths(paths: string[], cwd: string, root: string) {
+  const rootInCwd = root.startsWith(cwd + '/');
+  const relativeRoot = rootInCwd && root.slice(cwd.length + 1);
   for (let i = paths.length - 1; i >= 0; i--) {
-    const path = paths[i];
-    paths[i] = getRelativePath(path, cwd, root) + (!path || path.endsWith('/') ? '/' : '');
+    paths[i] = rootInCwd ? relativeRoot + '/' + paths[i] : posix.relative(cwd, root + '/' + paths[i]) || './';
   }
   return paths;
 }
