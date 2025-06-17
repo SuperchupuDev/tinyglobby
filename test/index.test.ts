@@ -241,6 +241,11 @@ test('globstar false', async () => {
   assert.deepEqual(files.sort(), []);
 });
 
+test('globstar false with expandDirectories', async () => {
+  const files = await glob({ patterns: ['.deep'], cwd, globstar: false });
+  assert.deepEqual(files.sort(), []);
+});
+
 test('absolute', async () => {
   const files = await glob({ patterns: ['a/a.txt'], cwd, absolute: true });
   assert.deepEqual(files.sort(), [`${cwd.replaceAll('\\', '/')}a/a.txt`]);
