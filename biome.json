@@ -35,7 +35,8 @@
         "useEnumInitializers": "off",
         "useForOf": "error",
         "useNodeAssertStrict": "error",
-        "useShorthandAssign": "error"
+        "useShorthandAssign": "error",
+        "useTemplate": "off"
       },
       "suspicious": {
         "noEmptyBlockStatements": "error"
