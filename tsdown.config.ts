@@ -1,4 +1,4 @@
-import { type UserConfig, defineConfig } from 'tsdown/config';
+import { defineConfig, type UserConfig } from 'tsdown/config';
 
 export default defineConfig({
   dts: true,
