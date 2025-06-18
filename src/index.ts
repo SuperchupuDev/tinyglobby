@@ -148,6 +148,9 @@ function processPatterns(
 
 // TODO: this is slow, find a better way to do this
 function getRelativePath(path: string, cwd: string, root: string) {
+  if (root.startsWith(`${cwd}/`)) {
+    return `${root.slice(cwd.length + 1)}/${path.endsWith('/') ? path.slice(0, -1) : path}`;
+  }
   return posix.relative(cwd, `${root}/${path}`) || '.';
 }
 
