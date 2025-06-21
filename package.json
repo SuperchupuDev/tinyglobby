@@ -49,11 +49,11 @@
     "picomatch": "^4.0.2"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.0.0",
-    "@types/node": "^22.15.31",
+    "@biomejs/biome": "^2.0.4",
+    "@types/node": "^22.15.32",
     "@types/picomatch": "^4.0.0",
-    "fs-fixture": "^2.7.1",
-    "tsdown": "^0.12.7",
+    "fs-fixture": "^2.8.1",
+    "tsdown": "^0.12.8",
     "typescript": "^5.8.3"
   },
   "engines": {
