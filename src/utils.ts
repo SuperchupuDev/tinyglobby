@@ -87,10 +87,17 @@ export function buildRelative(cwd: string, root: string): (path: string) => stri
   }
 
   if (root.startsWith(`${cwd}/`)) {
-    return p => `${root.slice(cwd.length + 1)}/${p}`;
+    const prefix = root.slice(cwd.length + 1);
+    return p => `${prefix}/${p}`;
   }
 
-  return p => posix.relative(cwd, `${root}/${p}`) || '.';
+  return p => {
+    const result = posix.relative(cwd, `${root}/${p}`);
+    if (p.endsWith('/') && result !== '') {
+      return `${result}/`;
+    }
+    return result || '.';
+  };
 }
 // #endregion
 
