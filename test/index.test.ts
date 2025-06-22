@@ -37,6 +37,11 @@ test('empty array matches nothing', async () => {
   assert.deepEqual(files.sort(), []);
 });
 
+test('empty string matches nothing', async () => {
+  const files = await glob('', { expandDirectories: false });
+  assert.deepEqual(files.sort(), []);
+});
+
 test('only double star', async () => {
   const files = await glob({ patterns: ['**'], cwd });
   assert.deepEqual(files.sort(), ['a/a.txt', 'a/b.txt', 'b/a.txt', 'b/b.txt']);
@@ -113,6 +118,14 @@ test('onlyDirectories option', async () => {
 test('onlyFiles option', async () => {
   const files = await glob({ patterns: ['a'], onlyFiles: false, cwd });
   assert.deepEqual(files.sort(), ['a/', 'a/a.txt', 'a/b.txt']);
+});
+
+test('debug option', async t => {
+  const { mock } = t.mock.method(console, 'log', () => null);
+  const files = await glob({ patterns: ['a'], debug: true, cwd });
+  assert.deepEqual(files.sort(), ['a/a.txt', 'a/b.txt']);
+  assert.equal(mock.callCount(), 11);
+  mock.restore();
 });
 
 test('onlyDirectories has preference over onlyFiles', async () => {
