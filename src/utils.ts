@@ -1,3 +1,4 @@
+import { posix } from 'node:path';
 import picomatch from 'picomatch';
 
 // #region PARTIAL MATCHER
@@ -75,6 +76,21 @@ export function getPartialMatcher(patterns: string[], options?: PartialMatcherOp
 
     return false;
   };
+}
+// #endregion
+
+// #region relative
+// `path.relative` is slow, we want to avoid it as much as we can
+export function buildRelative(cwd: string, root: string): (path: string) => string {
+  if (cwd === root) {
+    return p => p;
+  }
+
+  if (root.startsWith(`${cwd}/`)) {
+    return p => `${root.slice(cwd.length + 1)}/${p}`;
+  }
+
+  return p => posix.relative(cwd, `${root}/${p}`) || '.';
 }
 // #endregion
 
