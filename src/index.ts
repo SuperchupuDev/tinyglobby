@@ -1,7 +1,15 @@
 import path, { posix } from 'node:path';
 import { type Options as FdirOptions, fdir } from 'fdir';
 import picomatch from 'picomatch';
-import { buildRelative, escapePath, getPartialMatcher, isDynamicPattern, log, splitPattern } from './utils.ts';
+import {
+  buildFormat,
+  buildRelative,
+  escapePath,
+  getPartialMatcher,
+  isDynamicPattern,
+  log,
+  splitPattern
+} from './utils.ts';
 
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
@@ -146,24 +154,6 @@ function processPatterns(
   return { match: matchPatterns, ignore: ignorePatterns };
 }
 
-function processPath(
-  path: string,
-  root: string,
-  relative: (p: string) => string,
-  isDirectory: boolean,
-  absolute?: boolean
-) {
-  const trailingSlash = isDirectory && path !== '.';
-  // removes root from the pattern, and a trailing slash if any
-  const relativePath = absolute
-    ? path.slice(root === '/' ? 1 : root.length + 1, trailingSlash ? -1 : undefined) || '.'
-    : trailingSlash
-      ? path.slice(0, -1)
-      : path;
-
-  return relative(relativePath);
-}
-
 function formatPaths(paths: string[], relative: (p: string) => string) {
   for (let i = paths.length - 1; i >= 0; i--) {
     const path = paths[i];
@@ -216,13 +206,15 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     nocase
   });
 
+  const format = buildFormat(cwd, props.root, options.absolute);
+  const formatExclude = options.absolute ? format : buildFormat(cwd, props.root, true);
   const relative = buildRelative(cwd, props.root);
   const fdirOptions: Partial<FdirOptions> = {
     // use relative paths in the matcher
     filters: [
       options.debug
         ? (p, isDirectory) => {
-            const path = processPath(p, props.root, relative, isDirectory, options.absolute);
+            const path = format(p, isDirectory);
             const matches = matcher(path);
 
             if (matches) {
@@ -231,11 +223,11 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
 
             return matches;
           }
-        : (p, isDirectory) => matcher(processPath(p, props.root, relative, isDirectory, options.absolute))
+        : (p, isDirectory) => matcher(format(p, isDirectory))
     ],
     exclude: options.debug
       ? (_, p) => {
-          const relativePath = processPath(p, props.root, relative, true, true);
+          const relativePath = formatExclude(p, true);
           const skipped = (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
 
           if (skipped) {
@@ -247,7 +239,7 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
           return skipped;
         }
       : (_, p) => {
-          const relativePath = processPath(p, props.root, relative, true, true);
+          const relativePath = formatExclude(p, true);
           return (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
         },
     pathSeparator: '/',
