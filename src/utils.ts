@@ -99,12 +99,7 @@ export function buildFormat(cwd: string, root: string, absolute?: boolean): (p: 
         return isDir ? result.slice(0, -1) : result;
       };
     }
-    return (p: string, isDir: boolean) => {
-      if (p === '.') {
-        return p;
-      }
-      return isDir ? p.slice(0, -1) : p;
-    };
+    return (p: string, isDir: boolean) => (p !== '.' && isDir ? p.slice(0, -1) : p);
   }
 
   if (absolute) {
