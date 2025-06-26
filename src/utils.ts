@@ -115,10 +115,6 @@ export function buildFormat(cwd: string, root: string, absolute?: boolean): (p: 
 
 // like format but we need to do less
 export function buildRelative(cwd: string, root: string): (p: string) => string {
-  if (cwd === root) {
-    return p => p;
-  }
-
   if (root.startsWith(`${cwd}/`)) {
     const prefix = root.slice(cwd.length + 1);
     return p => `${prefix}/${p}`;
