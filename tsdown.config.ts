@@ -5,7 +5,7 @@ export default defineConfig({
   entry: ['src/index.ts'],
   fixedExtension: true,
   format: ['esm', 'cjs'],
-  removeNodeProtocol: true,
+  nodeProtocol: 'strip',
   sourcemap: !process.env.IS_RELEASE,
   target: 'node12'
 }) as UserConfig;
