@@ -249,6 +249,8 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
 
   if (options.deep !== undefined) {
     fdirOptions.maxDepth = Math.round(options.deep - props.depthOffset);
+  } else {
+    fdirOptions.maxDepth = 2;
   }
 
   if (options.absolute) {
