@@ -51,14 +51,14 @@
     "picomatch": "^4.0.2"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.0.0",
-    "@types/node": "^22.15.31",
+    "@biomejs/biome": "^2.0.5",
+    "@types/node": "^22.15.33",
     "@types/picomatch": "^4.0.0",
     "fast-glob": "^3.3.3",
-    "fs-fixture": "^2.7.1",
-    "glob": "^11.0.2",
+    "fs-fixture": "^2.8.1",
+    "glob": "^11.0.3",
     "tinybench": "^4.0.1",
-    "tsdown": "^0.12.7",
+    "tsdown": "^0.12.9",
     "typescript": "^5.8.3"
   },
   "engines": {
@@ -68,5 +68,5 @@
     "access": "public",
     "provenance": true
   },
-  "packageManager": "pnpm@10.12.1"
+  "packageManager": "pnpm@10.12.3"
 }
