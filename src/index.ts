@@ -1,7 +1,15 @@
 import path, { posix } from 'node:path';
 import { type Options as FdirOptions, fdir } from 'fdir';
 import picomatch from 'picomatch';
-import { escapePath, getPartialMatcher, isDynamicPattern, log, splitPattern } from './utils.ts';
+import {
+  buildFormat,
+  buildRelative,
+  escapePath,
+  getPartialMatcher,
+  isDynamicPattern,
+  log,
+  splitPattern
+} from './utils.ts';
 
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
@@ -146,25 +154,10 @@ function processPatterns(
   return { match: matchPatterns, ignore: ignorePatterns };
 }
 
-// TODO: this is slow, find a better way to do this
-function getRelativePath(path: string, cwd: string, root: string) {
-  return posix.relative(cwd, `${root}/${path}`) || '.';
-}
-
-function processPath(path: string, cwd: string, root: string, isDirectory: boolean, absolute?: boolean) {
-  const relativePath = absolute ? path.slice(root === '/' ? 1 : root.length + 1) || '.' : path;
-
-  if (root === cwd) {
-    return isDirectory && relativePath !== '.' ? relativePath.slice(0, -1) : relativePath;
-  }
-
-  return getRelativePath(relativePath, cwd, root);
-}
-
-function formatPaths(paths: string[], cwd: string, root: string) {
+function formatPaths(paths: string[], relative: (p: string) => string) {
   for (let i = paths.length - 1; i >= 0; i--) {
     const path = paths[i];
-    paths[i] = getRelativePath(path, cwd, root) + (!path || path.endsWith('/') ? '/' : '');
+    paths[i] = relative(path);
   }
   return paths;
 }
@@ -213,12 +206,15 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     nocase
   });
 
+  const format = buildFormat(cwd, props.root, options.absolute);
+  const formatExclude = options.absolute ? format : buildFormat(cwd, props.root, true);
+  const relative = buildRelative(cwd, props.root);
   const fdirOptions: Partial<FdirOptions> = {
     // use relative paths in the matcher
     filters: [
       options.debug
         ? (p, isDirectory) => {
-            const path = processPath(p, cwd, props.root, isDirectory, options.absolute);
+            const path = format(p, isDirectory);
             const matches = matcher(path);
 
             if (matches) {
@@ -227,11 +223,11 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
 
             return matches;
           }
-        : (p, isDirectory) => matcher(processPath(p, cwd, props.root, isDirectory, options.absolute))
+        : (p, isDirectory) => matcher(format(p, isDirectory))
     ],
     exclude: options.debug
       ? (_, p) => {
-          const relativePath = processPath(p, cwd, props.root, true, true);
+          const relativePath = formatExclude(p, true);
           const skipped = (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
 
           if (skipped) {
@@ -243,7 +239,7 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
           return skipped;
         }
       : (_, p) => {
-          const relativePath = processPath(p, cwd, props.root, true, true);
+          const relativePath = formatExclude(p, true);
           return (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
         },
     pathSeparator: '/',
@@ -286,7 +282,7 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     return sync ? api.sync() : api.withPromise();
   }
 
-  return sync ? formatPaths(api.sync(), cwd, root) : api.withPromise().then(paths => formatPaths(paths, cwd, root));
+  return sync ? formatPaths(api.sync(), relative) : api.withPromise().then(paths => formatPaths(paths, relative));
 }
 
 export function glob(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): Promise<string[]>;

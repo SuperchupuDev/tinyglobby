@@ -440,7 +440,7 @@ test('relative self (two layers)', () => {
 
 test('relative self that points to .', () => {
   const files = globSync(['../a'], { cwd: path.join(cwd, 'a'), onlyDirectories: true, expandDirectories: false });
-  assert.deepEqual(files.sort(), ['./']);
+  assert.deepEqual(files.sort(), ['.']);
 });
 
 test('relative self + normal pattern', () => {

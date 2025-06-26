@@ -1,3 +1,4 @@
+import { posix } from 'node:path';
 import picomatch from 'picomatch';
 
 // #region PARTIAL MATCHER
@@ -74,6 +75,57 @@ export function getPartialMatcher(patterns: string[], options?: PartialMatcherOp
     }
 
     return false;
+  };
+}
+// #endregion
+
+// #region format & relative
+// `path.relative` is slow, we want to avoid it as much as we can
+// like `buildRelative`, but with some differences to avoid extra work
+// for example we definitely do not want trailing slashes
+export function buildFormat(cwd: string, root: string, absolute?: boolean): (p: string, isDir: boolean) => string {
+  if (cwd === root || root.startsWith(`${cwd}/`)) {
+    if (absolute) {
+      const start = cwd === '/' ? 1 : cwd.length + 1;
+      return (p: string, isDir: boolean) => p.slice(start, isDir ? -1 : undefined) || '.';
+    }
+    const prefix = root.slice(cwd.length + 1);
+    if (prefix) {
+      return (p: string, isDir: boolean) => {
+        if (p === '.') {
+          return prefix;
+        }
+        const result = `${prefix}/${p}`;
+        return isDir ? result.slice(0, -1) : result;
+      };
+    }
+    return (p: string, isDir: boolean) => {
+      if (p === '.') {
+        return p;
+      }
+      return isDir ? p.slice(0, -1) : p;
+    };
+  }
+
+  if (absolute) {
+    return (p: string) => posix.relative(cwd, p) || '.';
+  }
+  return (p: string) => posix.relative(cwd, `${root}/${p}`) || '.';
+}
+
+// like format but we need to do less
+export function buildRelative(cwd: string, root: string): (p: string) => string {
+  if (root.startsWith(`${cwd}/`)) {
+    const prefix = root.slice(cwd.length + 1);
+    return p => `${prefix}/${p}`;
+  }
+
+  return p => {
+    const result = posix.relative(cwd, `${root}/${p}`);
+    if (p.endsWith('/') && result !== '') {
+      return `${result}/`;
+    }
+    return result || '.';
   };
 }
 // #endregion
