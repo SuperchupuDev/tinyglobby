@@ -207,6 +207,11 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
   });
 
   const format = buildFormat(cwd, props.root, options.absolute);
+  const canSkipFormatting =
+    (cwd === props.root || props.root.startsWith(`${cwd}/`)) &&
+    !options.absolute &&
+    !props.root.slice(cwd.length + 1) &&
+    options.onlyFiles !== false;
   const formatExclude = options.absolute ? format : buildFormat(cwd, props.root, true);
   const relative = buildRelative(cwd, props.root);
   const fdirOptions: Partial<FdirOptions> = {
@@ -223,7 +228,9 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
 
             return matches;
           }
-        : (p, isDirectory) => matcher(format(p, isDirectory))
+        : canSkipFormatting
+          ? p => matcher(p)
+          : (p, isDirectory) => matcher(format(p, isDirectory))
     ],
     exclude: options.debug
       ? (_, p) => {
