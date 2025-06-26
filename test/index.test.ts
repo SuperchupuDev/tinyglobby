@@ -24,6 +24,7 @@ const fixture = await createFixture({
 });
 
 const cwd = fixture.path;
+const escapedCwd = cwd.replaceAll('\\', '/');
 
 after(() => fixture.rm());
 
@@ -73,6 +74,12 @@ test('negative patterns', async () => {
 test('negative patterns setting root as /', async () => {
   const files = await glob({ patterns: ['**/a.txt', '!/b/a.txt'], cwd });
   assert.deepEqual(files.sort(), ['a/a.txt', 'b/a.txt']);
+});
+
+// only here for coverage reasons really
+test('absolutely crawl root', async () => {
+  const files = await glob('/', { cwd: '/', onlyDirectories: true, absolute: true, expandDirectories: false });
+  assert.deepEqual(files.sort(), ['/']);
 });
 
 test('patterns as string', async () => {
@@ -154,13 +161,13 @@ test("expandDirectories doesn't break common path inferring either", async () =>
 });
 
 test("handle absolute patterns that don't escape the cwd", async () => {
-  const files = await glob({ patterns: [`${cwd.replaceAll('\\', '/')}a/a.txt`], cwd });
+  const files = await glob({ patterns: [`${escapedCwd}a/a.txt`], cwd });
   assert.deepEqual(files.sort(), ['a/a.txt']);
 });
 
 test('fully handle absolute patterns', async () => {
   const files = await glob({
-    patterns: [`${cwd.replaceAll('\\', '/')}a/a.txt`, `${cwd.replaceAll('\\', '/')}b/a.txt`],
+    patterns: [`${escapedCwd}a/a.txt`, `${escapedCwd}b/a.txt`],
     cwd: path.join(cwd, 'a')
   });
   assert.deepEqual(files.sort(), ['../b/a.txt', 'a.txt']);
@@ -168,16 +175,21 @@ test('fully handle absolute patterns', async () => {
 
 test('escaped absolute patterns', async () => {
   const files = await glob({
-    patterns: [`${cwd.replaceAll('\\', '/')}.\\[a\\]/a.txt`],
+    patterns: [`${escapedCwd}.\\[a\\]/a.txt`],
     absolute: true,
     cwd: path.join(cwd, '.[a]')
   });
-  assert.deepEqual(files.sort(), [`${cwd.replaceAll('\\', '/')}.[a]/a.txt`]);
+  assert.deepEqual(files.sort(), [`${escapedCwd}.[a]/a.txt`]);
 });
 
 test('leading ../', async () => {
   const files = await glob({ patterns: ['../b/*.txt'], cwd: path.join(cwd, 'a') });
   assert.deepEqual(files.sort(), ['../b/a.txt', '../b/b.txt']);
+});
+
+test('leading ../ with only dirs', async () => {
+  const files = await glob(['../.a/*'], { cwd: path.join(cwd, 'a'), onlyDirectories: true, expandDirectories: false });
+  assert.deepEqual(files.sort(), ['../.a/a/']);
 });
 
 test('leading ../ plus normal pattern', async () => {
@@ -187,7 +199,7 @@ test('leading ../ plus normal pattern', async () => {
 
 test('leading ../ with absolute on', async () => {
   const files = await glob({ patterns: ['../b/*.txt'], absolute: true, cwd: path.join(cwd, 'a') });
-  assert.deepEqual(files.sort(), [`${cwd.replaceAll('\\', '/')}b/a.txt`, `${cwd.replaceAll('\\', '/')}b/b.txt`]);
+  assert.deepEqual(files.sort(), [`${escapedCwd}b/a.txt`, `${escapedCwd}b/b.txt`]);
 });
 
 test('bracket expanding', async () => {
@@ -237,17 +249,17 @@ test('deep with ../', async () => {
 
 test('absolute', async () => {
   const files = await glob({ patterns: ['a/a.txt'], cwd, absolute: true });
-  assert.deepEqual(files.sort(), [`${cwd.replaceAll('\\', '/')}a/a.txt`]);
+  assert.deepEqual(files.sort(), [`${escapedCwd}a/a.txt`]);
 });
 
 test('absolute + dot', async () => {
   const files = await glob({ patterns: ['a/a.txt'], dot: true, cwd: path.join(cwd, '.a'), absolute: true });
-  assert.deepEqual(files.sort(), [`${cwd.replaceAll('\\', '/')}.a/a/a.txt`]);
+  assert.deepEqual(files.sort(), [`${escapedCwd}.a/a/a.txt`]);
 });
 
 test('absolute + empty commonPath', async () => {
   const files = await glob({ patterns: ['a/**.txt'], cwd, absolute: true, expandDirectories: false });
-  assert.deepEqual(files.sort(), [`${cwd.replaceAll('\\', '/')}a/a.txt`, `${cwd.replaceAll('\\', '/')}a/b.txt`]);
+  assert.deepEqual(files.sort(), [`${escapedCwd}a/a.txt`, `${escapedCwd}a/b.txt`]);
 });
 
 test('handle symlinks', async () => {
@@ -274,9 +286,9 @@ test('handle recursive symlinks', async () => {
 test('handle symlinks (absolute)', async () => {
   const files = await glob({ patterns: ['.symlink/**'], absolute: true, cwd });
   assert.deepEqual(files.sort(), [
-    `${cwd.replaceAll('\\', '/')}.symlink/dir/a.txt`,
-    `${cwd.replaceAll('\\', '/')}.symlink/dir/b.txt`,
-    `${cwd.replaceAll('\\', '/')}.symlink/file`
+    `${escapedCwd}.symlink/dir/a.txt`,
+    `${escapedCwd}.symlink/dir/b.txt`,
+    `${escapedCwd}.symlink/file`
   ]);
 });
 
@@ -288,12 +300,12 @@ test('handle recursive symlinks (absolute)', async () => {
     cwd
   });
   assert.deepEqual(files.sort(), [
-    `${cwd.replaceAll('\\', '/')}.symlink/.recursive/.[a]/a.txt`,
-    `${cwd.replaceAll('\\', '/')}.symlink/.recursive/.symlink/file`,
-    `${cwd.replaceAll('\\', '/')}.symlink/.recursive/a/a.txt`,
-    `${cwd.replaceAll('\\', '/')}.symlink/.recursive/a/b.txt`,
-    `${cwd.replaceAll('\\', '/')}.symlink/.recursive/b/a.txt`,
-    `${cwd.replaceAll('\\', '/')}.symlink/.recursive/b/b.txt`
+    `${escapedCwd}.symlink/.recursive/.[a]/a.txt`,
+    `${escapedCwd}.symlink/.recursive/.symlink/file`,
+    `${escapedCwd}.symlink/.recursive/a/a.txt`,
+    `${escapedCwd}.symlink/.recursive/a/b.txt`,
+    `${escapedCwd}.symlink/.recursive/b/a.txt`,
+    `${escapedCwd}.symlink/.recursive/b/b.txt`
   ]);
 });
 
@@ -315,7 +327,7 @@ test('. works', async () => {
 
 test('. works (absolute)', async () => {
   const files = await glob(['.'], { cwd, absolute: true, expandDirectories: false, onlyDirectories: true });
-  assert.deepEqual(files.sort(), [cwd.replaceAll('\\', '/')]);
+  assert.deepEqual(files.sort(), [escapedCwd]);
 });
 
 test('works with non-absolute cwd', async () => {
@@ -366,13 +378,13 @@ test('negative patterns in options', async () => {
 
 test('negative absolute patterns in options', async () => {
   const files = await glob({
-    patterns: [`${cwd.replaceAll('\\', '/')}**/*.txt`, `!${cwd.replaceAll('\\', '/')}**/b.txt`],
+    patterns: [`${escapedCwd}**/*.txt`, `!${escapedCwd}**/b.txt`],
     cwd
   });
   assert.deepEqual(files.sort(), ['a/a.txt', 'b/a.txt']);
 
   const files2 = await glob({
-    patterns: [`${cwd.replaceAll('\\', '/')}**/*.txt`, `!${cwd.replaceAll('\\', '/')}**/a.txt`],
+    patterns: [`${escapedCwd}**/*.txt`, `!${escapedCwd}**/a.txt`],
     cwd
   });
   assert.deepEqual(files2.sort(), ['a/b.txt', 'b/b.txt']);

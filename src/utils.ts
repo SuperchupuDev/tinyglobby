@@ -153,6 +153,7 @@ export function convertWin32PathToPattern(path: string): string {
   return escapeWin32Path(path).replace(ESCAPED_WIN32_BACKSLASHES, '/');
 }
 
+/* node:coverage ignore next 3 */
 export const convertPathToPattern: (path: string) => string = isWin
   ? convertWin32PathToPattern
   : convertPosixPathToPattern;
@@ -172,6 +173,7 @@ const WIN32_UNESCAPED_GLOB_SYMBOLS = /(?<!\\)([()[\]{}]|^!|[!+@](?=\())/g;
 export const escapePosixPath = (path: string): string => path.replace(POSIX_UNESCAPED_GLOB_SYMBOLS, '\\$&');
 export const escapeWin32Path = (path: string): string => path.replace(WIN32_UNESCAPED_GLOB_SYMBOLS, '\\$&');
 
+/* node:coverage ignore next */
 export const escapePath: (path: string) => string = isWin ? escapeWin32Path : escapePosixPath;
 // #endregion
 
