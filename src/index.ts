@@ -17,17 +17,18 @@ const BACKSLASHES = /\\/g;
 
 export interface GlobOptions {
   absolute?: boolean;
-  cwd?: string;
-  patterns?: string | string[];
-  ignore?: string | string[];
-  dot?: boolean;
-  deep?: number;
-  followSymbolicLinks?: boolean;
   caseSensitiveMatch?: boolean;
+  cwd?: string;
+  debug?: boolean;
+  deep?: number;
+  dot?: boolean;
   expandDirectories?: boolean;
+  followSymbolicLinks?: boolean;
+  globstar?: boolean;
+  ignore?: string | string[];
   onlyDirectories?: boolean;
   onlyFiles?: boolean;
-  debug?: boolean;
+  patterns?: string | string[];
 }
 
 interface InternalProps {
@@ -193,17 +194,20 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
   const matcher = picomatch(processed.match, {
     dot: options.dot,
     nocase,
+    noglobstar: !(options.globstar ?? true),
     ignore: processed.ignore
   });
 
   const ignore = picomatch(processed.ignore, {
     dot: options.dot,
-    nocase
+    nocase,
+    noglobstar: !(options.globstar ?? true)
   });
 
   const partialMatcher = getPartialMatcher(processed.match, {
     dot: options.dot,
-    nocase
+    nocase,
+    noglobstar: !(options.globstar ?? true)
   });
 
   const format = buildFormat(cwd, props.root, options.absolute);

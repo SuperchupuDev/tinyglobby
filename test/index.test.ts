@@ -4,6 +4,7 @@ import { after, test } from 'node:test';
 import { createFixture } from 'fs-fixture';
 import { glob, globSync } from '../src/index.ts';
 
+// object properties are file names and values are file contents
 const fixture = await createFixture({
   a: {
     'a.txt': 'a',
@@ -245,6 +246,16 @@ test('deep with ../', async () => {
 
   const files3 = await glob({ patterns: ['../.deep/a/a/*.txt', 'a.txt'], deep: 1, cwd: path.join(cwd, 'a') });
   assert.deepEqual(files3.sort(), ['a.txt']);
+});
+
+test('globstar false', async () => {
+  const files = await glob({ patterns: ['.deep/**/*.txt'], cwd, expandDirectories: false, globstar: false });
+  assert.deepEqual(files.sort(), []);
+});
+
+test('globstar false with expandDirectories', async () => {
+  const files = await glob({ patterns: ['.deep'], cwd, globstar: false });
+  assert.deepEqual(files.sort(), []);
 });
 
 test('absolute', async () => {
