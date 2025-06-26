@@ -79,7 +79,7 @@ test('negative patterns setting root as /', async () => {
 // only here for coverage reasons really
 test('absolutely crawl root', async () => {
   const files = await glob('/', { cwd: '/', onlyDirectories: true, absolute: true, expandDirectories: false });
-  assert.deepEqual(files.sort(), ['/']);
+  assert.deepEqual(files.sort(), [path.resolve('/').replaceAll('\\', '/')]);
 });
 
 test('patterns as string', async () => {

@@ -1,6 +1,8 @@
 import { posix } from 'node:path';
 import picomatch from 'picomatch';
 
+const isWin = process.platform === 'win32';
+
 // #region PARTIAL MATCHER
 export interface PartialMatcherOptions {
   dot?: boolean;
@@ -80,13 +82,17 @@ export function getPartialMatcher(patterns: string[], options?: PartialMatcherOp
 // #endregion
 
 // #region format & relative
+/* node:coverage ignore next 2 */
+const WIN32_ROOT_DIR = /^[A-Z]:\/$/i;
+const isRoot = isWin ? (p: string) => WIN32_ROOT_DIR.test(p) : (p: string) => p === '/';
+
 // `path.relative` is slow, we want to avoid it as much as we can
 // like `buildRelative`, but with some differences to avoid extra work
 // for example we definitely do not want trailing slashes
 export function buildFormat(cwd: string, root: string, absolute?: boolean): (p: string, isDir: boolean) => string {
   if (cwd === root || root.startsWith(`${cwd}/`)) {
     if (absolute) {
-      const start = cwd === '/' ? 1 : cwd.length + 1;
+      const start = isRoot(cwd) ? cwd.length : cwd.length + 1;
       return (p: string, isDir: boolean) => p.slice(start, isDir ? -1 : undefined) || '.';
     }
     const prefix = root.slice(cwd.length + 1);
@@ -140,8 +146,6 @@ export function splitPattern(path: string): string[] {
   return result.parts?.length ? result.parts : [path];
 }
 // #endregion
-
-const isWin = process.platform === 'win32';
 
 // #region convertPathToPattern
 const ESCAPED_WIN32_BACKSLASHES = /\\(?![()[\]{}!+@])/g;
