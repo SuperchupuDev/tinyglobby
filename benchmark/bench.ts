@@ -1,9 +1,8 @@
-import { join } from 'node:path';
-import { Bench } from 'tinybench';
-
 import { glob as native } from 'node:fs/promises';
+import { join } from 'node:path';
 import fastGlob from 'fast-glob';
 import { glob } from 'glob';
+import { Bench } from 'tinybench';
 import { glob as tinyglobby } from '../src/index.ts';
 
 const bench = new Bench({ name: 'packages/*/tsconfig.json (typescript-eslint)' });
