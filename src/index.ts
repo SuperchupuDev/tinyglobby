@@ -225,23 +225,6 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
           }
         : (p, isDirectory) => matcher(format(p, isDirectory))
     ],
-    exclude: options.debug
-      ? (_, p) => {
-          const relativePath = formatExclude(p, true);
-          const skipped = (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
-
-          if (skipped) {
-            log(`skipped ${p}`);
-          } else {
-            log(`crawling ${p}`);
-          }
-
-          return skipped;
-        }
-      : (_, p) => {
-          const relativePath = formatExclude(p, true);
-          return (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
-        },
     pathSeparator: '/',
     relativePaths: true,
     resolveSymlinks: true
