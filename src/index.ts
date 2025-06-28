@@ -28,6 +28,9 @@ export interface GlobOptions {
   ignore?: string | string[];
   onlyDirectories?: boolean;
   onlyFiles?: boolean;
+  /**
+   * @deprecated Provide patterns as the first argument instead.
+   */
   patterns?: string | string[];
   signal?: AbortSignal;
 }
@@ -121,7 +124,7 @@ function processPatterns(
   if (typeof patterns === 'string') {
     patterns = [patterns];
   } else if (!patterns) {
-    // tinyglobby exclusive behavior, should be considered deprecated
+    // tinyglobby exclusive behavior, deprecated
     patterns = ['**/*'];
   }
 
@@ -292,6 +295,9 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
 }
 
 export function glob(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): Promise<string[]>;
+/**
+ * @deprecated Provide patterns as the first argument instead.
+ */
 export function glob(options: GlobOptions): Promise<string[]>;
 export async function glob(
   patternsOrOptions: string | string[] | GlobOptions,
@@ -311,6 +317,9 @@ export async function glob(
 }
 
 export function globSync(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): string[];
+/**
+ * @deprecated Provide patterns as the first argument instead.
+ */
 export function globSync(options: GlobOptions): string[];
 export function globSync(patternsOrOptions: string | string[] | GlobOptions, options?: GlobOptions): string[] {
   if (patternsOrOptions && options?.patterns) {
