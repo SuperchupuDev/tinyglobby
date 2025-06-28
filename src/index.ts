@@ -29,6 +29,7 @@ export interface GlobOptions {
   onlyDirectories?: boolean;
   onlyFiles?: boolean;
   patterns?: string | string[];
+  signal?: AbortSignal;
 }
 
 interface InternalProps {
@@ -248,7 +249,8 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
         },
     pathSeparator: '/',
     relativePaths: true,
-    resolveSymlinks: true
+    resolveSymlinks: true,
+    signal: options.signal
   };
 
   if (options.deep !== undefined) {

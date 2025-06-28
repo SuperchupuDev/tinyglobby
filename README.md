@@ -43,6 +43,7 @@ globSync(['src/**/*.ts'], { ignore: ['**/*.d.ts'] });
 - `onlyDirectories`: Enable to only return directories. Disables `onlyFiles` if set. Defaults to `false`.
 - `onlyFiles`: Enable to only return files. Defaults to `true`.
 - `patterns`: An array of glob patterns to search for. Defaults to `['**/*']`.
+- `signal`: An `AbortSignal` to abort crawling the file system.
 
 ## Used by
 

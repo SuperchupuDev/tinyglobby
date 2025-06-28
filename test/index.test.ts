@@ -128,6 +128,14 @@ test('onlyFiles option', async () => {
   assert.deepEqual(files.sort(), ['a/', 'a/a.txt', 'a/b.txt']);
 });
 
+test('signal option', async () => {
+  const controller = new AbortController();
+  const result = glob('**', { signal: controller.signal, cwd, expandDirectories: false });
+  controller.abort();
+  const files = await result;
+  assert.deepEqual(files.sort(), []);
+});
+
 test('debug option', async t => {
   const { mock } = t.mock.method(console, 'log', () => null);
   const files = await glob({ patterns: ['a'], debug: true, cwd });
