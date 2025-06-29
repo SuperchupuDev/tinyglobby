@@ -167,9 +167,13 @@ function formatPaths(paths: string[], relative: (p: string) => string) {
   return paths;
 }
 
-function crawl(options: GlobOptions, cwd: string, sync: false): Promise<string[]>;
-function crawl(options: GlobOptions, cwd: string, sync: true): string[];
-function crawl(options: GlobOptions, cwd: string, sync: boolean) {
+function crawl(options: GlobOptions, sync: false): Promise<string[]>;
+function crawl(options: GlobOptions, sync: true): string[];
+function crawl(options: GlobOptions, sync: boolean) {
+  const cwd = options.cwd
+    ? path.resolve(options.cwd).replace(BACKSLASHES, '/')
+    : process.cwd().replace(BACKSLASHES, '/');
+
   if (process.env.TINYGLOBBY_DEBUG) {
     options.debug = true;
   }
@@ -311,9 +315,8 @@ export async function glob(
     Array.isArray(patternsOrOptions) || typeof patternsOrOptions === 'string'
       ? { ...options, patterns: patternsOrOptions }
       : patternsOrOptions;
-  const cwd = opts.cwd ? path.resolve(opts.cwd).replace(BACKSLASHES, '/') : process.cwd().replace(BACKSLASHES, '/');
 
-  return crawl(opts, cwd, false);
+  return crawl(opts, false);
 }
 
 export function globSync(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): string[];
@@ -330,9 +333,8 @@ export function globSync(patternsOrOptions: string | string[] | GlobOptions, opt
     Array.isArray(patternsOrOptions) || typeof patternsOrOptions === 'string'
       ? { ...options, patterns: patternsOrOptions }
       : patternsOrOptions;
-  const cwd = opts.cwd ? path.resolve(opts.cwd).replace(BACKSLASHES, '/') : process.cwd().replace(BACKSLASHES, '/');
 
-  return crawl(opts, cwd, true);
+  return crawl(opts, true);
 }
 
 export { convertPathToPattern, escapePath, isDynamicPattern } from './utils.ts';
