@@ -10,7 +10,7 @@
   "nodejs-testing.extensions": [
     {
       "extensions": ["ts"],
-      "parameters": ["--experimental-transform-types"]
+      "parameters": []
     }
   ],
   "npm.packageManager": "pnpm",
