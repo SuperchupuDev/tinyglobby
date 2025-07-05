@@ -68,14 +68,11 @@
     "runtime": {
       "name": "node",
       "version": ">=24.3.0"
-    },
-    "packageManager": {
-      "name": "pnpm",
-      "version": "10.12.3"
     }
   },
   "publishConfig": {
     "access": "public",
     "provenance": true
-  }
+  },
+  "packageManager": "pnpm@10.12.3"
 }
