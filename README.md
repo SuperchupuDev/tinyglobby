@@ -69,5 +69,6 @@ globSync('src/**/*.ts', { ignore: '**/*.d.ts' });
 - [`unocss`](https://github.com/unocss/unocss)
 - [`vitepress`](https://github.com/vuejs/vitepress)
 - [`pkg-pr-new`](https://github.com/stackblitz-labs/pkg.pr.new)
+- [`content-collections`](https://github.com/sdorra/content-collections)
 - Your own project? [Open an issue](https://github.com/SuperchupuDev/tinyglobby/issues)
 if you feel like this list is incomplete.
