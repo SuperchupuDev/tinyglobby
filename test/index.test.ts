@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { after, test } from 'node:test';
 import { createFixture } from 'fs-fixture';
-import { glob, globSync } from '../src/index.ts';
+import { glob, globIterate, globSync } from '../src/index.ts';
 
 // object properties are file names and values are file contents
 const fixture = await createFixture({
@@ -422,6 +422,53 @@ test('sync version with multiple patterns', () => {
 test('sync with empty array matches nothing', () => {
   const files = globSync([]);
   assert.deepEqual(files.sort(), []);
+});
+
+test('iterator', async () => {
+  const files = await Array.fromAsync(globIterate('a/*.txt', { cwd }));
+  assert.deepEqual(files.sort(), ['a/a.txt', 'a/b.txt']);
+});
+
+test('iterator returning', async () => {
+  const iterator = globIterate('**', { dot: true, cwd });
+  const files: string[] = [];
+
+  let i = 0;
+  for await (const file of iterator) {
+    files.push(file);
+    console.log(file, i);
+    i++;
+
+    if (i === 10) {
+      iterator.return();
+    }
+  }
+
+  assert.equal(files.length, 10);
+});
+
+test('iterator aborting', async () => {
+  const ac = new AbortController();
+  const iterator = globIterate('**', { dot: true, signal: ac.signal, cwd });
+  const files: string[] = [];
+
+  let i = 0;
+  for await (const file of iterator) {
+    files.push(file);
+    console.log(file, i);
+    i++;
+
+    if (i === 10) {
+      ac.abort();
+    }
+  }
+
+  assert.equal(files.length, 10);
+});
+
+test('iterator with empty array matches nothing', async () => {
+  await using iterator = globIterate([]);
+  assert.partialDeepStrictEqual(await iterator.next(), { done: true });
 });
 
 test('*', async () => {

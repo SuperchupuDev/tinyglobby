@@ -182,7 +182,10 @@ function getCrawler(patterns?: string | string[], options: Omit<GlobOptions, 'pa
     return [
       {
         sync: () => [],
-        withPromise: async () => []
+        withPromise: async () => [],
+        async *withIterator() {
+          yield* [];
+        }
       },
       false
     ] as const;
@@ -339,6 +342,20 @@ export function globSync(patternsOrOptions: string | string[] | GlobOptions, opt
     return crawler.sync();
   }
   return formatPaths(crawler.sync(), relative);
+}
+
+export type GlobIterator = AsyncGenerator<string, void, undefined>;
+export async function* globIterate(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): GlobIterator {
+  const [crawler, relative] = getCrawler(patterns, options);
+  const iterator = crawler.withIterator();
+
+  if (!relative) {
+    return yield* crawler.withIterator();
+  }
+
+  for await (const path of iterator) {
+    yield relative(path);
+  }
 }
 
 export { convertPathToPattern, escapePath, isDynamicPattern } from './utils.ts';
