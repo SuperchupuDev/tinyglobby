@@ -130,9 +130,8 @@ test('onlyFiles option', async () => {
 
 test('signal option', async () => {
   const controller = new AbortController();
-  const result = glob('**', { signal: controller.signal, cwd, expandDirectories: false });
   controller.abort();
-  const files = await result;
+  const files = await glob('**', { signal: controller.signal, cwd, expandDirectories: false });
   assert.deepEqual(files.sort(), []);
 });
 

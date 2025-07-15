@@ -110,22 +110,20 @@ function normalizePattern(
     props.depthOffset = newCommonPath.length;
     props.commonPath = newCommonPath;
 
-    props.root = newCommonPath.length > 0 ? path.posix.join(cwd, ...newCommonPath) : cwd;
+    props.root = newCommonPath.length > 0 ? posix.join(cwd, ...newCommonPath) : cwd;
   }
 
   return result;
 }
 
 function processPatterns(
-  { patterns, ignore = [], expandDirectories = true }: GlobOptions,
+  // defaulting to ['**/*'] is tinyglobby exclusive behavior, deprecated
+  { patterns = ['**/*'], ignore = [], expandDirectories = true }: GlobOptions,
   cwd: string,
   props: InternalProps
 ) {
   if (typeof patterns === 'string') {
     patterns = [patterns];
-  } else if (!patterns) {
-    // tinyglobby exclusive behavior, deprecated
-    patterns = ['**/*'];
   }
 
   if (typeof ignore === 'string') {
@@ -167,9 +165,7 @@ function formatPaths(paths: string[], relative: (p: string) => string) {
   return paths;
 }
 
-function crawl(options: GlobOptions, sync: false): Promise<string[]>;
-function crawl(options: GlobOptions, sync: true): string[];
-function crawl(options: GlobOptions, sync: boolean) {
+function getCrawler(patterns?: string | string[], options: Omit<GlobOptions, 'patterns'> = {}) {
   const cwd = options.cwd
     ? path.resolve(options.cwd).replace(BACKSLASHES, '/')
     : process.cwd().replace(BACKSLASHES, '/');
@@ -179,11 +175,17 @@ function crawl(options: GlobOptions, sync: boolean) {
   }
 
   if (options.debug) {
-    log('globbing with options:', options, 'cwd:', cwd);
+    log('globbing with:', { patterns, options, cwd });
   }
 
-  if (Array.isArray(options.patterns) && options.patterns.length === 0) {
-    return sync ? [] : Promise.resolve([]);
+  if (Array.isArray(patterns) && patterns.length === 0) {
+    return [
+      {
+        sync: () => [],
+        withPromise: async () => []
+      },
+      false
+    ] as const;
   }
 
   const props = {
@@ -192,7 +194,7 @@ function crawl(options: GlobOptions, sync: boolean) {
     depthOffset: 0
   };
 
-  const processed = processPatterns(options, cwd, props);
+  const processed = processPatterns({ ...options, patterns }, cwd, props);
   const nocase = options.caseSensitiveMatch === false;
 
   if (options.debug) {
@@ -220,7 +222,6 @@ function crawl(options: GlobOptions, sync: boolean) {
 
   const format = buildFormat(cwd, props.root, options.absolute);
   const formatExclude = options.absolute ? format : buildFormat(cwd, props.root, true);
-  const relative = buildRelative(cwd, props.root);
   const fdirOptions: Partial<FdirOptions> = {
     // use relative paths in the matcher
     filters: [
@@ -289,13 +290,8 @@ function crawl(options: GlobOptions, sync: boolean) {
     log('internal properties:', props);
   }
 
-  const api = new fdir(fdirOptions).crawl(root);
-
-  if (cwd === root || options.absolute) {
-    return sync ? api.sync() : api.withPromise();
-  }
-
-  return sync ? formatPaths(api.sync(), relative) : api.withPromise().then(paths => formatPaths(paths, relative));
+  const relative = cwd !== root && !options.absolute && buildRelative(cwd, props.root);
+  return [new fdir(fdirOptions).crawl(root), relative] as const;
 }
 
 export function glob(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): Promise<string[]>;
@@ -311,12 +307,16 @@ export async function glob(
     throw new Error('Cannot pass patterns as both an argument and an option');
   }
 
-  const opts =
-    Array.isArray(patternsOrOptions) || typeof patternsOrOptions === 'string'
-      ? { ...options, patterns: patternsOrOptions }
-      : patternsOrOptions;
+  const isModern = Array.isArray(patternsOrOptions) || typeof patternsOrOptions === 'string';
+  const opts = isModern ? options : patternsOrOptions;
+  const patterns = isModern ? patternsOrOptions : patternsOrOptions.patterns;
 
-  return crawl(opts, false);
+  const [crawler, relative] = getCrawler(patterns, opts);
+
+  if (!relative) {
+    return crawler.withPromise();
+  }
+  return formatPaths(await crawler.withPromise(), relative);
 }
 
 export function globSync(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): string[];
@@ -329,12 +329,16 @@ export function globSync(patternsOrOptions: string | string[] | GlobOptions, opt
     throw new Error('Cannot pass patterns as both an argument and an option');
   }
 
-  const opts =
-    Array.isArray(patternsOrOptions) || typeof patternsOrOptions === 'string'
-      ? { ...options, patterns: patternsOrOptions }
-      : patternsOrOptions;
+  const isModern = Array.isArray(patternsOrOptions) || typeof patternsOrOptions === 'string';
+  const opts = isModern ? options : patternsOrOptions;
+  const patterns = isModern ? patternsOrOptions : patternsOrOptions.patterns;
 
-  return crawl(opts, true);
+  const [crawler, relative] = getCrawler(patterns, opts);
+
+  if (!relative) {
+    return crawler.sync();
+  }
+  return formatPaths(crawler.sync(), relative);
 }
 
 export { convertPathToPattern, escapePath, isDynamicPattern } from './utils.ts';
