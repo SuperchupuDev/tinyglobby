@@ -27,6 +27,7 @@ export interface GlobOptions {
   globstar?: boolean;
   ignore?: string | string[];
   onlyDirectories?: boolean;
+  posix?: boolean;
   onlyFiles?: boolean;
   /**
    * @deprecated Provide patterns as the first argument instead.
@@ -205,19 +206,22 @@ function getCrawler(patterns?: string | string[], options: Omit<GlobOptions, 'pa
     dot: options.dot,
     nocase,
     noglobstar: !(options.globstar ?? true),
-    ignore: processed.ignore
+    ignore: processed.ignore,
+    posix: options.posix
   });
 
   const ignore = picomatch(processed.ignore, {
     dot: options.dot,
     nocase,
-    noglobstar: !(options.globstar ?? true)
+    noglobstar: !(options.globstar ?? true),
+    posix: options.posix
   });
 
   const partialMatcher = getPartialMatcher(processed.match, {
     dot: options.dot,
     nocase,
-    noglobstar: !(options.globstar ?? true)
+    noglobstar: !(options.globstar ?? true),
+    posix: options.posix
   });
 
   const format = buildFormat(cwd, props.root, options.absolute);
