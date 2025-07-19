@@ -1,22 +1,16 @@
 import { posix } from 'node:path';
-import picomatch from 'picomatch';
+import picomatch, { type PicomatchOptions } from 'picomatch';
 
 const isWin = process.platform === 'win32';
 
 // #region PARTIAL MATCHER
-export interface PartialMatcherOptions {
-  dot?: boolean;
-  nocase?: boolean;
-  noglobstar?: boolean;
-}
-
 // can't use `Matcher` from picomatch as it requires a second argument since @types/picomatch v4
 type PartialMatcher = (test: string) => boolean;
 
 const ONLY_PARENT_DIRECTORIES = /^(\/?\.\.)+$/;
 
 // the result of over 4 months of figuring stuff out and a LOT of help
-export function getPartialMatcher(patterns: string[], options?: PartialMatcherOptions): PartialMatcher {
+export function getPartialMatcher(patterns: string[], options?: PicomatchOptions): PartialMatcher {
   // you might find this code pattern odd, but apparently it's faster than using `.push()`
   const patternsCount = patterns.length;
   const patternsParts: string[][] = Array(patternsCount);
