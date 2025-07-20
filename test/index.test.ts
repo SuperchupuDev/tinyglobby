@@ -363,6 +363,11 @@ test('using extglob patterns', async () => {
   assert.deepEqual(files.sort(), ['a/a.txt', 'a/b.txt']);
 });
 
+test('using negated bracket expression', async () => {
+  const files = await glob('**/[!a].*', { cwd });
+  assert.deepEqual(files.sort(), ['a/b.txt', 'b/b.txt']);
+});
+
 test('pattern normalization', async () => {
   const files1 = await glob('a', { cwd });
   const files2 = await glob('a/', { cwd });

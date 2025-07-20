@@ -1,6 +1,6 @@
 import path, { posix } from 'node:path';
 import { type Options as FdirOptions, fdir } from 'fdir';
-import picomatch from 'picomatch';
+import picomatch, { type PicomatchOptions } from 'picomatch';
 import {
   buildFormat,
   buildRelative,
@@ -195,30 +195,21 @@ function getCrawler(patterns?: string | string[], options: Omit<GlobOptions, 'pa
   };
 
   const processed = processPatterns({ ...options, patterns }, cwd, props);
-  const nocase = options.caseSensitiveMatch === false;
 
   if (options.debug) {
     log('internal processing patterns:', processed);
   }
 
-  const matcher = picomatch(processed.match, {
+  const matchOptions = {
     dot: options.dot,
-    nocase,
-    noglobstar: !(options.globstar ?? true),
-    ignore: processed.ignore
-  });
+    nocase: options.caseSensitiveMatch === false,
+    noglobstar: options.globstar === false,
+    posix: true
+  } satisfies PicomatchOptions;
 
-  const ignore = picomatch(processed.ignore, {
-    dot: options.dot,
-    nocase,
-    noglobstar: !(options.globstar ?? true)
-  });
-
-  const partialMatcher = getPartialMatcher(processed.match, {
-    dot: options.dot,
-    nocase,
-    noglobstar: !(options.globstar ?? true)
-  });
+  const matcher = picomatch(processed.match, { ...matchOptions, ignore: processed.ignore });
+  const ignore = picomatch(processed.ignore, matchOptions);
+  const partialMatcher = getPartialMatcher(processed.match, matchOptions);
 
   const format = buildFormat(cwd, props.root, options.absolute);
   const formatExclude = options.absolute ? format : buildFormat(cwd, props.root, true);
