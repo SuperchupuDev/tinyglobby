@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "module": "nodenext",
+    "lib": ["esnext"],
 
     "erasableSyntaxOnly": true,
     "verbatimModuleSyntax": true,
