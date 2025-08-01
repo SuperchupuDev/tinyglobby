@@ -15,24 +15,27 @@ const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
 const BACKSLASHES = /\\/g;
 
+// The `Array.isArray` type guard doesn't work for readonly arrays.
+const isReadonlyArray: (arg: unknown) => arg is readonly unknown[] = Array.isArray;
+
 export interface GlobOptions {
-  absolute?: boolean;
-  caseSensitiveMatch?: boolean;
-  cwd?: string;
-  debug?: boolean;
-  deep?: number;
-  dot?: boolean;
-  expandDirectories?: boolean;
-  followSymbolicLinks?: boolean;
-  globstar?: boolean;
-  ignore?: string | string[];
-  onlyDirectories?: boolean;
-  onlyFiles?: boolean;
+  readonly absolute?: boolean;
+  readonly caseSensitiveMatch?: boolean;
+  readonly cwd?: string;
+  readonly debug?: boolean;
+  readonly deep?: number;
+  readonly dot?: boolean;
+  readonly expandDirectories?: boolean;
+  readonly followSymbolicLinks?: boolean;
+  readonly globstar?: boolean;
+  readonly ignore?: string | readonly string[];
+  readonly onlyDirectories?: boolean;
+  readonly onlyFiles?: boolean;
   /**
    * @deprecated Provide patterns as the first argument instead.
    */
-  patterns?: string | string[];
-  signal?: AbortSignal;
+  readonly patterns?: string | readonly string[];
+  readonly signal?: AbortSignal;
 }
 
 interface InternalProps {
@@ -165,14 +168,11 @@ function formatPaths(paths: string[], relative: (p: string) => string) {
   return paths;
 }
 
-function getCrawler(patterns?: string | string[], options: Omit<GlobOptions, 'patterns'> = {}) {
+function getCrawler(patterns?: string | readonly string[], inputOptions: Omit<GlobOptions, 'patterns'> = {}) {
+  const options = process.env.TINYGLOBBY_DEBUG ? { ...inputOptions, debug: true } : inputOptions;
   const cwd = options.cwd
     ? path.resolve(options.cwd).replace(BACKSLASHES, '/')
     : process.cwd().replace(BACKSLASHES, '/');
-
-  if (process.env.TINYGLOBBY_DEBUG) {
-    options.debug = true;
-  }
 
   if (options.debug) {
     log('globbing with:', { patterns, options, cwd });
@@ -285,20 +285,20 @@ function getCrawler(patterns?: string | string[], options: Omit<GlobOptions, 'pa
   return [new fdir(fdirOptions).crawl(root), relative] as const;
 }
 
-export function glob(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): Promise<string[]>;
+export function glob(patterns: string | readonly string[], options?: Omit<GlobOptions, 'patterns'>): Promise<string[]>;
 /**
  * @deprecated Provide patterns as the first argument instead.
  */
 export function glob(options: GlobOptions): Promise<string[]>;
 export async function glob(
-  patternsOrOptions: string | string[] | GlobOptions,
+  patternsOrOptions: string | readonly string[] | GlobOptions,
   options?: GlobOptions
 ): Promise<string[]> {
   if (patternsOrOptions && options?.patterns) {
     throw new Error('Cannot pass patterns as both an argument and an option');
   }
 
-  const isModern = Array.isArray(patternsOrOptions) || typeof patternsOrOptions === 'string';
+  const isModern = isReadonlyArray(patternsOrOptions) || typeof patternsOrOptions === 'string';
   const opts = isModern ? options : patternsOrOptions;
   const patterns = isModern ? patternsOrOptions : patternsOrOptions.patterns;
 
