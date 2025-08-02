@@ -2,6 +2,7 @@ import path, { posix } from 'node:path';
 import { type Options as FdirOptions, fdir } from 'fdir';
 import picomatch, { type PicomatchOptions } from 'picomatch';
 import {
+  isReadonlyArray,
   buildFormat,
   buildRelative,
   escapePath,
@@ -14,9 +15,6 @@ import {
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
 const BACKSLASHES = /\\/g;
-
-// The `Array.isArray` type guard doesn't work for readonly arrays.
-const isReadonlyArray: (arg: unknown) => arg is readonly unknown[] = Array.isArray;
 
 export interface GlobOptions {
   readonly absolute?: boolean;
@@ -310,17 +308,17 @@ export async function glob(
   return formatPaths(await crawler.withPromise(), relative);
 }
 
-export function globSync(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): string[];
+export function globSync(patterns: string | readonly string[], options?: Omit<GlobOptions, 'patterns'>): string[];
 /**
  * @deprecated Provide patterns as the first argument instead.
  */
 export function globSync(options: GlobOptions): string[];
-export function globSync(patternsOrOptions: string | string[] | GlobOptions, options?: GlobOptions): string[] {
+export function globSync(patternsOrOptions: string | readonly string[] | GlobOptions, options?: GlobOptions): string[] {
   if (patternsOrOptions && options?.patterns) {
     throw new Error('Cannot pass patterns as both an argument and an option');
   }
 
-  const isModern = Array.isArray(patternsOrOptions) || typeof patternsOrOptions === 'string';
+  const isModern = isReadonlyArray(patternsOrOptions) || typeof patternsOrOptions === 'string';
   const opts = isModern ? options : patternsOrOptions;
   const patterns = isModern ? patternsOrOptions : patternsOrOptions.patterns;
 

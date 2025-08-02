@@ -1,6 +1,9 @@
 import { posix } from 'node:path';
 import picomatch, { type PicomatchOptions } from 'picomatch';
 
+// The `Array.isArray` type guard doesn't work for readonly arrays.
+export const isReadonlyArray: (arg: unknown) => arg is readonly unknown[] = Array.isArray;
+
 const isWin = process.platform === 'win32';
 
 // #region PARTIAL MATCHER
