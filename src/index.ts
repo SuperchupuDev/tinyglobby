@@ -2,12 +2,12 @@ import path, { posix } from 'node:path';
 import { type Options as FdirOptions, fdir } from 'fdir';
 import picomatch, { type PicomatchOptions } from 'picomatch';
 import {
-  isReadonlyArray,
   buildFormat,
   buildRelative,
   escapePath,
   getPartialMatcher,
   isDynamicPattern,
+  isReadonlyArray,
   log,
   splitPattern
 } from './utils.ts';
