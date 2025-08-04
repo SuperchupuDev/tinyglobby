@@ -4,14 +4,13 @@
     "lib": ["esnext"],
 
     "erasableSyntaxOnly": true,
+    "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "isolatedDeclarations": true,
-    "declaration": true,
 
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
     "noEmit": true,
     "skipLibCheck": true,
+    "declaration": true,
 
     "strict": true
   },
