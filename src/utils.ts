@@ -13,11 +13,12 @@ type PartialMatcher = (test: string) => boolean;
 const ONLY_PARENT_DIRECTORIES = /^(\/?\.\.)+$/;
 
 // the result of over 4 months of figuring stuff out and a LOT of help
-export function getPartialMatcher(patterns: string[], options?: PicomatchOptions): PartialMatcher {
+export function getPartialMatcher(patterns: string[], options: PicomatchOptions = {}): PartialMatcher {
   // you might find this code pattern odd, but apparently it's faster than using `.push()`
   const patternsCount = patterns.length;
   const patternsParts: string[][] = Array(patternsCount);
   const regexes: RegExp[][] = Array(patternsCount);
+  const globstarEnabled = !options.noglobstar;
   for (let i = 0; i < patternsCount; i++) {
     const parts = splitPattern(patterns[i]);
     patternsParts[i] = parts;
@@ -63,7 +64,7 @@ export function getPartialMatcher(patterns: string[], options?: PicomatchOptions
         // unlike popular belief, `**` doesn't return true in *all* cases
         // some examples are when matching it to `.a` with dot: false or `..`
         // so it needs to match to return early
-        if (part === '**') {
+        if (globstarEnabled && part === '**') {
           return true;
         }
 
