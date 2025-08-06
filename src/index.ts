@@ -7,6 +7,7 @@ import {
   escapePath,
   getPartialMatcher,
   isDynamicPattern,
+  isReadonlyArray,
   log,
   splitPattern
 } from './utils.ts';
@@ -25,13 +26,13 @@ export interface GlobOptions {
   expandDirectories?: boolean;
   followSymbolicLinks?: boolean;
   globstar?: boolean;
-  ignore?: string | string[];
+  ignore?: string | readonly string[];
   onlyDirectories?: boolean;
   onlyFiles?: boolean;
   /**
    * @deprecated Provide patterns as the first argument instead.
    */
-  patterns?: string | string[];
+  patterns?: string | readonly string[];
   signal?: AbortSignal;
 }
 
@@ -165,14 +166,11 @@ function formatPaths(paths: string[], relative: (p: string) => string) {
   return paths;
 }
 
-function getCrawler(patterns?: string | string[], options: Omit<GlobOptions, 'patterns'> = {}) {
+function getCrawler(patterns?: string | readonly string[], inputOptions: Omit<GlobOptions, 'patterns'> = {}) {
+  const options = process.env.TINYGLOBBY_DEBUG ? { ...inputOptions, debug: true } : inputOptions;
   const cwd = options.cwd
     ? path.resolve(options.cwd).replace(BACKSLASHES, '/')
     : process.cwd().replace(BACKSLASHES, '/');
-
-  if (process.env.TINYGLOBBY_DEBUG) {
-    options.debug = true;
-  }
 
   if (options.debug) {
     log('globbing with:', { patterns, options, cwd });
@@ -285,20 +283,20 @@ function getCrawler(patterns?: string | string[], options: Omit<GlobOptions, 'pa
   return [new fdir(fdirOptions).crawl(root), relative] as const;
 }
 
-export function glob(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): Promise<string[]>;
+export function glob(patterns: string | readonly string[], options?: Omit<GlobOptions, 'patterns'>): Promise<string[]>;
 /**
  * @deprecated Provide patterns as the first argument instead.
  */
 export function glob(options: GlobOptions): Promise<string[]>;
 export async function glob(
-  patternsOrOptions: string | string[] | GlobOptions,
+  patternsOrOptions: string | readonly string[] | GlobOptions,
   options?: GlobOptions
 ): Promise<string[]> {
   if (patternsOrOptions && options?.patterns) {
     throw new Error('Cannot pass patterns as both an argument and an option');
   }
 
-  const isModern = Array.isArray(patternsOrOptions) || typeof patternsOrOptions === 'string';
+  const isModern = isReadonlyArray(patternsOrOptions) || typeof patternsOrOptions === 'string';
   const opts = isModern ? options : patternsOrOptions;
   const patterns = isModern ? patternsOrOptions : patternsOrOptions.patterns;
 
@@ -310,17 +308,17 @@ export async function glob(
   return formatPaths(await crawler.withPromise(), relative);
 }
 
-export function globSync(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): string[];
+export function globSync(patterns: string | readonly string[], options?: Omit<GlobOptions, 'patterns'>): string[];
 /**
  * @deprecated Provide patterns as the first argument instead.
  */
 export function globSync(options: GlobOptions): string[];
-export function globSync(patternsOrOptions: string | string[] | GlobOptions, options?: GlobOptions): string[] {
+export function globSync(patternsOrOptions: string | readonly string[] | GlobOptions, options?: GlobOptions): string[] {
   if (patternsOrOptions && options?.patterns) {
     throw new Error('Cannot pass patterns as both an argument and an option');
   }
 
-  const isModern = Array.isArray(patternsOrOptions) || typeof patternsOrOptions === 'string';
+  const isModern = isReadonlyArray(patternsOrOptions) || typeof patternsOrOptions === 'string';
   const opts = isModern ? options : patternsOrOptions;
   const patterns = isModern ? patternsOrOptions : patternsOrOptions.patterns;
 
