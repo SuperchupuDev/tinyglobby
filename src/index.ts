@@ -17,23 +17,23 @@ const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
 const BACKSLASHES = /\\/g;
 
 export interface GlobOptions {
-  readonly absolute?: boolean;
-  readonly caseSensitiveMatch?: boolean;
-  readonly cwd?: string;
-  readonly debug?: boolean;
-  readonly deep?: number;
-  readonly dot?: boolean;
-  readonly expandDirectories?: boolean;
-  readonly followSymbolicLinks?: boolean;
-  readonly globstar?: boolean;
-  readonly ignore?: string | readonly string[];
-  readonly onlyDirectories?: boolean;
-  readonly onlyFiles?: boolean;
+  absolute?: boolean;
+  caseSensitiveMatch?: boolean;
+  cwd?: string;
+  debug?: boolean;
+  deep?: number;
+  dot?: boolean;
+  expandDirectories?: boolean;
+  followSymbolicLinks?: boolean;
+  globstar?: boolean;
+  ignore?: string | readonly string[];
+  onlyDirectories?: boolean;
+  onlyFiles?: boolean;
   /**
    * @deprecated Provide patterns as the first argument instead.
    */
-  readonly patterns?: string | readonly string[];
-  readonly signal?: AbortSignal;
+  patterns?: string | readonly string[];
+  signal?: AbortSignal;
 }
 
 interface InternalProps {
