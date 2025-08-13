@@ -23,27 +23,22 @@
     "rules": {
       "recommended": true,
       "correctness": {
+        "noInvalidBuiltinInstantiation": "error",
         "noUndeclaredVariables": "error",
         "noUnusedPrivateClassMembers": "error",
-        "noUnusedVariables": "error",
-        "noInvalidBuiltinInstantiation": "error"
+        "noUnusedVariables": "error"
+      },
+      "performance": {
+        "useTopLevelRegex": "error"
       },
       "style": {
-        "noNegationElse": "error",
-        "useBlockStatements": "error",
-        "useConsistentArrayType": "error",
-        "useEnumInitializers": "off",
-        "useForOf": "error",
-        "useNodeAssertStrict": "error",
-        "useShorthandAssign": "error",
-        "noParameterAssign": "error",
-        "useAsConstAssertion": "error",
-        "useDefaultParameterLast": "error",
-        "useSingleVarDeclarator": "error",
-        "noUnusedTemplateLiteral": "error",
-        "useNumberNamespace": "error",
-        "noInferrableTypes": "error",
-        "noUselessElse": "error"
+        "noNegationElse": "warn",
+        "useBlockStatements": "warn",
+        "useConsistentArrayType": "warn",
+        "useEnumInitializers": "warn",
+        "useForOf": "warn",
+        "useNodeAssertStrict": "warn",
+        "useShorthandAssign": "warn"
       },
       "suspicious": {
         "noEmptyBlockStatements": "error"

@@ -83,8 +83,8 @@ test('absolutely crawl root', async () => {
   assert.deepEqual(files.sort(), [path.resolve('/').replaceAll('\\', '/')]);
 });
 
-test('patterns as string', async () => {
-  const files = await glob('a/a.txt', { cwd });
+test('cwd as URL', async () => {
+  const files = await glob('a/a.txt', { cwd: new URL(`file://${escapedCwd}`) });
   assert.deepEqual(files.sort(), ['a/a.txt']);
 });
 

@@ -1,4 +1,5 @@
 import path, { posix } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { type Options as FdirOptions, fdir } from 'fdir';
 import picomatch, { type PicomatchOptions } from 'picomatch';
 import {
@@ -19,7 +20,7 @@ const BACKSLASHES = /\\/g;
 export interface GlobOptions {
   absolute?: boolean;
   caseSensitiveMatch?: boolean;
-  cwd?: string;
+  cwd?: string | URL;
   debug?: boolean;
   deep?: number;
   dot?: boolean;
@@ -166,11 +167,21 @@ function formatPaths(paths: string[], relative: (p: string) => string) {
   return paths;
 }
 
+function normalizeCwd(cwd?: string | URL) {
+  if (!cwd) {
+    return process.cwd().replace(BACKSLASHES, '/');
+  }
+
+  if (cwd instanceof URL) {
+    return fileURLToPath(cwd).replace(BACKSLASHES, '/');
+  }
+
+  return path.resolve(cwd).replace(BACKSLASHES, '/');
+}
+
 function getCrawler(patterns?: string | readonly string[], inputOptions: Omit<GlobOptions, 'patterns'> = {}) {
   const options = process.env.TINYGLOBBY_DEBUG ? { ...inputOptions, debug: true } : inputOptions;
-  const cwd = options.cwd
-    ? path.resolve(options.cwd).replace(BACKSLASHES, '/')
-    : process.cwd().replace(BACKSLASHES, '/');
+  const cwd = normalizeCwd(options.cwd);
 
   if (options.debug) {
     log('globbing with:', { patterns, options, cwd });
