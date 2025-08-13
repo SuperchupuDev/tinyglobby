@@ -201,9 +201,14 @@ test('leading ../ with absolute on', async () => {
   assert.deepEqual(files.sort(), [`${escapedCwd}b/a.txt`, `${escapedCwd}b/b.txt`]);
 });
 
-test('bracket expanding', async () => {
+test('brace expansion', async () => {
   const files = await glob('a/{a,b}.txt', { cwd });
   assert.deepEqual(files.sort(), ['a/a.txt', 'a/b.txt']);
+});
+
+test('braceExpansion false', async () => {
+  const files = await glob('a/{a,b}.txt', { cwd, braceExpansion: false });
+  assert.deepEqual(files.sort(), []);
 });
 
 test('dot', async () => {
@@ -359,8 +364,13 @@ test('dynamic patterns that include slashes inside parts', async () => {
 });
 
 test('using extglob patterns', async () => {
-  const files = await glob('a/*(a|b).txt', { cwd });
+  const files = await glob('a/+(a|b).txt', { cwd });
   assert.deepEqual(files.sort(), ['a/a.txt', 'a/b.txt']);
+});
+
+test('extglob false', async () => {
+  const files = await glob('a/+(a|b).txt', { cwd, extglob: false });
+  assert.deepEqual(files.sort(), []);
 });
 
 test('using negated bracket expression', async () => {

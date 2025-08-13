@@ -19,12 +19,14 @@ const BACKSLASHES = /\\/g;
 
 export interface GlobOptions {
   absolute?: boolean;
+  braceExpansion?: boolean;
   caseSensitiveMatch?: boolean;
   cwd?: string | URL;
   debug?: boolean;
   deep?: number;
   dot?: boolean;
   expandDirectories?: boolean;
+  extglob?: boolean;
   followSymbolicLinks?: boolean;
   globstar?: boolean;
   ignore?: string | readonly string[];
@@ -211,7 +213,9 @@ function getCrawler(patterns?: string | readonly string[], inputOptions: Omit<Gl
 
   const matchOptions = {
     dot: options.dot,
+    nobrace: options.braceExpansion === false,
     nocase: options.caseSensitiveMatch === false,
+    noextglob: options.extglob === false,
     noglobstar: options.globstar === false,
     posix: true
   } satisfies PicomatchOptions;
