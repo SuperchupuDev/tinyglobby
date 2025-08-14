@@ -1,6 +1,7 @@
+import nativeFs from 'node:fs';
 import path, { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { type Options as FdirOptions, fdir } from 'fdir';
+import { type Options as FdirOptions, type FSLike, fdir } from 'fdir';
 import picomatch, { type PicomatchOptions } from 'picomatch';
 import {
   buildFormat,
@@ -28,6 +29,7 @@ export interface GlobOptions {
   expandDirectories?: boolean;
   extglob?: boolean;
   followSymbolicLinks?: boolean;
+  fs?: FileSystemAdapter;
   globstar?: boolean;
   ignore?: string | readonly string[];
   onlyDirectories?: boolean;
@@ -38,6 +40,8 @@ export interface GlobOptions {
   patterns?: string | readonly string[];
   signal?: AbortSignal;
 }
+
+export type FileSystemAdapter = Partial<FSLike>;
 
 interface InternalProps {
   root: string;
@@ -259,6 +263,16 @@ function getCrawler(patterns?: string | readonly string[], inputOptions: Omit<Gl
           const relativePath = formatExclude(p, true);
           return (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
         },
+    fs: options.fs
+      ? {
+          readdir: options.fs.readdir || nativeFs.readdir,
+          readdirSync: options.fs.readdirSync || nativeFs.readdirSync,
+          realpath: options.fs.realpath || nativeFs.realpath,
+          realpathSync: options.fs.realpathSync || nativeFs.realpathSync,
+          stat: options.fs.stat || nativeFs.stat,
+          statSync: options.fs.statSync || nativeFs.statSync
+        }
+      : undefined,
     pathSeparator: '/',
     relativePaths: true,
     resolveSymlinks: true,
