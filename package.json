@@ -60,7 +60,7 @@
     "fast-glob": "^3.3.3",
     "fs-fixture": "^2.8.1",
     "glob": "^11.0.3",
-    "tinybench": "^4.1.0",
+    "tinybench": "^5.0.0",
     "tsdown": "^0.14.1",
     "typescript": "^5.9.2"
   },
