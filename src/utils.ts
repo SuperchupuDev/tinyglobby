@@ -162,6 +162,11 @@ export function convertWin32PathToPattern(path: string): string {
   return escapeWin32Path(path).replace(ESCAPED_WIN32_BACKSLASHES, '/');
 }
 
+/**
+ * Converts a path to a pattern depending on the platform.
+ * Identical to {@link escapePath} on POSIX systems.
+ * @see {@link https://superchupu.dev/tinyglobby/documentation#convertPathToPattern}
+ */
 /* node:coverage ignore next 3 */
 export const convertPathToPattern: (path: string) => string = isWin
   ? convertWin32PathToPattern
@@ -182,23 +187,27 @@ const WIN32_UNESCAPED_GLOB_SYMBOLS = /(?<!\\)([()[\]{}]|^!|[!+@](?=\())/g;
 export const escapePosixPath = (path: string): string => path.replace(POSIX_UNESCAPED_GLOB_SYMBOLS, '\\$&');
 export const escapeWin32Path = (path: string): string => path.replace(WIN32_UNESCAPED_GLOB_SYMBOLS, '\\$&');
 
+/**
+ * Escapes a path's special characters depending on the platform.
+ * @see {@link https://superchupu.dev/tinyglobby/documentation#escapePath}
+ */
 /* node:coverage ignore next */
 export const escapePath: (path: string) => string = isWin ? escapeWin32Path : escapePosixPath;
 // #endregion
 
 // #region isDynamicPattern
-/*
-  Has a few minor differences with `fast-glob` for better accuracy:
-
-  Doesn't necessarily return false on patterns that include `\\`.
-
-  Returns true if the pattern includes parentheses,
-  regardless of them representing one single pattern or not.
-
-  Returns true for unfinished glob extensions i.e. `(h`, `+(h`.
-
-  Returns true for unfinished brace expansions as long as they include `,` or `..`.
-*/
+/**
+ * Checks if a pattern has dynamic parts.
+ *
+ * Has a few minor differences with [`fast-glob`](https://github.com/mrmlnc/fast-glob) for better accuracy:
+ *
+ * - Doesn't necessarily return `false` on patterns that include `\`.
+ * - Returns `true` if the pattern includes parentheses, regardless of them representing one single pattern or not.
+ * - Returns `true` for unfinished glob extensions i.e. `(h`, `+(h`.
+ * - Returns `true` for unfinished brace expansions as long as they include `,` or `..`.
+ *
+ * @see {@link https://superchupu.dev/tinyglobby/documentation#isDynamicPattern}
+ */
 export function isDynamicPattern(pattern: string, options?: { caseSensitiveMatch: boolean }): boolean {
   if (options?.caseSensitiveMatch === false) {
     return true;

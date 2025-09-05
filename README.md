@@ -20,54 +20,6 @@ await glob(['files/*.ts', '!**/*.d.ts'], { cwd: 'src' });
 globSync('src/**/*.ts', { ignore: '**/*.d.ts' });
 ```
 
-## API
+## Documentation
 
-- `glob(patterns: string | string[], options: GlobOptions): Promise<string[]>`: Returns a promise with an array of matches.
-- `globSync(patterns: string | string[], options: GlobOptions): string[]`: Returns an array of matches.
-- `convertPathToPattern(path: string): string`: Converts a path to a pattern depending on the platform.
-- `escapePath(path: string): string`: Escapes a path's special characters depending on the platform.
-- `isDynamicPattern(pattern: string, options?: GlobOptions): boolean`: Checks if a pattern is dynamic.
-
-## Options
-
-- `absolute`: Whether to return absolute paths. Defaults to `false`.
-- `caseSensitiveMatch`: Whether to match in case-sensitive mode. Defaults to `true`.
-- `cwd`: The current working directory in which to search. Defaults to `process.cwd()`.
-- `debug`: Enable debug logs. Useful for development purposes.
-- `dot`: Whether to allow entries starting with a dot. Defaults to `false`.
-- `deep`: Maximum depth of a directory. Defaults to `Infinity`.
-- `expandDirectories`: Whether to expand directories. Disable to best match `fast-glob`. Defaults to `true`.
-- `followSymbolicLinks`: Whether to traverse and include symbolic links. Defaults to `true`.
-- `globstar`: Enables support for matching nested directories with globstars (`**`). If false, `**` behaves exactly like `*`. Defaults to `true`.
-- `ignore`: An array of glob patterns to ignore.
-- `onlyDirectories`: Enable to only return directories. Disables `onlyFiles` if set. Defaults to `false`.
-- `onlyFiles`: Enable to only return files. Defaults to `true`.
-- `signal`: An `AbortSignal` to abort crawling the file system.
-
-## Used by
-
-`tinyglobby` is downloaded many times by projects all around the world. Here's a partial list of notable projects that use it:
-
-<!-- should be sorted by weekly download count -->
-- [`vite`](https://github.com/vitejs/vite)
-- [`pnpm`](https://github.com/pnpm/pnpm)
-- [`node-gyp`](https://github.com/nodejs/node-gyp)
-- [`eslint-import-resolver-typescript`](https://github.com/import-js/eslint-import-resolver-typescript)
-- [`vitest`](https://github.com/vitest-dev/vitest)
-- [`copy-webpack-plugin`](https://github.com/webpack-contrib/copy-webpack-plugin)
-- [`storybook`](https://github.com/storybookjs/storybook)
-- [`ts-morph`](https://github.com/dsherret/ts-morph)
-- [`nx`](https://github.com/nrwl/nx)
-- [`sort-package-json`](https://github.com/keithamus/sort-package-json)
-- [`unimport`](https://github.com/unjs/unimport)
-- [`tsup`](https://github.com/egoist/tsup)
-- [`lerna`](https://github.com/lerna/lerna)
-- [`cspell`](https://github.com/streetsidesoftware/cspell)
-- [`nuxt`](https://github.com/nuxt/nuxt)
-- [`postcss-mixins`](https://github.com/postcss/postcss-mixins)
-- [`astro`](https://github.com/withastro/astro)
-- [`unocss`](https://github.com/unocss/unocss)
-- [`vitepress`](https://github.com/vuejs/vitepress)
-- [`pkg-pr-new`](https://github.com/stackblitz-labs/pkg.pr.new)
-- Your own project? [Open an issue](https://github.com/SuperchupuDev/tinyglobby/issues)
-if you feel like this list is incomplete.
+Visit https://superchupu.dev/tinyglobby to read the full documentation.
