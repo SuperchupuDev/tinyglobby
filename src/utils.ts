@@ -1,5 +1,5 @@
 import { posix } from 'node:path';
-import picomatch from 'picomatch';
+import picomatch, { type Matcher } from 'picomatch';
 
 // The `Array.isArray` type guard doesn't work for readonly arrays.
 export const isReadonlyArray: (arg: unknown) => arg is readonly unknown[] = Array.isArray;
@@ -28,17 +28,17 @@ export function getPartialMatcher(patterns: string[], options: PartialMatcherOpt
   // you might find this code pattern odd, but apparently it's faster than using `.push()`
   const patternsCount = patterns.length;
   const patternsParts: string[][] = Array(patternsCount);
-  const regexes: RegExp[][] = Array(patternsCount);
+  const matchers: Matcher[][] = Array(patternsCount);
   const globstarEnabled = !options.noglobstar;
   for (let i = 0; i < patternsCount; i++) {
     const parts = splitPattern(patterns[i]);
     patternsParts[i] = parts;
     const partsCount = parts.length;
-    const partRegexes = Array(partsCount);
+    const partMatchers: Matcher[] = Array(partsCount);
     for (let j = 0; j < partsCount; j++) {
-      partRegexes[j] = picomatch.makeRe(parts[j], options);
+      partMatchers[j] = picomatch(parts[j], options);
     }
-    regexes[i] = partRegexes;
+    matchers[i] = partMatchers;
   }
   return (input: string) => {
     // no need to `splitPattern` as this is indeed not a pattern
@@ -52,7 +52,7 @@ export function getPartialMatcher(patterns: string[], options: PartialMatcherOpt
     }
     for (let i = 0; i < patterns.length; i++) {
       const patternParts = patternsParts[i];
-      const regex = regexes[i];
+      const matcher = matchers[i];
       const inputPatternCount = inputParts.length;
       const minParts = Math.min(inputPatternCount, patternParts.length);
       let j = 0;
@@ -66,7 +66,7 @@ export function getPartialMatcher(patterns: string[], options: PartialMatcherOpt
           return true;
         }
 
-        const match = regex[j].test(inputParts[j]);
+        const match = matcher[j](inputParts[j]);
 
         if (!match) {
           break;

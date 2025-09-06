@@ -116,6 +116,11 @@ describe('getPartialMatcher', () => {
     assert.ok(!matcher('test/utilg/a/c'));
   });
 
+  test('patterns that break picomatch.makeRe', () => {
+    const matcher = getPartialMatcher(['+++']);
+    assert.ok(matcher('+++'));
+  });
+
   test('..', () => {
     const matcher = getPartialMatcher(['../test/util?/a']);
     assert.ok(matcher('..'));
