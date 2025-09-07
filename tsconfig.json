@@ -1,22 +1,18 @@
 {
   "compilerOptions": {
-    "target": "es2019",
+    "module": "nodenext",
     "lib": ["esnext"],
 
-    "module": "esnext",
-    "moduleResolution": "bundler",
-
-    "outDir": "dist",
-    "esModuleInterop": true,
+    "erasableSyntaxOnly": true,
+    "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "isolatedDeclarations": true,
-    "declaration": true,
 
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
     "noEmit": true,
     "skipLibCheck": true,
+    "declaration": true,
 
     "strict": true
-  }
+  },
+  "exclude": ["./benchmark/typescript-eslint"]
 }

@@ -1,14 +1,16 @@
-name: Publish Package
+name: Benchmark
 on:
-  release:
-    types: [created]
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 jobs:
-  publish:
-    name: Publish
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
+  benchmarks:
+    name: Benchmarks
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -20,16 +22,13 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
-          registry-url: 'https://registry.npmjs.org'
           cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build
-        run: node --run build
-        env:
-          IS_RELEASE: true
+      - name: Setup
+        run: node --run bench:setup
 
-      - name: Publish to npm
-        run: pnpm publish --no-git-checks
+      - name: Run benchmark
+        run: node --run bench

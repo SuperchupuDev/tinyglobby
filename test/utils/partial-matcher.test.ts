@@ -41,6 +41,16 @@ describe('getPartialMatcher', () => {
     assert.ok(matcher('test'));
     assert.ok(matcher('test/utils'));
     assert.ok(matcher('test/utils/a'));
+    assert.ok(matcher('test/utils/a/b/h'));
+    assert.ok(!matcher('test/tests/a'));
+  });
+
+  test('works with ** (globstar disabled)', () => {
+    const matcher = getPartialMatcher(['test/utils/**'], { noglobstar: true });
+    assert.ok(matcher('test'));
+    assert.ok(matcher('test/utils'));
+    assert.ok(matcher('test/utils/a'));
+    assert.ok(!matcher('test/utils/a/b/h'));
     assert.ok(!matcher('test/tests/a'));
   });
 
@@ -104,6 +114,11 @@ describe('getPartialMatcher', () => {
     assert.ok(matcher('test/utilg/a'));
     assert.ok(matcher('test/utilg'));
     assert.ok(!matcher('test/utilg/a/c'));
+  });
+
+  test('patterns that break picomatch.makeRe', () => {
+    const matcher = getPartialMatcher(['+++']);
+    assert.ok(matcher('+++'));
   });
 
   test('..', () => {

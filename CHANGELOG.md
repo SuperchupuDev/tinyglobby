@@ -1,3 +1,46 @@
+### [0.2.15](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.14...0.2.15)
+
+#### Added
+
+- Documentation page at https://superchupu.dev/tinyglobby,
+  which also contains a library comparison page and migration guide.
+
+  It's been a huge effort that took two months to make.
+
+  Big thanks to [outslept](https://github.com/outslept), [43081j](https://github.com/43081j)
+  and [benmccann](https://github.com/benmcann) for helping out! ❤️
+
+- JSDoc to all functions and options based on the online documentation page
+
+- Benchmarks with help from
+  [43081j](https://github.com/43081j) and [benmccann](https://github.com/benmcann)
+
+- `braceExpansion` option
+- `extglob` option
+- `fs` option
+- `globstar` option by [benmccann](https://github.com/benmcann)
+- `signal` option
+
+- `package.json` export as `tinyglobby/package.json`
+
+- Ability to pass readonly types by [TomerAberbach](https://github.com/TomerAberbach)
+
+- Support for `URL`s in `cwd` option
+
+#### Changed
+
+- Rewritten path processing algorithm leading to a huge performance increase in many cases
+  with help from [43081j](https://github.com/43081j) and [benmccann](https://github.com/benmcann)
+
+- Deprecated using `patterns` inside the options object
+
+- Enabled trusted publishing using npm's OIDC support
+
+#### Fixed
+
+- Negated bracket expressions i.e. `[!abc]`
+- Some patterns like `+++` breaking the partial matcher
+
 ### [0.2.14](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.13...0.2.14)
 
 #### Fixed

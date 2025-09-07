@@ -1,26 +1,119 @@
+import nativeFs from 'node:fs';
 import path, { posix } from 'node:path';
-import { type Options as FdirOptions, fdir } from 'fdir';
-import picomatch from 'picomatch';
-import { escapePath, getPartialMatcher, isDynamicPattern, log, splitPattern } from './utils.ts';
+import { fileURLToPath } from 'node:url';
+import { type Options as FdirOptions, type FSLike, fdir } from 'fdir';
+import picomatch, { type PicomatchOptions } from 'picomatch';
+import {
+  buildFormat,
+  buildRelative,
+  escapePath,
+  getPartialMatcher,
+  isDynamicPattern,
+  isReadonlyArray,
+  log,
+  splitPattern
+} from './utils.ts';
 
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
 const BACKSLASHES = /\\/g;
 
 export interface GlobOptions {
+  /**
+   * Whether to return absolute paths. Disable to have relative paths.
+   * @default false
+   */
   absolute?: boolean;
-  cwd?: string;
-  patterns?: string | string[];
-  ignore?: string | string[];
-  dot?: boolean;
-  deep?: number;
-  followSymbolicLinks?: boolean;
+  /**
+   * Enables support for brace expansion syntax, like `{a,b}` or `{1..9}`.
+   * @default true
+   */
+  braceExpansion?: boolean;
+  /**
+   * Whether to match in case-sensitive mode.
+   * @default true
+   */
   caseSensitiveMatch?: boolean;
-  expandDirectories?: boolean;
-  onlyDirectories?: boolean;
-  onlyFiles?: boolean;
+  /**
+   * The working directory in which to search. Results will be returned relative to this directory, unless
+   * {@link absolute} is set.
+   *
+   * It is important to avoid globbing outside this directory when possible, even with absolute paths enabled,
+   * as doing so can harm performance due to having to recalculate relative paths.
+   * @default process.cwd()
+   */
+  cwd?: string | URL;
+  /**
+   * Logs useful debug information. Meant for development purposes. Logs can change at any time.
+   * @default false
+   */
   debug?: boolean;
+  /**
+   * Maximum directory depth to crawl.
+   * @default Infinity
+   */
+  deep?: number;
+  /**
+   * Whether to return entries that start with a dot, like `.gitignore` or `.prettierrc`.
+   * @default false
+   */
+  dot?: boolean;
+  /**
+   * Whether to automatically expand directory patterns.
+   *
+   * Important to disable if migrating from [`fast-glob`](https://github.com/mrmlnc/fast-glob).
+   * @default true
+   */
+  expandDirectories?: boolean;
+  /**
+   * Enables support for extglobs, like `+(pattern)`.
+   * @default true
+   */
+  extglob?: boolean;
+  /**
+   * Whether to traverse and include symbolic links. Can slightly affect performance.
+   * @default true
+   */
+  followSymbolicLinks?: boolean;
+  /**
+   * An object that overrides `node:fs` functions.
+   * @default import('node:fs')
+   */
+  fs?: FileSystemAdapter;
+  /**
+   * Enables support for matching nested directories with globstars (`**`).
+   * If `false`, `**` behaves exactly like `*`.
+   * @default true
+   */
+  globstar?: boolean;
+  /**
+   * Glob patterns to exclude from the results.
+   * @default []
+   */
+  ignore?: string | readonly string[];
+  /**
+   * Enable to only return directories.
+   * If `true`, disables {@link onlyFiles}.
+   * @default false
+   */
+  onlyDirectories?: boolean;
+  /**
+   * Enable to only return files.
+   * @default true
+   */
+  onlyFiles?: boolean;
+  /**
+   * @deprecated Provide patterns as the first argument instead.
+   */
+  patterns?: string | readonly string[];
+  /**
+   * An `AbortSignal` to abort crawling the file system.
+   * @default undefined
+   */
+  signal?: AbortSignal;
 }
+
+export type FileSystemAdapter = Partial<FSLike>;
 
 interface InternalProps {
   root: string;
@@ -97,22 +190,20 @@ function normalizePattern(
     props.depthOffset = newCommonPath.length;
     props.commonPath = newCommonPath;
 
-    props.root = newCommonPath.length > 0 ? path.posix.join(cwd, ...newCommonPath) : cwd;
+    props.root = newCommonPath.length > 0 ? posix.join(cwd, ...newCommonPath) : cwd;
   }
 
   return result;
 }
 
 function processPatterns(
-  { patterns, ignore = [], expandDirectories = true }: GlobOptions,
+  // defaulting to ['**/*'] is tinyglobby exclusive behavior, deprecated
+  { patterns = ['**/*'], ignore = [], expandDirectories = true }: GlobOptions,
   cwd: string,
   props: InternalProps
 ) {
   if (typeof patterns === 'string') {
     patterns = [patterns];
-  } else if (!patterns) {
-    // tinyglobby exclusive behavior, should be considered deprecated
-    patterns = ['**/*'];
   }
 
   if (typeof ignore === 'string') {
@@ -146,42 +237,42 @@ function processPatterns(
   return { match: matchPatterns, ignore: ignorePatterns };
 }
 
-// TODO: this is slow, find a better way to do this
-function getRelativePath(path: string, cwd: string, root: string) {
-  return posix.relative(cwd, `${root}/${path}`) || '.';
-}
-
-function processPath(path: string, cwd: string, root: string, isDirectory: boolean, absolute?: boolean) {
-  const relativePath = absolute ? path.slice(root === '/' ? 1 : root.length + 1) || '.' : path;
-
-  if (root === cwd) {
-    return isDirectory && relativePath !== '.' ? relativePath.slice(0, -1) : relativePath;
-  }
-
-  return getRelativePath(relativePath, cwd, root);
-}
-
-function formatPaths(paths: string[], cwd: string, root: string) {
+function formatPaths(paths: string[], relative: (p: string) => string) {
   for (let i = paths.length - 1; i >= 0; i--) {
     const path = paths[i];
-    paths[i] = getRelativePath(path, cwd, root) + (!path || path.endsWith('/') ? '/' : '');
+    paths[i] = relative(path);
   }
   return paths;
 }
 
-function crawl(options: GlobOptions, cwd: string, sync: false): Promise<string[]>;
-function crawl(options: GlobOptions, cwd: string, sync: true): string[];
-function crawl(options: GlobOptions, cwd: string, sync: boolean) {
-  if (process.env.TINYGLOBBY_DEBUG) {
-    options.debug = true;
+function normalizeCwd(cwd?: string | URL) {
+  if (!cwd) {
+    return process.cwd().replace(BACKSLASHES, '/');
   }
+
+  if (cwd instanceof URL) {
+    return fileURLToPath(cwd).replace(BACKSLASHES, '/');
+  }
+
+  return path.resolve(cwd).replace(BACKSLASHES, '/');
+}
+
+function getCrawler(patterns?: string | readonly string[], inputOptions: Omit<GlobOptions, 'patterns'> = {}) {
+  const options = process.env.TINYGLOBBY_DEBUG ? { ...inputOptions, debug: true } : inputOptions;
+  const cwd = normalizeCwd(options.cwd);
 
   if (options.debug) {
-    log('globbing with options:', options, 'cwd:', cwd);
+    log('globbing with:', { patterns, options, cwd });
   }
 
-  if (Array.isArray(options.patterns) && options.patterns.length === 0) {
-    return sync ? [] : Promise.resolve([]);
+  if (Array.isArray(patterns) && patterns.length === 0) {
+    return [
+      {
+        sync: () => [],
+        withPromise: async () => []
+      },
+      false
+    ] as const;
   }
 
   const props = {
@@ -190,35 +281,33 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     depthOffset: 0
   };
 
-  const processed = processPatterns(options, cwd, props);
-  const nocase = options.caseSensitiveMatch === false;
+  const processed = processPatterns({ ...options, patterns }, cwd, props);
 
   if (options.debug) {
     log('internal processing patterns:', processed);
   }
 
-  const matcher = picomatch(processed.match, {
+  const matchOptions = {
     dot: options.dot,
-    nocase,
-    ignore: processed.ignore
-  });
+    nobrace: options.braceExpansion === false,
+    nocase: options.caseSensitiveMatch === false,
+    noextglob: options.extglob === false,
+    noglobstar: options.globstar === false,
+    posix: true
+  } satisfies PicomatchOptions;
 
-  const ignore = picomatch(processed.ignore, {
-    dot: options.dot,
-    nocase
-  });
+  const matcher = picomatch(processed.match, { ...matchOptions, ignore: processed.ignore });
+  const ignore = picomatch(processed.ignore, matchOptions);
+  const partialMatcher = getPartialMatcher(processed.match, matchOptions);
 
-  const partialMatcher = getPartialMatcher(processed.match, {
-    dot: options.dot,
-    nocase
-  });
-
+  const format = buildFormat(cwd, props.root, options.absolute);
+  const formatExclude = options.absolute ? format : buildFormat(cwd, props.root, true);
   const fdirOptions: Partial<FdirOptions> = {
     // use relative paths in the matcher
     filters: [
       options.debug
         ? (p, isDirectory) => {
-            const path = processPath(p, cwd, props.root, isDirectory, options.absolute);
+            const path = format(p, isDirectory);
             const matches = matcher(path);
 
             if (matches) {
@@ -227,11 +316,11 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
 
             return matches;
           }
-        : (p, isDirectory) => matcher(processPath(p, cwd, props.root, isDirectory, options.absolute))
+        : (p, isDirectory) => matcher(format(p, isDirectory))
     ],
     exclude: options.debug
       ? (_, p) => {
-          const relativePath = processPath(p, cwd, props.root, true, true);
+          const relativePath = formatExclude(p, true);
           const skipped = (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
 
           if (skipped) {
@@ -243,12 +332,23 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
           return skipped;
         }
       : (_, p) => {
-          const relativePath = processPath(p, cwd, props.root, true, true);
+          const relativePath = formatExclude(p, true);
           return (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
         },
+    fs: options.fs
+      ? {
+          readdir: options.fs.readdir || nativeFs.readdir,
+          readdirSync: options.fs.readdirSync || nativeFs.readdirSync,
+          realpath: options.fs.realpath || nativeFs.realpath,
+          realpathSync: options.fs.realpathSync || nativeFs.realpathSync,
+          stat: options.fs.stat || nativeFs.stat,
+          statSync: options.fs.statSync || nativeFs.statSync
+        }
+      : undefined,
     pathSeparator: '/',
     relativePaths: true,
-    resolveSymlinks: true
+    resolveSymlinks: true,
+    signal: options.signal
   };
 
   if (options.deep !== undefined) {
@@ -280,48 +380,63 @@ function crawl(options: GlobOptions, cwd: string, sync: boolean) {
     log('internal properties:', props);
   }
 
-  const api = new fdir(fdirOptions).crawl(root);
-
-  if (cwd === root || options.absolute) {
-    return sync ? api.sync() : api.withPromise();
-  }
-
-  return sync ? formatPaths(api.sync(), cwd, root) : api.withPromise().then(paths => formatPaths(paths, cwd, root));
+  const relative = cwd !== root && !options.absolute && buildRelative(cwd, props.root);
+  return [new fdir(fdirOptions).crawl(root), relative] as const;
 }
 
-export function glob(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): Promise<string[]>;
+/**
+ * Asynchronously match files following a glob pattern.
+ * @see {@link https://superchupu.dev/tinyglobby/documentation#glob}
+ */
+export function glob(patterns: string | readonly string[], options?: Omit<GlobOptions, 'patterns'>): Promise<string[]>;
+/**
+ * @deprecated Provide patterns as the first argument instead.
+ */
 export function glob(options: GlobOptions): Promise<string[]>;
 export async function glob(
-  patternsOrOptions: string | string[] | GlobOptions,
+  patternsOrOptions: string | readonly string[] | GlobOptions,
   options?: GlobOptions
 ): Promise<string[]> {
   if (patternsOrOptions && options?.patterns) {
     throw new Error('Cannot pass patterns as both an argument and an option');
   }
 
-  const opts =
-    Array.isArray(patternsOrOptions) || typeof patternsOrOptions === 'string'
-      ? { ...options, patterns: patternsOrOptions }
-      : patternsOrOptions;
-  const cwd = opts.cwd ? path.resolve(opts.cwd).replace(BACKSLASHES, '/') : process.cwd().replace(BACKSLASHES, '/');
+  const isModern = isReadonlyArray(patternsOrOptions) || typeof patternsOrOptions === 'string';
+  const opts = isModern ? options : patternsOrOptions;
+  const patterns = isModern ? patternsOrOptions : patternsOrOptions.patterns;
 
-  return crawl(opts, cwd, false);
+  const [crawler, relative] = getCrawler(patterns, opts);
+
+  if (!relative) {
+    return crawler.withPromise();
+  }
+  return formatPaths(await crawler.withPromise(), relative);
 }
 
-export function globSync(patterns: string | string[], options?: Omit<GlobOptions, 'patterns'>): string[];
+/**
+ * Synchronously match files following a glob pattern.
+ * @see {@link https://superchupu.dev/tinyglobby/documentation#globSync}
+ */
+export function globSync(patterns: string | readonly string[], options?: Omit<GlobOptions, 'patterns'>): string[];
+/**
+ * @deprecated Provide patterns as the first argument instead.
+ */
 export function globSync(options: GlobOptions): string[];
-export function globSync(patternsOrOptions: string | string[] | GlobOptions, options?: GlobOptions): string[] {
+export function globSync(patternsOrOptions: string | readonly string[] | GlobOptions, options?: GlobOptions): string[] {
   if (patternsOrOptions && options?.patterns) {
     throw new Error('Cannot pass patterns as both an argument and an option');
   }
 
-  const opts =
-    Array.isArray(patternsOrOptions) || typeof patternsOrOptions === 'string'
-      ? { ...options, patterns: patternsOrOptions }
-      : patternsOrOptions;
-  const cwd = opts.cwd ? path.resolve(opts.cwd).replace(BACKSLASHES, '/') : process.cwd().replace(BACKSLASHES, '/');
+  const isModern = isReadonlyArray(patternsOrOptions) || typeof patternsOrOptions === 'string';
+  const opts = isModern ? options : patternsOrOptions;
+  const patterns = isModern ? patternsOrOptions : patternsOrOptions.patterns;
 
-  return crawl(opts, cwd, true);
+  const [crawler, relative] = getCrawler(patterns, opts);
+
+  if (!relative) {
+    return crawler.sync();
+  }
+  return formatPaths(crawler.sync(), relative);
 }
 
 export { convertPathToPattern, escapePath, isDynamicPattern } from './utils.ts';
