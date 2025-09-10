@@ -1,9 +1,9 @@
 import { posix } from 'node:path';
 import { type PathsOutput, fdir } from 'fdir';
 import type { APIBuilder } from 'fdir/dist/builder/api-builder';
-import picomatch from "picomatch";
-import type { GlobOptions, InternalProps, PartialMatcherOptions, ProcessedPatterns } from "./types.ts";
-import { getPartialMatcher, log } from "./utils.ts";
+import picomatch from 'picomatch';
+import type { GlobOptions, InternalProps, PartialMatcherOptions, ProcessedPatterns } from './types.ts';
+import { getPartialMatcher, log } from './utils.ts';
 
 // #region getRelativePath
 // TODO: this is slow, find a better way to do this
@@ -14,7 +14,7 @@ export function getRelativePath(path: string, cwd: string, root: string): string
 
 // #region processPath
 function processPath(path: string, cwd: string, root: string, isDirectory: boolean, absolute?: boolean) {
-  const relativePath = absolute ? path.slice(root.length + 1) || '.' : path;
+  const relativePath = absolute ? path.slice(root === '/' ? 1 : root.length + 1) || '.' : path;
 
   if (root === cwd) {
     return isDirectory && relativePath !== '.' ? relativePath.slice(0, -1) : relativePath;
