@@ -1,7 +1,13 @@
-import picomatch from 'picomatch';
+import path, { posix } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import picomatch, { type Matcher } from 'picomatch';
 import type { PartialMatcher, PartialMatcherOptions } from './types.ts';
 
 const ONLY_PARENT_DIRECTORIES = /^(\/?\.\.)+$/;
+// The `Array.isArray` type guard doesn't work for readonly arrays.
+export const isReadonlyArray: (arg: unknown) => arg is readonly unknown[] = Array.isArray;
+const isWin = process.platform === 'win32';
+const BACKSLASHES = /\\/g;
 
 // the result of over 4 months of figuring stuff out and a LOT of help
 export function getPartialMatcher(patterns: string[], options: PartialMatcherOptions = {}): PartialMatcher {
@@ -205,7 +211,14 @@ export function log(...tasks: unknown[]): void {
 // #endregion
 
 // #region ensureStringArray
-export function ensureStringArray(value: string | string[]): string[] {
+export function ensureStringArray(value: string | string[] | readonly string[]): readonly string[] {
   return typeof value === 'string' ? [value] : value;
 }
 // #endregion ensureStringArray
+
+export function normalizeCwd(cwd?: string | URL): string {
+  if (!cwd) {
+    return process.cwd().replace(BACKSLASHES, '/');
+  }
+  return (cwd instanceof URL ? fileURLToPath(cwd) : path.resolve(cwd)).replace(BACKSLASHES, '/');
+}

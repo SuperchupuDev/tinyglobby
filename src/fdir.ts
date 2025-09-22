@@ -1,9 +1,18 @@
+import nativeFs from 'node:fs';
 import { posix } from 'node:path';
-import { type PathsOutput, fdir } from 'fdir';
-import type { APIBuilder } from 'fdir/dist/builder/api-builder';
-import picomatch from 'picomatch';
-import type { GlobOptions, InternalProps, PartialMatcherOptions, ProcessedPatterns } from './types.ts';
-import { getPartialMatcher, log } from './utils.ts';
+import { type Options as FdirOptions, fdir, type PathsOutput } from 'fdir';
+import picomatch, { type PicomatchOptions } from 'picomatch';
+import type {
+  APIBuilder,
+  GlobCrawler,
+  GlobOptions,
+  InternalProps,
+  PartialMatcherOptions,
+  ProcessedPatterns
+} from './types.ts';
+import { buildFormat, buildRelative, getPartialMatcher, log } from './utils.ts';
+
+const BACKSLASHES = /\\/g;
 
 // #region getRelativePath
 // TODO: this is slow, find a better way to do this
@@ -23,16 +32,6 @@ function processPath(path: string, cwd: string, root: string, isDirectory: boole
   return getRelativePath(relativePath, cwd, root);
 }
 // #endregion processPath
-
-// #region formatPaths
-export function formatPaths(paths: string[], cwd: string, root: string): string[] {
-  for (let i = paths.length - 1; i >= 0; i--) {
-    const path = paths[i];
-    paths[i] = getRelativePath(path, cwd, root) + (!path || path[path.length - 1] === '/' ? '/' : '');
-  }
-  return paths;
-}
-// #endregion formatPaths
 
 // #region buildFdir
 export function buildFdir(
@@ -89,3 +88,101 @@ export function buildFdir(
   }).crawl(root);
 }
 // #endregion buildFdir
+
+export function buildFDir2(props: InternalProps, options: GlobOptions, processed: ProcessedPatterns): GlobCrawler {
+  const matchOptions = {
+    dot: options.dot,
+    nobrace: options.braceExpansion === false,
+    nocase: options.caseSensitiveMatch === false,
+    noextglob: options.extglob === false,
+    noglobstar: options.globstar === false,
+    posix: true
+  } satisfies PicomatchOptions;
+
+  const cwd = props.root;
+  const matcher = picomatch(processed.match, { ...matchOptions, ignore: processed.ignore });
+  const ignore = picomatch(processed.ignore, matchOptions);
+  const partialMatcher = getPartialMatcher(processed.match, matchOptions);
+
+  const format = buildFormat(cwd, props.root, options.absolute);
+  const formatExclude = options.absolute ? format : buildFormat(cwd, props.root, true);
+  const fdirOptions: Partial<FdirOptions> = {
+    // use relative paths in the matcher
+    filters: [
+      options.debug
+        ? (p, isDirectory) => {
+            const path = format(p, isDirectory);
+            const matches = matcher(path);
+
+            if (matches) {
+              log(`matched ${path}`);
+            }
+
+            return matches;
+          }
+        : (p, isDirectory) => matcher(format(p, isDirectory))
+    ],
+    exclude: options.debug
+      ? (_, p) => {
+          const relativePath = formatExclude(p, true);
+          const skipped = (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
+
+          if (skipped) {
+            log(`skipped ${p}`);
+          } else {
+            log(`crawling ${p}`);
+          }
+
+          return skipped;
+        }
+      : (_, p) => {
+          const relativePath = formatExclude(p, true);
+          return (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
+        },
+    fs: options.fs
+      ? {
+          readdir: options.fs.readdir || nativeFs.readdir,
+          readdirSync: options.fs.readdirSync || nativeFs.readdirSync,
+          realpath: options.fs.realpath || nativeFs.realpath,
+          realpathSync: options.fs.realpathSync || nativeFs.realpathSync,
+          stat: options.fs.stat || nativeFs.stat,
+          statSync: options.fs.statSync || nativeFs.statSync
+        }
+      : undefined,
+    pathSeparator: '/',
+    relativePaths: true,
+    resolveSymlinks: true,
+    signal: options.signal
+  };
+
+  if (options.deep !== undefined) {
+    fdirOptions.maxDepth = Math.round(options.deep - props.depthOffset);
+  }
+
+  if (options.absolute) {
+    fdirOptions.relativePaths = false;
+    fdirOptions.resolvePaths = true;
+    fdirOptions.includeBasePath = true;
+  }
+
+  if (options.followSymbolicLinks === false) {
+    fdirOptions.resolveSymlinks = false;
+    fdirOptions.excludeSymlinks = true;
+  }
+
+  if (options.onlyDirectories) {
+    fdirOptions.excludeFiles = true;
+    fdirOptions.includeDirs = true;
+  } else if (options.onlyFiles === false) {
+    fdirOptions.includeDirs = true;
+  }
+
+  props.root = props.root.replace(BACKSLASHES, '');
+  const root = props.root;
+
+  if (options.debug) {
+    log('internal properties:', props);
+  }
+  const relative = cwd !== root && !options.absolute && buildRelative(cwd, props.root);
+  return { crawler: new fdir(fdirOptions).crawl(root), relative } as const;
+}

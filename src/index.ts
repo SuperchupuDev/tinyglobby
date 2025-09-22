@@ -1,15 +1,21 @@
-import nativeFs from 'node:fs';
 import path, { posix } from 'node:path';
-import { buildFdir, formatPaths } from './fdir.ts';
-import type { GlobOptions, Input, InternalProps, ProcessedPatterns } from './types.ts';
-import { ensureStringArray, escapePath, isDynamicPattern, log, splitPattern } from './utils.ts';
+import { buildFDir2 } from './fdir.ts';
+import type { GlobCrawler, GlobOptions, InternalProps, ProcessedPatterns } from './types.ts';
+import {
+  ensureStringArray,
+  escapePath,
+  isDynamicPattern,
+  isReadonlyArray,
+  log,
+  normalizeCwd,
+  splitPattern
+} from './utils.ts';
 
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
-const BACKSLASHES = /\\/g;
 
 function normalizePattern(pattern: string, props: InternalProps, opts: GlobOptions, isIgnore: boolean): string {
-  const cwd = opts.cwd;
+  const cwd: string = opts.cwd as string;
   let result: string = pattern;
   if (pattern[pattern.length - 1] === '/') {
     result = pattern.slice(0, -1);
@@ -35,7 +41,7 @@ function normalizePattern(pattern: string, props: InternalProps, opts: GlobOptio
     let i = 0;
     const cwdParts = escapedCwd.split('/');
     while (i < n && parts[i + n] === cwdParts[cwdParts.length + i - n]) {
-      result = result.slice(0, (n - i - 1) * 3) + result.slice((n - i) * 3 + parts[i + n].length + 1) || '.';
+      result = `${result.slice(0, (n - i - 1) * 3)}${result.slice((n - i) * 3 + parts[i + n].length + 1)}` || '.';
       i++;
     }
 
@@ -78,11 +84,11 @@ function normalizePattern(pattern: string, props: InternalProps, opts: GlobOptio
   return result;
 }
 
-function processPatterns(opts: GlobOptions, props: InternalProps): ProcessedPatterns {
+function processPatterns(opts: GlobOptions, patterns: readonly string[], props: InternalProps): ProcessedPatterns {
   const matchPatterns: string[] = [];
   const ignorePatterns: string[] = [];
 
-  for (const pattern of opts.ignore) {
+  for (const pattern of opts.ignore as string[]) {
     if (!pattern) {
       continue;
     }
@@ -92,7 +98,7 @@ function processPatterns(opts: GlobOptions, props: InternalProps): ProcessedPatt
     }
   }
 
-  for (const pattern of opts.patterns) {
+  for (const pattern of patterns) {
     if (!pattern) {
       continue;
     }
@@ -106,82 +112,109 @@ function processPatterns(opts: GlobOptions, props: InternalProps): ProcessedPatt
   return { match: matchPatterns, ignore: ignorePatterns };
 }
 
-// Only the literal type doesn't emit any typescript errors
-const defaultOptions = {
+const defaultOptions: Partial<GlobOptions> = {
   expandDirectories: true,
   debug: !!process.env.TINYGLOBBY_DEBUG,
   ignore: [],
   // tinyglobby exclusive behavior, should be considered deprecated
-  patterns: ['**/*'],
   caseSensitiveMatch: true,
   followSymbolicLinks: true,
   onlyFiles: true,
   dot: false
 };
 
-function getOptions(input: Input, options?: Partial<GlobOptions>): GlobOptions {
-  const opts = {
+function getOptions(input?: string | readonly string[], options?: Partial<GlobOptions>): GlobOptions {
+  const opts: Partial<GlobOptions> = {
     ...defaultOptions,
     ...(Array.isArray(input) || typeof input === 'string' ? { ...options, patterns: input } : input)
   };
-  opts.cwd = (opts.cwd ? path.resolve(opts.cwd) : process.cwd()).replace(BACKSLASHES, '/');
-  opts.ignore = ensureStringArray(opts.ignore);
-  opts.patterns = ensureStringArray(opts.patterns);
+  opts.cwd = normalizeCwd(opts.cwd);
+  opts.ignore = ensureStringArray(opts.ignore as string[]);
+
+  if (opts.debug) {
+    log('globbing with:', { options, cwd: opts.cwd });
+  }
+
   return opts as GlobOptions;
 }
 
-function crawl(input: Input, options: Partial<GlobOptions> | undefined, sync: false): Promise<string[]>;
-function crawl(input: Input, options: Partial<GlobOptions> | undefined, sync: true): string[];
-function crawl(input: Input, options: Partial<GlobOptions> | undefined, sync: boolean) {
-  if (input && options?.patterns) {
-    throw new Error('Cannot pass patterns as both an argument and an option.');
+function formatPaths(paths: string[], relative: (p: string) => string) {
+  for (let i = paths.length - 1; i >= 0; i--) {
+    const path = paths[i];
+    paths[i] = relative(path);
+  }
+  return paths;
+}
+
+function crawl(
+  patternsOrOptions: string | readonly string[] | GlobOptions,
+  inputOptions?: GlobOptions
+): GlobCrawler | undefined {
+  if (patternsOrOptions && inputOptions?.patterns) {
+    throw new Error('Cannot pass patterns as both an argument and an option');
   }
 
-  const opts = getOptions(input, options);
-  const cwd = opts.cwd;
+  const isModern = isReadonlyArray(patternsOrOptions) || typeof patternsOrOptions === 'string';
+  const patterns = ensureStringArray((isModern ? patternsOrOptions : patternsOrOptions.patterns) ?? ['**/*']);
+  const options = getOptions(patterns, isModern ? inputOptions : patternsOrOptions);
 
-  if (opts.debug) {
-    log('globbing with options:', opts, 'cwd:', cwd);
-  }
-
-  if (!opts.patterns.length) {
-    return sync ? [] : Promise.resolve([]);
+  // If the user defined an empty array as input, do not return a crawler and stop the tool.
+  if (Array.isArray(patterns) && patterns.length === 0) {
+    return;
   }
 
   const props: InternalProps = {
-    root: cwd,
+    root: options.cwd as string,
     commonPath: null,
     depthOffset: 0
   };
 
-  const processed = processPatterns(opts, props);
-  props.root = props.root.replace(BACKSLASHES, '');
-  const root = props.root;
+  const processed = processPatterns(options, patterns, props);
 
-  if (opts.debug) {
+  if (options.debug) {
     log('internal processing patterns:', processed);
-    log('internal properties:', props);
   }
 
-  const api = buildFdir(opts, props, processed, cwd, root);
+  return buildFDir2(props, options, processed);
+}
 
-  if (cwd === root || opts.absolute) {
-    return sync ? api.sync() : api.withPromise();
+function evalGlobResult(paths?: string[], crawler?: GlobCrawler): string[] {
+  if (!crawler || !paths?.length) {
+    return [];
   }
-
-  return sync ? formatPaths(api.sync(), cwd, root) : api.withPromise().then(paths => formatPaths(paths, cwd, root));
+  return crawler.relative ? formatPaths(paths, crawler.relative) : paths;
 }
 
-export function glob(patterns: string | string[], options?: Omit<Partial<GlobOptions>, 'patterns'>): Promise<string[]>;
-export function glob(options: Partial<GlobOptions>): Promise<string[]>;
-export async function glob(input: Input, options?: Partial<GlobOptions>): Promise<string[]> {
-  return crawl(input, options, false);
+/**
+ * Asynchronously match files following a glob pattern.
+ * @see {@link https://superchupu.dev/tinyglobby/documentation#glob}
+ */
+export function glob(patterns: string | readonly string[], options?: Omit<GlobOptions, 'patterns'>): Promise<string[]>;
+/**
+ * @deprecated Provide patterns as the first argument instead.
+ */
+export function glob(options: GlobOptions): Promise<string[]>;
+export async function glob(
+  patternsOrOptions: string | readonly string[] | GlobOptions,
+  options?: GlobOptions
+): Promise<string[]> {
+  const globCrawler = crawl(patternsOrOptions, options);
+  return evalGlobResult(await globCrawler?.crawler.withPromise(), globCrawler);
 }
 
-export function globSync(patterns: string | string[], options?: Omit<Partial<GlobOptions>, 'patterns'>): string[];
-export function globSync(options: Partial<GlobOptions>): string[];
-export function globSync(input: Input, options?: Partial<GlobOptions>): string[] {
-  return crawl(input, options, true);
+/**
+ * Synchronously match files following a glob pattern.
+ * @see {@link https://superchupu.dev/tinyglobby/documentation#globSync}
+ */
+export function globSync(patterns: string | readonly string[], options?: Omit<GlobOptions, 'patterns'>): string[];
+/**
+ * @deprecated Provide patterns as the first argument instead.
+ */
+export function globSync(options: GlobOptions): string[];
+export function globSync(patternsOrOptions: string | readonly string[] | GlobOptions, options?: GlobOptions): string[] {
+  const globCrawler = crawl(patternsOrOptions, options);
+  return evalGlobResult(globCrawler?.crawler.sync(), globCrawler);
 }
 
+export type { GlobOptions } from './types.ts';
 export { convertPathToPattern, escapePath, isDynamicPattern } from './utils.ts';
