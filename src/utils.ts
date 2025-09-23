@@ -211,14 +211,7 @@ export function log(...tasks: unknown[]): void {
 // #endregion
 
 // #region ensureStringArray
-export function ensureStringArray(value: string | string[] | readonly string[]): readonly string[] {
-  return typeof value === 'string' ? [value] : value;
+export function ensureStringArray(value?: string | string[] | readonly string[]): readonly string[] {
+  return typeof value === 'string' ? [value] : (value ?? []);
 }
 // #endregion ensureStringArray
-
-export function normalizeCwd(cwd?: string | URL): string {
-  if (!cwd) {
-    return process.cwd().replace(BACKSLASHES, '/');
-  }
-  return (cwd instanceof URL ? fileURLToPath(cwd) : path.resolve(cwd)).replace(BACKSLASHES, '/');
-}

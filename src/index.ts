@@ -1,18 +1,24 @@
+import nativeFs from 'node:fs';
 import path, { posix } from 'node:path';
-import { buildFDir2 } from './fdir.ts';
-import type { GlobCrawler, GlobOptions, InternalProps, ProcessedPatterns } from './types.ts';
+import { fileURLToPath } from 'node:url';
+import { type Options as FdirOptions, fdir } from 'fdir';
+import picomatch, { type PicomatchOptions } from 'picomatch';
+import type { GlobCrawler, GlobOptions, InternalProps } from './types.ts';
 import {
+  buildFormat,
+  buildRelative,
   ensureStringArray,
   escapePath,
+  getPartialMatcher,
   isDynamicPattern,
   isReadonlyArray,
   log,
-  normalizeCwd,
   splitPattern
 } from './utils.ts';
 
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
+const BACKSLASHES = /\\/g;
 
 function normalizePattern(pattern: string, props: InternalProps, opts: GlobOptions, isIgnore: boolean): string {
   const cwd: string = opts.cwd as string;
@@ -77,14 +83,13 @@ function normalizePattern(pattern: string, props: InternalProps, opts: GlobOptio
 
     props.depthOffset = newCommonPath.length;
     props.commonPath = newCommonPath;
-
     props.root = newCommonPath.length > 0 ? posix.join(cwd, ...newCommonPath) : cwd;
   }
 
   return result;
 }
 
-function processPatterns(opts: GlobOptions, patterns: readonly string[], props: InternalProps): ProcessedPatterns {
+function processPatterns(opts: GlobOptions, patterns: readonly string[], props: InternalProps) {
   const matchPatterns: string[] = [];
   const ignorePatterns: string[] = [];
 
@@ -112,32 +117,6 @@ function processPatterns(opts: GlobOptions, patterns: readonly string[], props: 
   return { match: matchPatterns, ignore: ignorePatterns };
 }
 
-const defaultOptions: Partial<GlobOptions> = {
-  expandDirectories: true,
-  debug: !!process.env.TINYGLOBBY_DEBUG,
-  ignore: [],
-  // tinyglobby exclusive behavior, should be considered deprecated
-  caseSensitiveMatch: true,
-  followSymbolicLinks: true,
-  onlyFiles: true,
-  dot: false
-};
-
-function getOptions(input?: string | readonly string[], options?: Partial<GlobOptions>): GlobOptions {
-  const opts: Partial<GlobOptions> = {
-    ...defaultOptions,
-    ...(Array.isArray(input) || typeof input === 'string' ? { ...options, patterns: input } : input)
-  };
-  opts.cwd = normalizeCwd(opts.cwd);
-  opts.ignore = ensureStringArray(opts.ignore as string[]);
-
-  if (opts.debug) {
-    log('globbing with:', { options, cwd: opts.cwd });
-  }
-
-  return opts as GlobOptions;
-}
-
 function formatPaths(paths: string[], relative: (p: string) => string) {
   for (let i = paths.length - 1; i >= 0; i--) {
     const path = paths[i];
@@ -146,25 +125,55 @@ function formatPaths(paths: string[], relative: (p: string) => string) {
   return paths;
 }
 
-function crawl(
-  patternsOrOptions: string | readonly string[] | GlobOptions,
-  inputOptions?: GlobOptions
-): GlobCrawler | undefined {
+function normalizeCwd(cwd: string | URL) {
+  return (cwd instanceof URL ? fileURLToPath(cwd) : path.resolve(cwd)).replace(BACKSLASHES, '/');
+}
+
+const defaultOptions: Partial<GlobOptions> = {
+  expandDirectories: true,
+  debug: !!process.env.TINYGLOBBY_DEBUG,
+  cwd: process.cwd(),
+  ignore: [],
+  // tinyglobby exclusive behavior, should be considered deprecated
+  caseSensitiveMatch: true,
+  followSymbolicLinks: true,
+  onlyFiles: true,
+  dot: false
+};
+
+function getOptions(options?: Partial<GlobOptions>): GlobOptions {
+  const opts = {
+    ...defaultOptions,
+    ...options,
+    debug: !!(process.env.TINYGLOBBY_DEBUG ?? options?.debug)
+  };
+
+  opts.cwd = normalizeCwd(opts.cwd as string);
+  opts.ignore = ensureStringArray(opts.ignore);
+
+  if (opts.debug) {
+    log('globbing with:', { options, cwd: opts.cwd });
+  }
+
+  return opts as GlobOptions;
+}
+
+function crawl(patternsOrOptions: string | readonly string[] | GlobOptions = ['**/*'], inputOptions: GlobOptions = {}) {
   if (patternsOrOptions && inputOptions?.patterns) {
     throw new Error('Cannot pass patterns as both an argument and an option');
   }
 
   const isModern = isReadonlyArray(patternsOrOptions) || typeof patternsOrOptions === 'string';
   const patterns = ensureStringArray((isModern ? patternsOrOptions : patternsOrOptions.patterns) ?? ['**/*']);
-  const options = getOptions(patterns, isModern ? inputOptions : patternsOrOptions);
+  const options = getOptions(isModern ? inputOptions : patternsOrOptions);
+  const cwd = options.cwd as string;
 
-  // If the user defined an empty array as input, do not return a crawler and stop the tool.
   if (Array.isArray(patterns) && patterns.length === 0) {
     return;
   }
 
-  const props: InternalProps = {
-    root: options.cwd as string,
+  const props = {
+    root: cwd,
     commonPath: null,
     depthOffset: 0
   };
@@ -175,7 +184,102 @@ function crawl(
     log('internal processing patterns:', processed);
   }
 
-  return buildFDir2(props, options, processed);
+  // Undefined and false are two different options here!
+  const matchOptions = {
+    dot: options.dot,
+    nobrace: options.braceExpansion === false,
+    nocase: options.caseSensitiveMatch === false,
+    noextglob: options.extglob === false,
+    noglobstar: options.globstar === false,
+    posix: true
+  } satisfies PicomatchOptions;
+
+  const matcher = picomatch(processed.match, { ...matchOptions, ignore: processed.ignore });
+  const ignore = picomatch(processed.ignore, matchOptions);
+  const partialMatcher = getPartialMatcher(processed.match, matchOptions);
+
+  const format = buildFormat(cwd, props.root, options.absolute);
+  const formatExclude = options.absolute ? format : buildFormat(cwd, props.root, true);
+  const fdirOptions: Partial<FdirOptions> = {
+    // use relative paths in the matcher
+    filters: [
+      options.debug
+        ? (p, isDirectory) => {
+            const path = format(p, isDirectory);
+            const matches = matcher(path);
+
+            if (matches) {
+              log(`matched ${path}`);
+            }
+
+            return matches;
+          }
+        : (p, isDirectory) => matcher(format(p, isDirectory))
+    ],
+    exclude: options.debug
+      ? (_, p) => {
+          const relativePath = formatExclude(p, true);
+          const skipped = (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
+
+          if (skipped) {
+            log(`skipped ${p}`);
+          } else {
+            log(`crawling ${p}`);
+          }
+
+          return skipped;
+        }
+      : (_, p) => {
+          const relativePath = formatExclude(p, true);
+          return (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
+        },
+    fs: options.fs
+      ? {
+          readdir: options.fs.readdir || nativeFs.readdir,
+          readdirSync: options.fs.readdirSync || nativeFs.readdirSync,
+          realpath: options.fs.realpath || nativeFs.realpath,
+          realpathSync: options.fs.realpathSync || nativeFs.realpathSync,
+          stat: options.fs.stat || nativeFs.stat,
+          statSync: options.fs.statSync || nativeFs.statSync
+        }
+      : undefined,
+    pathSeparator: '/',
+    relativePaths: true,
+    resolveSymlinks: true,
+    signal: options.signal
+  };
+
+  if (options.deep !== undefined) {
+    fdirOptions.maxDepth = Math.round(options.deep - props.depthOffset);
+  }
+
+  if (options.absolute) {
+    fdirOptions.relativePaths = false;
+    fdirOptions.resolvePaths = true;
+    fdirOptions.includeBasePath = true;
+  }
+
+  if (options.followSymbolicLinks === false) {
+    fdirOptions.resolveSymlinks = false;
+    fdirOptions.excludeSymlinks = true;
+  }
+
+  if (options.onlyDirectories) {
+    fdirOptions.excludeFiles = true;
+    fdirOptions.includeDirs = true;
+  } else if (options.onlyFiles === false) {
+    fdirOptions.includeDirs = true;
+  }
+
+  props.root = props.root.replace(BACKSLASHES, '');
+  const root = props.root;
+
+  if (options.debug) {
+    log('internal properties:', props);
+  }
+
+  const relative = cwd !== root && !options.absolute && buildRelative(cwd, props.root);
+  return { crawler: new fdir(fdirOptions).crawl(root), relative };
 }
 
 function evalGlobResult(paths?: string[], crawler?: GlobCrawler): string[] {
