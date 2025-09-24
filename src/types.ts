@@ -1,6 +1,7 @@
 import type { FSLike, Output, PathsOutput, ResultCallback } from 'fdir';
 
 export type FileSystemAdapter = Partial<FSLike>;
+export type PredicateFormatter = (path: string, isDir: boolean) => string;
 
 export interface APIBuilder<TReturnType extends Output> {
   withPromise(): Promise<TReturnType>;
