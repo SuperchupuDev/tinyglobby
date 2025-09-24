@@ -1,7 +1,8 @@
 import nativeFs from 'node:fs';
 import path, { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { type FSLike } from 'fdir';
+import type { FSLike } from 'fdir';
+import { buildFDir } from './fdir.ts';
 import type { GlobCrawler, GlobOptions, InternalProps } from './types.ts';
 import {
   ensureStringArray,
@@ -12,7 +13,6 @@ import {
   log,
   splitPattern
 } from './utils.ts';
-import { buildFDir } from './fdir.ts';
 
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
@@ -127,15 +127,15 @@ function normalizeCwd(cwd: string | URL) {
   return (cwd instanceof URL ? fileURLToPath(cwd) : path.resolve(cwd)).replace(BACKSLASHES, '/');
 }
 
-const fsKeys = ['readdir', 'readdirSync', 'realpath', 'realpathSync', 'stat', 'statSync']
+const fsKeys = ['readdir', 'readdirSync', 'realpath', 'realpathSync', 'stat', 'statSync'];
 
 function normalizeFs(fs: Record<string, unknown>): Partial<FSLike> {
   if (fs !== nativeFs) {
     for (const key of fsKeys) {
-      fs[key] = (isFunction(fs[key]) ? fs : nativeFs as Record<string, unknown>)[key]
+      fs[key] = (isFunction(fs[key]) ? fs : (nativeFs as Record<string, unknown>))[key];
     }
   }
-  return fs as Partial<FSLike>
+  return fs as Partial<FSLike>;
 }
 
 // Some of these options have to be set in this way to mitigate state differences between boolean and undefined
@@ -153,7 +153,6 @@ const defaultOptions: Partial<GlobOptions> = {
   fs: nativeFs
 };
 
-
 function getOptions(options?: Partial<GlobOptions>): GlobOptions {
   const opts = {
     ...defaultOptions,
@@ -163,7 +162,7 @@ function getOptions(options?: Partial<GlobOptions>): GlobOptions {
 
   opts.cwd = normalizeCwd(opts.cwd as string);
   opts.ignore = ensureStringArray(opts.ignore);
-  opts.fs = normalizeFs(opts.fs as Partial<FSLike>)
+  opts.fs = normalizeFs(opts.fs as Partial<FSLike>);
 
   if (opts.debug) {
     log('globbing with:', { options, cwd: opts.cwd });
@@ -198,7 +197,7 @@ function crawl(patternsOrOptions: string | readonly string[] | GlobOptions = ['*
     log('internal processing patterns:', processed);
   }
 
-  return buildFDir(props, options, processed, cwd)
+  return buildFDir(props, options, processed, cwd);
 }
 
 function evalGlobResult(paths?: string[], crawler?: GlobCrawler): string[] {

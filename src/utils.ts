@@ -216,5 +216,5 @@ export function ensureStringArray(value?: string | string[] | readonly string[])
 
 // #region isFunction
 export function isFunction(value: unknown): boolean {
-  return !!value && typeof value === 'function'
+  return !!value && typeof value === 'function';
 }

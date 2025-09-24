@@ -1,14 +1,11 @@
-import nativeFs from 'node:fs';
 import { posix } from 'node:path';
-import { type Options as FdirOptions, fdir, type PathsOutput, type ExcludePredicate, type FSLike } from 'fdir';
+import { type ExcludePredicate, type FSLike, fdir } from 'fdir';
 import picomatch, { type Matcher, type PicomatchOptions } from 'picomatch';
 import type {
-  APIBuilder,
   GlobCrawler,
   GlobOptions,
   InternalProps,
   PartialMatcher,
-  PartialMatcherOptions,
   PredicateFormatter,
   ProcessedPatterns
 } from './types.ts';
@@ -24,7 +21,7 @@ export function getRelativePath(path: string, cwd: string, root: string): string
 // #endregion
 
 // #region processPath
-function processPath(path: string, cwd: string, root: string, isDirectory: boolean, absolute?: boolean) {
+function _processPath(path: string, cwd: string, root: string, isDirectory: boolean, absolute?: boolean) {
   const relativePath = absolute ? path.slice(root === '/' ? 1 : root.length + 1) || '.' : path;
 
   if (root === cwd) {
@@ -35,16 +32,25 @@ function processPath(path: string, cwd: string, root: string, isDirectory: boole
 }
 // #endregion processPath
 
-function buildExcludePredicate(formatter: PredicateFormatter, partialMatcher: PartialMatcher, ignore: Matcher): ExcludePredicate {
-  return  (_, p) => {
+function buildExcludePredicate(
+  formatter: PredicateFormatter,
+  partialMatcher: PartialMatcher,
+  ignore: Matcher
+): ExcludePredicate {
+  return (_, p) => {
     const relativePath = formatter(p, true);
     return (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
-  }
+  };
 }
 
 // #region buildFdir
-export function buildFDir(props: InternalProps, options: GlobOptions, processed: ProcessedPatterns, cwd: string): GlobCrawler {
-  const { absolute, caseSensitiveMatch, debug, dot, followSymbolicLinks, onlyDirectories } = options
+export function buildFDir(
+  props: InternalProps,
+  options: GlobOptions,
+  processed: ProcessedPatterns,
+  cwd: string
+): GlobCrawler {
+  const { absolute, caseSensitiveMatch, debug, dot, followSymbolicLinks, onlyDirectories } = options;
 
   // For these options, false and undefined are two different states!
   const matchOptions = {
@@ -61,7 +67,11 @@ export function buildFDir(props: InternalProps, options: GlobOptions, processed:
   const partialMatcher = getPartialMatcher(processed.match, matchOptions);
 
   const format = buildFormat(cwd, props.root, options.absolute);
-  const excludePredicate = buildExcludePredicate(options.absolute ? format : buildFormat(cwd, props.root, true), partialMatcher, ignore);
+  const excludePredicate = buildExcludePredicate(
+    options.absolute ? format : buildFormat(cwd, props.root, true),
+    partialMatcher,
+    ignore
+  );
 
   props.root = props.root.replace(BACKSLASHES, '');
   const root = props.root;
@@ -74,7 +84,7 @@ export function buildFDir(props: InternalProps, options: GlobOptions, processed:
   const crawler = new fdir({
     // use relative paths in the matcher
     filters: [
-      options.debug
+      debug
         ? (p, isDirectory) => {
             const path = format(p, isDirectory);
             const matches = matcher(path);
@@ -87,10 +97,10 @@ export function buildFDir(props: InternalProps, options: GlobOptions, processed:
           }
         : (p, isDirectory) => matcher(format(p, isDirectory))
     ],
-    exclude: options.debug
+    exclude: debug
       ? (_, p) => {
-          const skipped = excludePredicate(_, p)
-          log(`${skipped ? 'skipped' : 'crawling'} ${p}`)
+          const skipped = excludePredicate(_, p);
+          log(`${skipped ? 'skipped' : 'crawling'} ${p}`);
           return skipped;
         }
       : excludePredicate,
@@ -111,6 +121,6 @@ export function buildFDir(props: InternalProps, options: GlobOptions, processed:
     log('internal properties:', props);
   }
 
-  return { crawler, relative: cwd !== root && !options.absolute && buildRelative(cwd, root)  };
+  return { crawler, relative: cwd !== root && !options.absolute && buildRelative(cwd, root) };
 }
 // #endregion buildFdir
