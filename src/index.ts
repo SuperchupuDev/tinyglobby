@@ -1,20 +1,18 @@
 import nativeFs from 'node:fs';
 import path, { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { type Options as FdirOptions, fdir } from 'fdir';
-import picomatch, { type PicomatchOptions } from 'picomatch';
+import { type FSLike } from 'fdir';
 import type { GlobCrawler, GlobOptions, InternalProps } from './types.ts';
 import {
-  buildFormat,
-  buildRelative,
   ensureStringArray,
   escapePath,
-  getPartialMatcher,
   isDynamicPattern,
+  isFunction,
   isReadonlyArray,
   log,
   splitPattern
 } from './utils.ts';
+import { buildFDir } from './fdir.ts';
 
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
@@ -129,7 +127,20 @@ function normalizeCwd(cwd: string | URL) {
   return (cwd instanceof URL ? fileURLToPath(cwd) : path.resolve(cwd)).replace(BACKSLASHES, '/');
 }
 
+const fsKeys = ['readdir', 'readdirSync', 'realpath', 'realpathSync', 'stat', 'statSync']
+
+function normalizeFs(fs: Record<string, unknown>): Partial<FSLike> {
+  if (fs !== nativeFs) {
+    for (const key of fsKeys) {
+      fs[key] = (isFunction(fs[key]) ? fs : nativeFs as Record<string, unknown>)[key]
+    }
+  }
+  return fs as Partial<FSLike>
+}
+
+// Some of these options have to be set in this way to mitigate state differences between boolean and undefined
 const defaultOptions: Partial<GlobOptions> = {
+  absolute: false,
   expandDirectories: true,
   debug: !!process.env.TINYGLOBBY_DEBUG,
   cwd: process.cwd(),
@@ -138,8 +149,10 @@ const defaultOptions: Partial<GlobOptions> = {
   caseSensitiveMatch: true,
   followSymbolicLinks: true,
   onlyFiles: true,
-  dot: false
+  dot: false,
+  fs: nativeFs
 };
+
 
 function getOptions(options?: Partial<GlobOptions>): GlobOptions {
   const opts = {
@@ -150,6 +163,7 @@ function getOptions(options?: Partial<GlobOptions>): GlobOptions {
 
   opts.cwd = normalizeCwd(opts.cwd as string);
   opts.ignore = ensureStringArray(opts.ignore);
+  opts.fs = normalizeFs(opts.fs as Partial<FSLike>)
 
   if (opts.debug) {
     log('globbing with:', { options, cwd: opts.cwd });
@@ -184,102 +198,7 @@ function crawl(patternsOrOptions: string | readonly string[] | GlobOptions = ['*
     log('internal processing patterns:', processed);
   }
 
-  // Undefined and false are two different options here!
-  const matchOptions = {
-    dot: options.dot,
-    nobrace: options.braceExpansion === false,
-    nocase: options.caseSensitiveMatch === false,
-    noextglob: options.extglob === false,
-    noglobstar: options.globstar === false,
-    posix: true
-  } satisfies PicomatchOptions;
-
-  const matcher = picomatch(processed.match, { ...matchOptions, ignore: processed.ignore });
-  const ignore = picomatch(processed.ignore, matchOptions);
-  const partialMatcher = getPartialMatcher(processed.match, matchOptions);
-
-  const format = buildFormat(cwd, props.root, options.absolute);
-  const formatExclude = options.absolute ? format : buildFormat(cwd, props.root, true);
-  const fdirOptions: Partial<FdirOptions> = {
-    // use relative paths in the matcher
-    filters: [
-      options.debug
-        ? (p, isDirectory) => {
-            const path = format(p, isDirectory);
-            const matches = matcher(path);
-
-            if (matches) {
-              log(`matched ${path}`);
-            }
-
-            return matches;
-          }
-        : (p, isDirectory) => matcher(format(p, isDirectory))
-    ],
-    exclude: options.debug
-      ? (_, p) => {
-          const relativePath = formatExclude(p, true);
-          const skipped = (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
-
-          if (skipped) {
-            log(`skipped ${p}`);
-          } else {
-            log(`crawling ${p}`);
-          }
-
-          return skipped;
-        }
-      : (_, p) => {
-          const relativePath = formatExclude(p, true);
-          return (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
-        },
-    fs: options.fs
-      ? {
-          readdir: options.fs.readdir || nativeFs.readdir,
-          readdirSync: options.fs.readdirSync || nativeFs.readdirSync,
-          realpath: options.fs.realpath || nativeFs.realpath,
-          realpathSync: options.fs.realpathSync || nativeFs.realpathSync,
-          stat: options.fs.stat || nativeFs.stat,
-          statSync: options.fs.statSync || nativeFs.statSync
-        }
-      : undefined,
-    pathSeparator: '/',
-    relativePaths: true,
-    resolveSymlinks: true,
-    signal: options.signal
-  };
-
-  if (options.deep !== undefined) {
-    fdirOptions.maxDepth = Math.round(options.deep - props.depthOffset);
-  }
-
-  if (options.absolute) {
-    fdirOptions.relativePaths = false;
-    fdirOptions.resolvePaths = true;
-    fdirOptions.includeBasePath = true;
-  }
-
-  if (options.followSymbolicLinks === false) {
-    fdirOptions.resolveSymlinks = false;
-    fdirOptions.excludeSymlinks = true;
-  }
-
-  if (options.onlyDirectories) {
-    fdirOptions.excludeFiles = true;
-    fdirOptions.includeDirs = true;
-  } else if (options.onlyFiles === false) {
-    fdirOptions.includeDirs = true;
-  }
-
-  props.root = props.root.replace(BACKSLASHES, '');
-  const root = props.root;
-
-  if (options.debug) {
-    log('internal properties:', props);
-  }
-
-  const relative = cwd !== root && !options.absolute && buildRelative(cwd, props.root);
-  return { crawler: new fdir(fdirOptions).crawl(root), relative };
+  return buildFDir(props, options, processed, cwd)
 }
 
 function evalGlobResult(paths?: string[], crawler?: GlobCrawler): string[] {

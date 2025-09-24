@@ -1,13 +1,11 @@
-import path, { posix } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { posix } from 'node:path';
 import picomatch, { type Matcher } from 'picomatch';
-import type { PartialMatcher, PartialMatcherOptions } from './types.ts';
+import type { PartialMatcher, PartialMatcherOptions, PredicateFormatter } from './types.ts';
 
 const ONLY_PARENT_DIRECTORIES = /^(\/?\.\.)+$/;
 // The `Array.isArray` type guard doesn't work for readonly arrays.
 export const isReadonlyArray: (arg: unknown) => arg is readonly unknown[] = Array.isArray;
 const isWin = process.platform === 'win32';
-const BACKSLASHES = /\\/g;
 
 // the result of over 4 months of figuring stuff out and a LOT of help
 export function getPartialMatcher(patterns: string[], options: PartialMatcherOptions = {}): PartialMatcher {
@@ -85,7 +83,7 @@ const isRoot = isWin ? (p: string) => WIN32_ROOT_DIR.test(p) : (p: string) => p 
 // `path.relative` is slow, we want to avoid it as much as we can
 // like `buildRelative`, but with some differences to avoid extra work
 // for example we definitely do not want trailing slashes
-export function buildFormat(cwd: string, root: string, absolute?: boolean): (p: string, isDir: boolean) => string {
+export function buildFormat(cwd: string, root: string, absolute?: boolean): PredicateFormatter {
   if (cwd === root || root.startsWith(`${cwd}/`)) {
     if (absolute) {
       const start = isRoot(cwd) ? cwd.length : cwd.length + 1;
@@ -215,3 +213,8 @@ export function ensureStringArray(value?: string | string[] | readonly string[])
   return typeof value === 'string' ? [value] : (value ?? []);
 }
 // #endregion ensureStringArray
+
+// #region isFunction
+export function isFunction(value: unknown): boolean {
+  return !!value && typeof value === 'function'
+}
