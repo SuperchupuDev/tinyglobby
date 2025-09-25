@@ -143,18 +143,13 @@ const defaultOptions: Partial<GlobOptions> = {
 };
 
 function getOptions(options?: Partial<GlobOptions>): GlobOptions {
-  const opts = {
-    ...defaultOptions,
-    ...options,
-    debug: !!(process.env.TINYGLOBBY_DEBUG ?? options?.debug)
-  };
-
+  const opts = { ...defaultOptions, ...options };
   opts.cwd = normalizeCwd(opts.cwd as string);
   opts.ignore = ensureStringArray(opts.ignore);
   opts.fs = normalizeFs(opts.fs as Partial<FSLike>);
 
   if (opts.debug) {
-    log('globbing with:', { options, cwd: opts.cwd });
+    log('globbing with:', { options: opts });
   }
 
   return opts as GlobOptions;
