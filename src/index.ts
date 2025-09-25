@@ -30,7 +30,9 @@ function normalizePattern(pattern: string, props: InternalProps, opts: GlobOptio
   }
 
   const escapedCwd = escapePath(cwd);
-  result = path.isAbsolute(result.replace(ESCAPING_BACKSLASHES, '')) ? posix.relative(escapedCwd, result) : posix.normalize(result)
+  result = path.isAbsolute(result.replace(ESCAPING_BACKSLASHES, ''))
+    ? posix.relative(escapedCwd, result)
+    : posix.normalize(result);
 
   const parentDir = PARENT_DIRECTORY.exec(result)?.[0];
   const parts = splitPattern(result);
@@ -89,9 +91,9 @@ function processPatterns(opts: GlobOptions, patterns: readonly string[], props: 
 
   for (const pattern of opts.ignore as string[]) {
     // don't handle negated patterns here for consistency with fast-glob
-    if (pattern && pattern[0] !== '!' || pattern[1] === '(') {
-        ignorePatterns.push(normalizePattern(pattern, props, opts, true));
-      }
+    if ((pattern && pattern[0] !== '!') || pattern[1] === '(') {
+      ignorePatterns.push(normalizePattern(pattern, props, opts, true));
+    }
   }
 
   for (const pattern of patterns) {

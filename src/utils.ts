@@ -112,12 +112,12 @@ export function buildFormat(cwd: string, root: string, absolute?: boolean): Pred
 // like format but we need to do less
 export function buildRelative(cwd: string, root: string): (p: string) => string {
   if (root.startsWith(`${cwd}/`)) {
-    return p => `${ root.slice(cwd.length + 1)}/${p}`;
+    return p => `${root.slice(cwd.length + 1)}/${p}`;
   }
 
   return p => {
     const result = posix.relative(cwd, `${root}/${p}`);
-    return p[p.length - 1] === '/' && result !== '' ? `${result}/` : (result || '.')
+    return p[p.length - 1] === '/' && result !== '' ? `${result}/` : result || '.';
   };
 }
 // #endregion

@@ -39,7 +39,7 @@ export function buildFDir(
   cwd: string
 ): GlobCrawler {
   const { absolute, caseSensitiveMatch, debug, dot, followSymbolicLinks, onlyDirectories } = options;
-  const root = props.root.replace(BACKSLASHES, '')
+  const root = props.root.replace(BACKSLASHES, '');
   // For these options, false and undefined are two different states!
   const matchOptions = {
     dot,
@@ -60,7 +60,6 @@ export function buildFDir(
     partialMatcher,
     ignore
   );
-
 
   let maxDepth: number | undefined;
   if (options.deep !== undefined) {
