@@ -1,15 +1,14 @@
 import nativeFs from 'node:fs';
 import path, { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { FSLike } from 'fdir';
+import type { FSLike, PathsOutput } from 'fdir';
 import { buildFDir } from './fdir.ts';
-import type { GlobCrawler, GlobOptions, InternalProps } from './types.ts';
+import type { APIBuilder, GlobOptions, InternalProps, RelativeMapper } from './types.ts';
 import {
   BACKSLASHES,
   ensureStringArray,
   escapePath,
   isDynamicPattern,
-  isFunction,
   isReadonlyArray,
   log,
   splitPattern
@@ -125,7 +124,7 @@ const fsKeys = ['readdir', 'readdirSync', 'realpath', 'realpathSync', 'stat', 's
 function normalizeFs(fs: Record<string, unknown>): Partial<FSLike> {
   if (fs !== nativeFs) {
     for (const key of fsKeys) {
-      fs[key] = (isFunction(fs[key]) ? fs : (nativeFs as Record<string, unknown>))[key];
+      fs[key] = (typeof fs[key] === 'function' ? fs : (nativeFs as Record<string, unknown>))[key];
     }
   }
   return fs as Partial<FSLike>;
@@ -133,16 +132,13 @@ function normalizeFs(fs: Record<string, unknown>): Partial<FSLike> {
 
 // Some of these options have to be set in this way to mitigate state differences between boolean and undefined
 const defaultOptions: Partial<GlobOptions> = {
-  absolute: false,
   expandDirectories: true,
   debug: !!process.env.TINYGLOBBY_DEBUG,
   cwd: process.cwd(),
-  ignore: [],
   // tinyglobby exclusive behavior, should be considered deprecated
   caseSensitiveMatch: true,
   followSymbolicLinks: true,
   onlyFiles: true,
-  dot: false,
   fs: nativeFs
 };
 
@@ -164,7 +160,10 @@ function getOptions(options?: Partial<GlobOptions>): GlobOptions {
   return opts as GlobOptions;
 }
 
-function crawl(patternsOrOptions: string | readonly string[] | GlobOptions = ['**/*'], inputOptions: GlobOptions = {}) {
+function crawl(
+  patternsOrOptions: string | readonly string[] | GlobOptions = ['**/*'],
+  inputOptions: GlobOptions = {}
+): [] | [APIBuilder<PathsOutput>, RelativeMapper] {
   if (patternsOrOptions && inputOptions?.patterns) {
     throw new Error('Cannot pass patterns as both an argument and an option');
   }
@@ -175,7 +174,7 @@ function crawl(patternsOrOptions: string | readonly string[] | GlobOptions = ['*
   const cwd = options.cwd as string;
 
   if (Array.isArray(patterns) && patterns.length === 0) {
-    return;
+    return [];
   }
 
   const props: InternalProps = { root: cwd, depthOffset: 0 };
@@ -188,11 +187,8 @@ function crawl(patternsOrOptions: string | readonly string[] | GlobOptions = ['*
   return buildFDir(props, options, processed, cwd);
 }
 
-function evalGlobResult(paths?: string[], crawler?: GlobCrawler): string[] {
-  if (!crawler || !paths?.length) {
-    return [];
-  }
-  return crawler.relative ? formatPaths(paths, crawler.relative) : paths;
+function evalGlobResult(paths: string[] = [], relative?: RelativeMapper): string[] {
+  return relative ? formatPaths(paths, relative) : paths;
 }
 
 /**
@@ -208,8 +204,8 @@ export async function glob(
   patternsOrOptions: string | readonly string[] | GlobOptions,
   options?: GlobOptions
 ): Promise<string[]> {
-  const globCrawler = crawl(patternsOrOptions, options);
-  return evalGlobResult(await globCrawler?.crawler.withPromise(), globCrawler);
+  const [crawler, relative] = crawl(patternsOrOptions, options);
+  return evalGlobResult(await crawler?.withPromise(), relative);
 }
 
 /**
@@ -222,8 +218,8 @@ export function globSync(patterns: string | readonly string[], options?: Omit<Gl
  */
 export function globSync(options: GlobOptions): string[];
 export function globSync(patternsOrOptions: string | readonly string[] | GlobOptions, options?: GlobOptions): string[] {
-  const globCrawler = crawl(patternsOrOptions, options);
-  return evalGlobResult(globCrawler?.crawler.sync(), globCrawler);
+  const [crawler, relative] = crawl(patternsOrOptions, options);
+  return evalGlobResult(crawler?.sync(), relative);
 }
 
 export type { GlobOptions } from './types.ts';

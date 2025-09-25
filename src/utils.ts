@@ -210,8 +210,3 @@ export function ensureStringArray(value?: string | string[] | readonly string[])
   return typeof value === 'string' ? [value] : (value ?? []);
 }
 // #endregion ensureStringArray
-
-// #region isFunction
-export function isFunction(value: unknown): boolean {
-  return !!value && typeof value === 'function';
-}

@@ -1,17 +1,13 @@
-import type { FSLike, Output, PathsOutput, ResultCallback } from 'fdir';
+import type { FSLike, Output, ResultCallback } from 'fdir';
 
 export type FileSystemAdapter = Partial<FSLike>;
 export type PredicateFormatter = (path: string, isDir: boolean) => string;
+export type RelativeMapper = false | ((path: string) => string);
 
 export interface APIBuilder<TReturnType extends Output> {
   withPromise(): Promise<TReturnType>;
   withCallback(cb: ResultCallback<TReturnType>): void;
   sync(): TReturnType;
-}
-
-export interface GlobCrawler {
-  crawler: APIBuilder<PathsOutput>;
-  relative: false | ((path: string) => string);
 }
 
 export interface GlobOptions {

@@ -1,14 +1,7 @@
 import { posix } from 'node:path';
-import { type ExcludePredicate, type FSLike, fdir } from 'fdir';
-import picomatch, { type Matcher, type PicomatchOptions } from 'picomatch';
-import type {
-  GlobCrawler,
-  GlobOptions,
-  InternalProps,
-  PartialMatcher,
-  PredicateFormatter,
-  ProcessedPatterns
-} from './types.ts';
+import { type ExcludePredicate, type FSLike, fdir, type PathsOutput } from 'fdir';
+import picomatch, { type PicomatchOptions } from 'picomatch';
+import type { APIBuilder, GlobOptions, InternalProps, ProcessedPatterns, RelativeMapper } from './types.ts';
 import { BACKSLASHES, buildFormat, buildRelative, getPartialMatcher, log } from './utils.ts';
 
 // #region getRelativePath
@@ -17,30 +10,16 @@ export function getRelativePath(path: string, cwd: string, root: string): string
   return posix.relative(cwd, `${root}/${path}`) || '.';
 }
 // #endregion
-
-// #region buildExcludePredicate
-function buildExcludePredicate(
-  formatter: PredicateFormatter,
-  partialMatcher: PartialMatcher,
-  ignore: Matcher
-): ExcludePredicate {
-  return (_, p) => {
-    const relativePath = formatter(p, true);
-    return (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
-  };
-}
-// #endregion buildExcludePredicate
-
 // #region buildFdir
 export function buildFDir(
   props: InternalProps,
   options: GlobOptions,
   processed: ProcessedPatterns,
   cwd: string
-): GlobCrawler {
+): [APIBuilder<PathsOutput>, false | RelativeMapper] {
   const { absolute, caseSensitiveMatch, debug, dot, followSymbolicLinks, onlyDirectories } = options;
   const root = props.root.replace(BACKSLASHES, '');
-  // For these options, false and undefined are two different states!
+  // For some of these options, false and undefined are two different states!
   const matchOptions = {
     dot,
     nobrace: options.braceExpansion === false,
@@ -55,11 +34,12 @@ export function buildFDir(
   const partialMatcher = getPartialMatcher(processed.match, matchOptions);
 
   const format = buildFormat(cwd, root, absolute);
-  const excludePredicate = buildExcludePredicate(
-    options.absolute ? format : buildFormat(cwd, root, true),
-    partialMatcher,
-    ignore
-  );
+  const excludeFormatter = absolute ? format : buildFormat(cwd, root, true);
+
+  const excludePredicate: ExcludePredicate = (_, p): boolean => {
+    const relativePath = excludeFormatter(p, true);
+    return (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
+  };
 
   let maxDepth: number | undefined;
   if (options.deep !== undefined) {
@@ -106,6 +86,6 @@ export function buildFDir(
     log('internal properties:', { ...props, root });
   }
 
-  return { crawler, relative: cwd !== root && !absolute && buildRelative(cwd, root) };
+  return [crawler, cwd !== root && !absolute && buildRelative(cwd, root)];
 }
 // #endregion buildFdir
