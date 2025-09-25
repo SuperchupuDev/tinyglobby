@@ -111,7 +111,7 @@ export interface GlobOptions {
 
 export interface InternalProps {
   root: string;
-  commonPath: string[] | null;
+  commonPath?: string[];
   depthOffset: number;
 }
 

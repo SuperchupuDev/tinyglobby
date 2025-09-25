@@ -9,9 +9,7 @@ import type {
   PredicateFormatter,
   ProcessedPatterns
 } from './types.ts';
-import { buildFormat, buildRelative, getPartialMatcher, log } from './utils.ts';
-
-const BACKSLASHES = /\\/g;
+import { BACKSLASHES, buildFormat, buildRelative, getPartialMatcher, log } from './utils.ts';
 
 // #region getRelativePath
 // TODO: this is slow, find a better way to do this
@@ -20,18 +18,7 @@ export function getRelativePath(path: string, cwd: string, root: string): string
 }
 // #endregion
 
-// #region processPath
-function _processPath(path: string, cwd: string, root: string, isDirectory: boolean, absolute?: boolean) {
-  const relativePath = absolute ? path.slice(root === '/' ? 1 : root.length + 1) || '.' : path;
-
-  if (root === cwd) {
-    return isDirectory && relativePath !== '.' ? relativePath.slice(0, -1) : relativePath;
-  }
-
-  return getRelativePath(relativePath, cwd, root);
-}
-// #endregion processPath
-
+// #region buildExcludePredicate
 function buildExcludePredicate(
   formatter: PredicateFormatter,
   partialMatcher: PartialMatcher,
@@ -42,6 +29,7 @@ function buildExcludePredicate(
     return (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
   };
 }
+// #endregion buildExcludePredicate
 
 // #region buildFdir
 export function buildFDir(
@@ -51,7 +39,7 @@ export function buildFDir(
   cwd: string
 ): GlobCrawler {
   const { absolute, caseSensitiveMatch, debug, dot, followSymbolicLinks, onlyDirectories } = options;
-
+  const root = props.root.replace(BACKSLASHES, '')
   // For these options, false and undefined are two different states!
   const matchOptions = {
     dot,
@@ -66,15 +54,13 @@ export function buildFDir(
   const ignore = picomatch(processed.ignore, matchOptions);
   const partialMatcher = getPartialMatcher(processed.match, matchOptions);
 
-  const format = buildFormat(cwd, props.root, options.absolute);
+  const format = buildFormat(cwd, root, absolute);
   const excludePredicate = buildExcludePredicate(
-    options.absolute ? format : buildFormat(cwd, props.root, true),
+    options.absolute ? format : buildFormat(cwd, root, true),
     partialMatcher,
     ignore
   );
 
-  props.root = props.root.replace(BACKSLASHES, '');
-  const root = props.root;
 
   let maxDepth: number | undefined;
   if (options.deep !== undefined) {
@@ -118,9 +104,9 @@ export function buildFDir(
   }).crawl(root);
 
   if (options.debug) {
-    log('internal properties:', props);
+    log('internal properties:', { ...props, root });
   }
 
-  return { crawler, relative: cwd !== root && !options.absolute && buildRelative(cwd, root) };
+  return { crawler, relative: cwd !== root && !absolute && buildRelative(cwd, root) };
 }
 // #endregion buildFdir

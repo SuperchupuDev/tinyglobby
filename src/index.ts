@@ -5,6 +5,7 @@ import type { FSLike } from 'fdir';
 import { buildFDir } from './fdir.ts';
 import type { GlobCrawler, GlobOptions, InternalProps } from './types.ts';
 import {
+  BACKSLASHES,
   ensureStringArray,
   escapePath,
   isDynamicPattern,
@@ -16,7 +17,6 @@ import {
 
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
-const BACKSLASHES = /\\/g;
 
 function normalizePattern(pattern: string, props: InternalProps, opts: GlobOptions, isIgnore: boolean): string {
   const cwd: string = opts.cwd as string;
@@ -30,19 +30,15 @@ function normalizePattern(pattern: string, props: InternalProps, opts: GlobOptio
   }
 
   const escapedCwd = escapePath(cwd);
-  if (path.isAbsolute(result.replace(ESCAPING_BACKSLASHES, ''))) {
-    result = posix.relative(escapedCwd, result);
-  } else {
-    result = posix.normalize(result);
-  }
+  result = path.isAbsolute(result.replace(ESCAPING_BACKSLASHES, '')) ? posix.relative(escapedCwd, result) : posix.normalize(result)
 
   const parentDir = PARENT_DIRECTORY.exec(result)?.[0];
   const parts = splitPattern(result);
+  let i = 0;
   if (parentDir) {
     const n = (parentDir.length + 1) / 3;
 
     // normalize a pattern like `../foo/bar` to `bar` when cwd ends with `/foo`
-    let i = 0;
     const cwdParts = escapedCwd.split('/');
     while (i < n && parts[i + n] === cwdParts[cwdParts.length + i - n]) {
       result = `${result.slice(0, (n - i - 1) * 3)}${result.slice((n - i) * 3 + parts[i + n].length + 1)}` || '.';
@@ -64,7 +60,7 @@ function normalizePattern(pattern: string, props: InternalProps, opts: GlobOptio
     const newCommonPath: string[] = [];
     const length = Math.min(props.commonPath.length, parts.length);
 
-    for (let i = 0; i < length; i++) {
+    for (i = 0; i < length; i++) {
       const part = parts[i];
 
       if (part === '**' && !parts[i + 1]) {
@@ -92,33 +88,28 @@ function processPatterns(opts: GlobOptions, patterns: readonly string[], props: 
   const ignorePatterns: string[] = [];
 
   for (const pattern of opts.ignore as string[]) {
-    if (!pattern) {
-      continue;
-    }
     // don't handle negated patterns here for consistency with fast-glob
-    if (pattern[0] !== '!' || pattern[1] === '(') {
-      ignorePatterns.push(normalizePattern(pattern, props, opts, true));
-    }
+    if (pattern && pattern[0] !== '!' || pattern[1] === '(') {
+        ignorePatterns.push(normalizePattern(pattern, props, opts, true));
+      }
   }
 
   for (const pattern of patterns) {
-    if (!pattern) {
-      continue;
-    }
-    if (pattern[0] !== '!' || pattern[1] === '(') {
-      matchPatterns.push(normalizePattern(pattern, props, opts, false));
-    } else if (pattern[1] !== '!' || pattern[2] === '(') {
-      ignorePatterns.push(normalizePattern(pattern.slice(1), props, opts, true));
+    if (pattern) {
+      if (pattern[0] !== '!' || pattern[1] === '(') {
+        matchPatterns.push(normalizePattern(pattern, props, opts, false));
+      } else if (pattern[1] !== '!' || pattern[2] === '(') {
+        ignorePatterns.push(normalizePattern(pattern.slice(1), props, opts, true));
+      }
     }
   }
 
   return { match: matchPatterns, ignore: ignorePatterns };
 }
 
-function formatPaths(paths: string[], relative: (p: string) => string) {
+function formatPaths(paths: string[], relative: (p: string) => string): string[] {
   for (let i = paths.length - 1; i >= 0; i--) {
-    const path = paths[i];
-    paths[i] = relative(path);
+    paths[i] = relative(paths[i]);
   }
   return paths;
 }
@@ -185,12 +176,7 @@ function crawl(patternsOrOptions: string | readonly string[] | GlobOptions = ['*
     return;
   }
 
-  const props = {
-    root: cwd,
-    commonPath: null,
-    depthOffset: 0
-  };
-
+  const props: InternalProps = { root: cwd, depthOffset: 0 };
   const processed = processPatterns(options, patterns, props);
 
   if (options.debug) {

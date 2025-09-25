@@ -5,6 +5,7 @@ import type { PartialMatcher, PartialMatcherOptions, PredicateFormatter } from '
 const ONLY_PARENT_DIRECTORIES = /^(\/?\.\.)+$/;
 // The `Array.isArray` type guard doesn't work for readonly arrays.
 export const isReadonlyArray: (arg: unknown) => arg is readonly unknown[] = Array.isArray;
+export const BACKSLASHES: RegExp = /\\/g;
 const isWin = process.platform === 'win32';
 
 // the result of over 4 months of figuring stuff out and a LOT of help
@@ -14,6 +15,7 @@ export function getPartialMatcher(patterns: string[], options: PartialMatcherOpt
   const patternsParts: string[][] = Array(patternsCount);
   const matchers: Matcher[][] = Array(patternsCount);
   const globstarEnabled = !options.noglobstar;
+
   for (let i = 0; i < patternsCount; i++) {
     const parts = splitPattern(patterns[i]);
     patternsParts[i] = parts;
@@ -24,6 +26,7 @@ export function getPartialMatcher(patterns: string[], options: PartialMatcherOpt
     }
     matchers[i] = partMatchers;
   }
+
   return (input: string) => {
     // if we only have patterns like `src/*` but the input is `../..`
     // normally the parent directory would not get crawled
@@ -50,9 +53,7 @@ export function getPartialMatcher(patterns: string[], options: PartialMatcherOpt
           return true;
         }
 
-        const match = matcher[j](inputParts[j]);
-
-        if (!match) {
+        if (!matcher[j](inputParts[j])) {
           break;
         }
 
@@ -111,16 +112,12 @@ export function buildFormat(cwd: string, root: string, absolute?: boolean): Pred
 // like format but we need to do less
 export function buildRelative(cwd: string, root: string): (p: string) => string {
   if (root.startsWith(`${cwd}/`)) {
-    const prefix = root.slice(cwd.length + 1);
-    return p => `${prefix}/${p}`;
+    return p => `${ root.slice(cwd.length + 1)}/${p}`;
   }
 
   return p => {
     const result = posix.relative(cwd, `${root}/${p}`);
-    if (p.endsWith('/') && result !== '') {
-      return `${result}/`;
-    }
-    return result || '.';
+    return p[p.length - 1] === '/' && result !== '' ? `${result}/` : (result || '.')
   };
 }
 // #endregion
@@ -204,7 +201,7 @@ export function isDynamicPattern(pattern: string, options?: { caseSensitiveMatch
 
 // #region log
 export function log(...tasks: unknown[]): void {
-  console.log(`[tinyglobby ${new Date().toLocaleTimeString('es')}]`, ...tasks);
+  console.log(`[tinyglobby ${new Date().toLocaleTimeString()}]`, ...tasks);
 }
 // #endregion
 
