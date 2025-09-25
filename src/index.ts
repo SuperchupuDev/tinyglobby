@@ -111,6 +111,12 @@ export interface GlobOptions {
    * @default undefined
    */
   signal?: AbortSignal;
+  /**
+   * Apply sorting to match the order of the provided patterns.
+   * Can impact performance.
+   * @default false
+   */
+  sortResultsByPatterns?: boolean;
 }
 
 export type FileSystemAdapter = Partial<FSLike>;
@@ -381,7 +387,41 @@ function getCrawler(patterns?: string | readonly string[], inputOptions: Omit<Gl
   }
 
   const relative = cwd !== root && !options.absolute && buildRelative(cwd, props.root);
-  return [new fdir(fdirOptions).crawl(root), relative] as const;
+  return [
+    new fdir(fdirOptions).crawl(root),
+    relative,
+    { patterns: processed.match, matchOptions }
+  ] as const;
+}
+
+function* sortByPatterns(files: string[], patterns: string[], matchOptions: PicomatchOptions) {
+  const processedFiles = new Set<string>();
+  for (const isMatch of patterns.map((pattern) => picomatch(pattern, matchOptions))) {
+    for (const file of files) {
+      if (!processedFiles.has(file) && isMatch(file)) {
+        processedFiles.add(file);
+        yield file;
+      }
+    }
+  }
+}
+
+function handleResult(
+  relative: false | ((p: string) => string),
+  result: string[],
+  matcher?: { patterns: string[]; matchOptions: PicomatchOptions },
+  options?: GlobOptions
+) {
+  if (!relative) {
+    if (options?.sortResultsByPatterns && matcher) {
+      return [...sortByPatterns(result, matcher.patterns, matcher.matchOptions)];
+    }
+    return result;
+  }
+  if (options?.sortResultsByPatterns && matcher) {
+    return formatPaths([...sortByPatterns(result, matcher.patterns, matcher.matchOptions)], relative)
+  }
+  return formatPaths(result, relative);
 }
 
 /**
@@ -405,12 +445,9 @@ export async function glob(
   const opts = isModern ? options : patternsOrOptions;
   const patterns = isModern ? patternsOrOptions : patternsOrOptions.patterns;
 
-  const [crawler, relative] = getCrawler(patterns, opts);
+  const [crawler, relative, matcher] = getCrawler(patterns, opts);
 
-  if (!relative) {
-    return crawler.withPromise();
-  }
-  return formatPaths(await crawler.withPromise(), relative);
+  return handleResult(relative, await crawler.withPromise(), matcher, options);
 }
 
 /**
@@ -431,12 +468,9 @@ export function globSync(patternsOrOptions: string | readonly string[] | GlobOpt
   const opts = isModern ? options : patternsOrOptions;
   const patterns = isModern ? patternsOrOptions : patternsOrOptions.patterns;
 
-  const [crawler, relative] = getCrawler(patterns, opts);
+  const [crawler, relative, matcher] = getCrawler(patterns, opts);
 
-  if (!relative) {
-    return crawler.sync();
-  }
-  return formatPaths(crawler.sync(), relative);
+  return handleResult(relative, crawler.sync(), matcher, options);
 }
 
 export { convertPathToPattern, escapePath, isDynamicPattern } from './utils.ts';
