@@ -540,14 +540,16 @@ export function* compileGlobs(
     log('globbing with:', { patterns, options: useOptions, cwd });
   }
 
+  const props = {
+    root: cwd,
+    commonPath: null,
+    depthOffset: 0
+  }
+
   const processed = processPatterns(
     { ...useOptions, patterns },
     cwd,
-    {
-      root: cwd,
-      commonPath: null,
-      depthOffset: 0
-    }
+    props
   );
 
   if (useOptions.debug) {
@@ -563,8 +565,15 @@ export function* compileGlobs(
     posix: true
   } satisfies PicomatchOptions;
 
+  const format = buildFormat(cwd, props.root, inputOptions.absolute);
+
   for (const match of processed.match) {
-    yield [match, picomatch(match, { ...matchOptions, ignore: processed.ignore })] as const;
+    const isMatch = picomatch(match, { ...matchOptions, ignore: processed.ignore });
+
+    yield [
+      match,
+      (filePath: string): boolean => isMatch(format(filePath, false))
+    ] as const;
   }
 }
 
