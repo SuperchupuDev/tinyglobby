@@ -1,5 +1,6 @@
 import { posix } from 'node:path';
 import picomatch, { type Matcher } from 'picomatch';
+import type { PartialMatcher, PartialMatcherOptions } from './types.ts';
 
 // The `Array.isArray` type guard doesn't work for readonly arrays.
 export const isReadonlyArray: (arg: unknown) => arg is readonly unknown[] = Array.isArray;
@@ -7,20 +8,6 @@ export const isReadonlyArray: (arg: unknown) => arg is readonly unknown[] = Arra
 const isWin = process.platform === 'win32';
 
 // #region PARTIAL MATCHER
-
-// temporary workaround for https://github.com/rolldown/tsdown/issues/391
-interface PartialMatcherOptions {
-  dot?: boolean;
-  nobrace?: boolean;
-  nocase?: boolean;
-  noextglob?: boolean;
-  noglobstar?: boolean;
-  posix?: boolean;
-}
-
-// can't use `Matcher` from picomatch as it requires a second argument since @types/picomatch v4
-type PartialMatcher = (test: string) => boolean;
-
 const ONLY_PARENT_DIRECTORIES = /^(\/?\.\.)+$/;
 
 // the result of over 4 months of figuring stuff out and a LOT of help
