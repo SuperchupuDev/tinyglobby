@@ -545,7 +545,7 @@ export function* compileGlobs(
     root: cwd,
     commonPath: null,
     depthOffset: 0
-  }
+  };
 
   const processed = processPatterns({ ...useOptions, patterns }, cwd, props);
 
