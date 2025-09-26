@@ -505,9 +505,9 @@ export function globSync(patternsOrOptions: string | readonly string[] | GlobOpt
  * const sortedFiles = [];
  * const processedFiles = new Set();
  *
- * for (const [glob, matcher] of matchersGenerator) {
+ * for (const [glob, match] of matchersGenerator) {
  *   for (const file of files) {
- *     if (!processedFiles.has(file) && matcher(file)) {
+ *     if (!processedFiles.has(file) && match(file)) {
  *       processedFiles.add(file);
  *       sortedFiles.push(file);
  *     }
@@ -524,46 +524,48 @@ export function globSync(patternsOrOptions: string | readonly string[] | GlobOpt
  * ```
  */
 export function* compileGlobs(
-    patternsOrOptions: string | readonly string[] | GlobOptions, options?: GlobOptions
-): Generator<readonly [glob: string, matcher: (path: string ) => boolean], undefined, void> {
-    if (patternsOrOptions && options?.patterns) {
-        throw new Error('Cannot pass patterns as both an argument and an option');
+  patternsOrOptions: string | readonly string[] | GlobOptions, options?: GlobOptions
+): Generator<readonly [glob: string, match: (path: string) => boolean], undefined, void> {
+  if (patternsOrOptions && options?.patterns) {
+    throw new Error('Cannot pass patterns as both an argument and an option');
+  }
+
+  const isModern = isReadonlyArray(patternsOrOptions) || typeof patternsOrOptions === 'string';
+  const inputOptions = (isModern ? options : patternsOrOptions) || {};
+  const patterns = isModern ? patternsOrOptions : patternsOrOptions.patterns;
+
+  const useOptions = process.env.TINYGLOBBY_DEBUG ? { ...inputOptions, debug: true } : inputOptions;
+  const cwd = normalizeCwd(useOptions.cwd);
+  if (useOptions.debug) {
+    log('globbing with:', { patterns, options: useOptions, cwd });
+  }
+
+  const processed = processPatterns(
+    { ...useOptions, patterns },
+    cwd,
+    {
+      root: cwd,
+      commonPath: null,
+      depthOffset: 0
     }
+  );
 
-    const isModern = isReadonlyArray(patternsOrOptions) || typeof patternsOrOptions === 'string';
-    const inputOptions = (isModern ? options : patternsOrOptions) || {};
-    const patterns = isModern ? patternsOrOptions : patternsOrOptions.patterns;
+  if (useOptions.debug) {
+    log('internal processing patterns:', processed);
+  }
 
-    const useOptions = process.env.TINYGLOBBY_DEBUG ? { ...inputOptions, debug: true } : inputOptions;
-    const cwd = normalizeCwd(useOptions.cwd);
-    if (useOptions.debug) {
-        log('globbing with:', { patterns, options: useOptions, cwd });
-    }
+  const matchOptions = {
+    dot: useOptions.dot,
+    nobrace: useOptions.braceExpansion === false,
+    nocase: useOptions.caseSensitiveMatch === false,
+    noextglob: useOptions.extglob === false,
+    noglobstar: useOptions.globstar === false,
+    posix: true
+  } satisfies PicomatchOptions;
 
-    const props = {
-        root: cwd,
-        commonPath: null,
-        depthOffset: 0
-    };
-
-    const processed = processPatterns({ ...useOptions, patterns }, cwd, props);
-
-    if (useOptions.debug) {
-        log('internal processing patterns:', processed);
-    }
-
-    const matchOptions = {
-        dot: useOptions.dot,
-        nobrace: useOptions.braceExpansion === false,
-        nocase: useOptions.caseSensitiveMatch === false,
-        noextglob: useOptions.extglob === false,
-        noglobstar: useOptions.globstar === false,
-        posix: true
-    } satisfies PicomatchOptions;
-
-    for (const match of processed.match) {
-      yield [match, picomatch(match, { ...matchOptions, ignore: processed.ignore })] as const;
-    }
+  for (const match of processed.match) {
+    yield [match, picomatch(match, { ...matchOptions, ignore: processed.ignore })] as const;
+  }
 }
 
 export { convertPathToPattern, escapePath, isDynamicPattern } from './utils.ts';
