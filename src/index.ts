@@ -158,7 +158,7 @@ function getOptions(options?: Partial<GlobOptions>): GlobOptions {
   opts.fs = normalizeFs(opts.fs);
 
   if (opts.debug) {
-    log('globbing with:', { options: opts });
+    log('globbing with options:', opts);
   }
 
   return opts;
