@@ -524,7 +524,8 @@ export function globSync(patternsOrOptions: string | readonly string[] | GlobOpt
  * ```
  */
 export function* compileGlobs(
-  patternsOrOptions: string | readonly string[] | GlobOptions, options?: GlobOptions
+  patternsOrOptions: string | readonly string[] | GlobOptions,
+  options?: GlobOptions
 ): Generator<readonly [glob: string, match: (path: string) => boolean], undefined, void> {
   if (patternsOrOptions && options?.patterns) {
     throw new Error('Cannot pass patterns as both an argument and an option');
@@ -546,11 +547,7 @@ export function* compileGlobs(
     depthOffset: 0
   }
 
-  const processed = processPatterns(
-    { ...useOptions, patterns },
-    cwd,
-    props
-  );
+  const processed = processPatterns({ ...useOptions, patterns }, cwd, props);
 
   if (useOptions.debug) {
     log('internal processing patterns:', processed);
@@ -570,10 +567,7 @@ export function* compileGlobs(
   for (const match of processed.match) {
     const isMatch = picomatch(match, { ...matchOptions, ignore: processed.ignore });
 
-    yield [
-      match,
-      (filePath: string): boolean => isMatch(format(filePath, false))
-    ] as const;
+    yield [match, (filePath: string): boolean => isMatch(format(filePath, false))] as const;
   }
 }
 
