@@ -210,3 +210,8 @@ export function log(...tasks: unknown[]): void {
   console.log(`[tinyglobby ${new Date().toLocaleTimeString('es')}]`, ...tasks);
 }
 // #endregion
+// #region ensureStringArray
+export function ensureStringArray(value?: string | string[] | readonly string[]): readonly string[] {
+  return typeof value === 'string' ? [value] : (value ?? []);
+}
+// #endregion ensureStringArray

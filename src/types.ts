@@ -3,6 +3,7 @@ import type { FSLike } from 'fdir';
 export type FileSystemAdapter = Partial<FSLike>;
 // can't use `Matcher` from picomatch as it requires a second argument since @types/picomatch v4
 export type PartialMatcher = (test: string) => boolean;
+export type GlobInput = string | readonly string[] | Partial<GlobOptions>;
 
 export interface InternalProps {
   root: string;
@@ -35,7 +36,7 @@ export interface GlobOptions {
    * Whether to match in case-sensitive mode.
    * @default true
    */
-  caseSensitiveMatch?: boolean;
+  caseSensitiveMatch: boolean;
   /**
    * The working directory in which to search. Results will be returned relative to this directory, unless
    * {@link absolute} is set.
@@ -44,12 +45,12 @@ export interface GlobOptions {
    * as doing so can harm performance due to having to recalculate relative paths.
    * @default process.cwd()
    */
-  cwd?: string | URL;
+  cwd: string | URL;
   /**
    * Logs useful debug information. Meant for development purposes. Logs can change at any time.
    * @default false
    */
-  debug?: boolean;
+  debug: boolean;
   /**
    * Maximum directory depth to crawl.
    * @default Infinity
@@ -66,7 +67,7 @@ export interface GlobOptions {
    * Important to disable if migrating from [`fast-glob`](https://github.com/mrmlnc/fast-glob).
    * @default true
    */
-  expandDirectories?: boolean;
+  expandDirectories: boolean;
   /**
    * Enables support for extglobs, like `+(pattern)`.
    * @default true
@@ -76,12 +77,12 @@ export interface GlobOptions {
    * Whether to traverse and include symbolic links. Can slightly affect performance.
    * @default true
    */
-  followSymbolicLinks?: boolean;
+  followSymbolicLinks: boolean;
   /**
    * An object that overrides `node:fs` functions.
    * @default import('node:fs')
    */
-  fs?: FileSystemAdapter;
+  fs: FileSystemAdapter;
   /**
    * Enables support for matching nested directories with globstars (`**`).
    * If `false`, `**` behaves exactly like `*`.
@@ -92,7 +93,7 @@ export interface GlobOptions {
    * Glob patterns to exclude from the results.
    * @default []
    */
-  ignore?: string | readonly string[];
+  ignore: string | readonly string[];
   /**
    * Enable to only return directories.
    * If `true`, disables {@link onlyFiles}.
@@ -103,7 +104,7 @@ export interface GlobOptions {
    * Enable to only return files.
    * @default true
    */
-  onlyFiles?: boolean;
+  onlyFiles: boolean;
   /**
    * @deprecated Provide patterns as the first argument instead.
    */
