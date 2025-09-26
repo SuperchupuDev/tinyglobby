@@ -1,4 +1,4 @@
-import type { FSLike } from "fdir";
+import type { FSLike } from 'fdir';
 
 export type FileSystemAdapter = Partial<FSLike>;
 // can't use `Matcher` from picomatch as it requires a second argument since @types/picomatch v4

@@ -3,6 +3,7 @@ import path, { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type Options as FdirOptions, fdir } from 'fdir';
 import picomatch, { type PicomatchOptions } from 'picomatch';
+import type { GlobOptions, InternalProps } from './types.ts';
 import {
   buildFormat,
   buildRelative,
@@ -13,7 +14,6 @@ import {
   log,
   splitPattern
 } from './utils.ts';
-import type { GlobOptions, InternalProps } from './types.ts';
 
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
@@ -337,5 +337,5 @@ export function globSync(patternsOrOptions: string | readonly string[] | GlobOpt
   return formatPaths(crawler.sync(), relative);
 }
 
-export type { GlobOptions } from './types.ts'
+export type { GlobOptions } from './types.ts';
 export { convertPathToPattern, escapePath, isDynamicPattern } from './utils.ts';
