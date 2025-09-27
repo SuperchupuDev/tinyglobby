@@ -3,7 +3,7 @@ import path, { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type Options as FdirOptions, type FSLike, fdir } from 'fdir';
 import picomatch, { type PicomatchOptions } from 'picomatch';
-import type { FileSystemAdapter, GlobInput, GlobOptions, InternalProps } from './types.ts';
+import type { FileSystemAdapter, GlobInput, GlobOptions, InternalOptions, InternalProps } from './types.ts';
 import {
   buildFormat,
   buildRelative,
@@ -20,7 +20,7 @@ const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
 const BACKSLASHES = /\\/g;
 
-function normalizePattern(pattern: string, opts: GlobOptions, props: InternalProps, isIgnore: boolean) {
+function normalizePattern(pattern: string, opts: InternalOptions, props: InternalProps, isIgnore: boolean) {
   const cwd = opts.cwd as string;
   let result: string = pattern;
   if (pattern.endsWith('/')) {
@@ -90,7 +90,7 @@ function normalizePattern(pattern: string, opts: GlobOptions, props: InternalPro
   return result;
 }
 
-function processPatterns(options: GlobOptions, patterns: readonly string[], props: InternalProps) {
+function processPatterns(options: InternalOptions, patterns: readonly string[], props: InternalProps) {
   const matchPatterns: string[] = [];
   const ignorePatterns: string[] = [];
 
@@ -139,7 +139,7 @@ function normalizeFs(fs: Record<string, unknown>): FileSystemAdapter {
 
 // Object containing all default options to ensure there is no hidden state difference
 // between false and undefined.
-const defaultOptions: Partial<GlobOptions> = {
+const defaultOptions: GlobOptions = {
   caseSensitiveMatch: true,
   cwd: process.cwd(),
   debug: !!process.env.TINYGLOBBY_DEBUG,
@@ -149,8 +149,8 @@ const defaultOptions: Partial<GlobOptions> = {
   onlyFiles: true
 };
 
-function getOptions(options?: Partial<GlobOptions>): GlobOptions {
-  const opts = { ...defaultOptions, ...options } as GlobOptions;
+function getOptions(options?: GlobOptions): InternalOptions {
+  const opts = { ...defaultOptions, ...options } as InternalOptions;
 
   opts.cwd = (opts.cwd instanceof URL ? fileURLToPath(opts.cwd) : path.resolve(opts.cwd)).replace(BACKSLASHES, '/');
   // Default value of [] will be inserted here if ignore is undefined
@@ -164,7 +164,7 @@ function getOptions(options?: Partial<GlobOptions>): GlobOptions {
   return opts;
 }
 
-function getCrawler(globInput: GlobInput, inputOptions: Partial<GlobOptions> = {}) {
+function getCrawler(globInput: GlobInput, inputOptions: GlobOptions = {}) {
   if (globInput && inputOptions?.patterns) {
     throw new Error('Cannot pass patterns as both an argument and an option');
   }
@@ -291,13 +291,13 @@ function getCrawler(globInput: GlobInput, inputOptions: Partial<GlobOptions> = {
  */
 export function glob(
   patterns: string | readonly string[],
-  options?: Omit<Partial<GlobOptions>, 'patterns'>
+  options?: Omit<GlobOptions, 'patterns'>
 ): Promise<string[]>;
 /**
  * @deprecated Provide patterns as the first argument instead.
  */
-export function glob(options: Partial<GlobOptions>): Promise<string[]>;
-export async function glob(globInput: GlobInput, options?: Partial<GlobOptions>): Promise<string[]> {
+export function glob(options: GlobOptions): Promise<string[]>;
+export async function glob(globInput: GlobInput, options?: GlobOptions): Promise<string[]> {
   const [crawler, relative] = getCrawler(globInput, options);
 
   if (!relative) {
@@ -312,13 +312,13 @@ export async function glob(globInput: GlobInput, options?: Partial<GlobOptions>)
  */
 export function globSync(
   patterns: string | readonly string[],
-  options?: Omit<Partial<GlobOptions>, 'patterns'>
+  options?: Omit<GlobOptions, 'patterns'>
 ): string[];
 /**
  * @deprecated Provide patterns as the first argument instead.
  */
-export function globSync(options: Partial<GlobOptions>): string[];
-export function globSync(globInput: GlobInput, options?: Partial<GlobOptions>): string[] {
+export function globSync(options: GlobOptions): string[];
+export function globSync(globInput: GlobInput, options?: GlobOptions): string[] {
   const [crawler, relative] = getCrawler(globInput, options);
 
   if (!relative) {
