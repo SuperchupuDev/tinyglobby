@@ -116,12 +116,13 @@ export interface GlobOptions {
   signal?: AbortSignal;
 }
 
-export interface InternalOptions extends Required<GlobOptions> {
-  
-}
+export interface InternalOptions extends Required<GlobOptions> {}
 
 export type InternalGlobOptions = Required<
-  Omit<GlobOptions, 'absolute' | 'braceExpansion' | 'debug' | 'deep' | 'dot' | 'extglob' | 'onlyDirectories' | 'patterns' | 'signal'>
+  Omit<
+    GlobOptions,
+    'absolute' | 'braceExpansion' | 'debug' | 'deep' | 'dot' | 'extglob' | 'onlyDirectories' | 'patterns' | 'signal'
+  >
 > & {
   absolute?: boolean;
   braceExpansion?: boolean;

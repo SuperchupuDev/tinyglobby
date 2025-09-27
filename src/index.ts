@@ -289,10 +289,7 @@ function getCrawler(globInput: GlobInput, inputOptions: GlobOptions = {}) {
  * Asynchronously match files following a glob pattern.
  * @see {@link https://superchupu.dev/tinyglobby/documentation#glob}
  */
-export function glob(
-  patterns: string | readonly string[],
-  options?: Omit<GlobOptions, 'patterns'>
-): Promise<string[]>;
+export function glob(patterns: string | readonly string[], options?: Omit<GlobOptions, 'patterns'>): Promise<string[]>;
 /**
  * @deprecated Provide patterns as the first argument instead.
  */
@@ -310,10 +307,7 @@ export async function glob(globInput: GlobInput, options?: GlobOptions): Promise
  * Synchronously match files following a glob pattern.
  * @see {@link https://superchupu.dev/tinyglobby/documentation#globSync}
  */
-export function globSync(
-  patterns: string | readonly string[],
-  options?: Omit<GlobOptions, 'patterns'>
-): string[];
+export function globSync(patterns: string | readonly string[], options?: Omit<GlobOptions, 'patterns'>): string[];
 /**
  * @deprecated Provide patterns as the first argument instead.
  */
