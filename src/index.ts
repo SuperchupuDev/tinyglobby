@@ -131,7 +131,7 @@ const fsKeys = ['readdir', 'readdirSync', 'realpath', 'realpathSync', 'stat', 's
 function normalizeFs(fs: Record<string, unknown>): FileSystemAdapter {
   if (fs !== nativeFs) {
     for (const key of fsKeys) {
-      fs[key] = (typeof fs[key] === 'function' ? fs : (nativeFs as Record<string, unknown>))[key];
+      fs[key] = (fs[key] ? fs : (nativeFs as Record<string, unknown>))[key];
     }
   }
   return fs;
