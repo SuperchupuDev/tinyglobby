@@ -3,6 +3,7 @@ import type { FSLike } from 'fdir';
 export type FileSystemAdapter = Partial<FSLike>;
 // can't use `Matcher` from picomatch as it requires a second argument since @types/picomatch v4
 export type PartialMatcher = (test: string) => boolean;
+export type GlobInput = string | readonly string[] | Partial<GlobOptions>;
 
 export interface InternalProps {
   root: string;
@@ -114,3 +115,22 @@ export interface GlobOptions {
    */
   signal?: AbortSignal;
 }
+
+export interface InternalOptions extends Required<GlobOptions> {}
+
+export type InternalGlobOptions = Required<
+  Omit<
+    GlobOptions,
+    'absolute' | 'braceExpansion' | 'debug' | 'deep' | 'dot' | 'extglob' | 'onlyDirectories' | 'patterns' | 'signal'
+  >
+> & {
+  absolute?: boolean;
+  braceExpansion?: boolean;
+  debug?: boolean;
+  deep?: number;
+  dot?: boolean;
+  extglob?: boolean;
+  onlyDirectories?: boolean;
+  patterns?: string | readonly string[];
+  signal?: AbortSignal;
+};

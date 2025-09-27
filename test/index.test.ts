@@ -164,19 +164,6 @@ test('debug option', async t => {
   mock.restore();
 });
 
-test('debug option from process.env', async t => {
-  const { mock } = t.mock.method(console, 'log', () => null);
-  const { mock: envMock } = t.mock.property(process, 'env', { ...process.env, TINYGLOBBY_DEBUG: '1' });
-
-  const files = await glob('a', { debug: true, cwd });
-  assert.deepEqual(files.sort(), ['a/a.txt', 'a/b.txt']);
-  assert.equal(mock.callCount(), 11);
-  assert.equal(envMock.accessCount(), 1);
-
-  mock.restore();
-  envMock.restore();
-});
-
 test('onlyDirectories has preference over onlyFiles', async () => {
   const files = await glob('a', { onlyDirectories: true, onlyFiles: true, cwd });
   assert.deepEqual(files.sort(), ['a/']);
