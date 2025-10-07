@@ -53,7 +53,7 @@ export interface BaseOptions {
    * @default true
    */
   globstar?: boolean;
-    /**
+  /**
    * Enable to only return directories.
    * If `true`, disables {@link onlyFiles}.
    * @default false
@@ -119,4 +119,4 @@ export interface GlobOptions extends BaseOptions {
   onlyFiles?: boolean;
 }
 
-export type InternalOptions = BaseOptions & Required<GlobOptions>
+export type InternalOptions = BaseOptions & Required<GlobOptions>;
