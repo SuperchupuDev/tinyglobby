@@ -200,7 +200,7 @@ function getCrawler(globInput: GlobInput, inputOptions: GlobOptions = {}) {
   const matchOptions = {
     dot: options.dot,
     nobrace: options.braceExpansion === false,
-    nocase: options.caseSensitiveMatch === false,
+    nocase: !options.caseSensitiveMatch,
     noextglob: options.extglob === false,
     noglobstar: options.globstar === false,
     posix: true

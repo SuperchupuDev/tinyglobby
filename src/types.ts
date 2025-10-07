@@ -21,7 +21,7 @@ export interface PartialMatcherOptions {
   posix?: boolean;
 }
 
-export interface GlobOptions {
+export interface BaseOptions {
   /**
    * Whether to return absolute paths. Disable to have relative paths.
    * @default false
@@ -32,6 +32,45 @@ export interface GlobOptions {
    * @default true
    */
   braceExpansion?: boolean;
+  /**
+   * Maximum directory depth to crawl.
+   * @default Infinity
+   */
+  deep?: number;
+  /**
+   * Whether to return entries that start with a dot, like `.gitignore` or `.prettierrc`.
+   * @default false
+   */
+  dot?: boolean;
+  /**
+   * Enables support for extglobs, like `+(pattern)`.
+   * @default true
+   */
+  extglob?: boolean;
+  /**
+   * Enables support for matching nested directories with globstars (`**`).
+   * If `false`, `**` behaves exactly like `*`.
+   * @default true
+   */
+  globstar?: boolean;
+    /**
+   * Enable to only return directories.
+   * If `true`, disables {@link onlyFiles}.
+   * @default false
+   */
+  onlyDirectories?: boolean;
+  /**
+   * @deprecated Provide patterns as the first argument instead.
+   */
+  patterns?: string | readonly string[];
+  /**
+   * An `AbortSignal` to abort crawling the file system.
+   * @default undefined
+   */
+  signal?: AbortSignal;
+}
+
+export interface GlobOptions extends BaseOptions {
   /**
    * Whether to match in case-sensitive mode.
    * @default true
@@ -52,27 +91,12 @@ export interface GlobOptions {
    */
   debug?: boolean;
   /**
-   * Maximum directory depth to crawl.
-   * @default Infinity
-   */
-  deep?: number;
-  /**
-   * Whether to return entries that start with a dot, like `.gitignore` or `.prettierrc`.
-   * @default false
-   */
-  dot?: boolean;
-  /**
    * Whether to automatically expand directory patterns.
    *
    * Important to disable if migrating from [`fast-glob`](https://github.com/mrmlnc/fast-glob).
    * @default true
    */
   expandDirectories?: boolean;
-  /**
-   * Enables support for extglobs, like `+(pattern)`.
-   * @default true
-   */
-  extglob?: boolean;
   /**
    * Whether to traverse and include symbolic links. Can slightly affect performance.
    * @default true
@@ -84,53 +108,15 @@ export interface GlobOptions {
    */
   fs?: FileSystemAdapter;
   /**
-   * Enables support for matching nested directories with globstars (`**`).
-   * If `false`, `**` behaves exactly like `*`.
-   * @default true
-   */
-  globstar?: boolean;
-  /**
    * Glob patterns to exclude from the results.
    * @default []
    */
   ignore?: string | readonly string[];
   /**
-   * Enable to only return directories.
-   * If `true`, disables {@link onlyFiles}.
-   * @default false
-   */
-  onlyDirectories?: boolean;
-  /**
    * Enable to only return files.
    * @default true
    */
   onlyFiles?: boolean;
-  /**
-   * @deprecated Provide patterns as the first argument instead.
-   */
-  patterns?: string | readonly string[];
-  /**
-   * An `AbortSignal` to abort crawling the file system.
-   * @default undefined
-   */
-  signal?: AbortSignal;
 }
 
-export interface InternalOptions extends Required<GlobOptions> {}
-
-export type InternalGlobOptions = Required<
-  Omit<
-    GlobOptions,
-    'absolute' | 'braceExpansion' | 'debug' | 'deep' | 'dot' | 'extglob' | 'onlyDirectories' | 'patterns' | 'signal'
-  >
-> & {
-  absolute?: boolean;
-  braceExpansion?: boolean;
-  debug?: boolean;
-  deep?: number;
-  dot?: boolean;
-  extglob?: boolean;
-  onlyDirectories?: boolean;
-  patterns?: string | readonly string[];
-  signal?: AbortSignal;
-};
+export type InternalOptions = BaseOptions & Required<GlobOptions>
