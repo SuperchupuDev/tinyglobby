@@ -1,9 +1,8 @@
-import nativeFs from 'node:fs';
 import path, { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { type Options as FdirOptions, type FSLike, fdir } from 'fdir';
+import { type Options as FdirOptions, fdir } from 'fdir';
 import picomatch, { type PicomatchOptions } from 'picomatch';
-import type { FileSystemAdapter, GlobInput, GlobOptions, InternalOptions, InternalProps } from './types.ts';
+import type { GlobInput, GlobOptions, InternalOptions, InternalProps } from './types.ts';
 import {
   buildFormat,
   buildRelative,
@@ -126,17 +125,6 @@ function formatPaths(paths: string[], relative: (p: string) => string) {
   return paths;
 }
 
-const fsKeys = ['readdir', 'readdirSync', 'realpath', 'realpathSync', 'stat', 'statSync'];
-
-function normalizeFs(fs: Record<string, unknown>): FileSystemAdapter {
-  if (fs !== nativeFs) {
-    for (const key of fsKeys) {
-      fs[key] = (fs[key] ? fs : (nativeFs as Record<string, unknown>))[key];
-    }
-  }
-  return fs;
-}
-
 // Object containing all default options to ensure there is no hidden state difference
 // between false and undefined.
 const defaultOptions: GlobOptions = {
@@ -145,7 +133,6 @@ const defaultOptions: GlobOptions = {
   debug: !!process.env.TINYGLOBBY_DEBUG,
   expandDirectories: true,
   followSymbolicLinks: true,
-  fs: nativeFs,
   onlyFiles: true
 };
 
@@ -155,7 +142,6 @@ function getOptions(options?: GlobOptions): InternalOptions {
   opts.cwd = (opts.cwd instanceof URL ? fileURLToPath(opts.cwd) : path.resolve(opts.cwd)).replace(BACKSLASHES, '/');
   // Default value of [] will be inserted here if ignore is undefined
   opts.ignore = ensureStringArray(opts.ignore);
-  opts.fs = normalizeFs(opts.fs);
 
   if (opts.debug) {
     log('globbing with options:', opts);
@@ -245,7 +231,7 @@ function getCrawler(globInput: GlobInput, inputOptions: GlobOptions = {}) {
           const relativePath = formatExclude(p, true);
           return (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
         },
-    fs: options.fs as FSLike,
+    fs: options.fs,
     pathSeparator: '/',
     relativePaths: true,
     resolveSymlinks: true,

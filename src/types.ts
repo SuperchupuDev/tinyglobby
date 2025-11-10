@@ -1,6 +1,5 @@
 import type { FSLike } from 'fdir';
 
-export type FileSystemAdapter = Partial<FSLike>;
 // can't use `Matcher` from picomatch as it requires a second argument since @types/picomatch v4
 export type PartialMatcher = (test: string) => boolean;
 export type GlobInput = string | readonly string[] | GlobOptions;
@@ -82,7 +81,7 @@ export interface GlobOptions {
    * An object that overrides `node:fs` functions.
    * @default import('node:fs')
    */
-  fs?: FileSystemAdapter;
+  fs?: FSLike;
   /**
    * Enables support for matching nested directories with globstars (`**`).
    * If `false`, `**` behaves exactly like `*`.
@@ -118,6 +117,6 @@ export interface GlobOptions {
 
 export type InternalOptions = Pick<
   Required<GlobOptions>,
-  'caseSensitiveMatch' | 'cwd' | 'debug' | 'expandDirectories' | 'followSymbolicLinks' | 'fs' | 'onlyFiles' | 'ignore'
+  'caseSensitiveMatch' | 'cwd' | 'debug' | 'expandDirectories' | 'followSymbolicLinks' | 'onlyFiles' | 'ignore'
 > &
   GlobOptions;
