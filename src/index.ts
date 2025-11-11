@@ -1,7 +1,7 @@
 import nativeFs from 'node:fs';
 import path, { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { type FSLike, type Options as FdirOptions, fdir } from 'fdir';
+import { type Options as FdirOptions, type FSLike, fdir } from 'fdir';
 import picomatch, { type PicomatchOptions } from 'picomatch';
 import type { FileSystemAdapter, GlobInput, GlobOptions, InternalOptions, InternalProps } from './types.ts';
 import {
