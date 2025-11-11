@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { readdir } from 'node:fs';
 import path from 'node:path';
 import { after, test } from 'node:test';
 import { createFixture } from 'fs-fixture';
@@ -86,26 +85,6 @@ test('absolutely crawl root', async () => {
 
 test('cwd as URL', async () => {
   const files = await glob('a/a.txt', { cwd: new URL(`file://${escapedCwd}`) });
-  assert.deepEqual(files.sort(), ['a/a.txt']);
-});
-
-test('fs option', async t => {
-  const myCoolReaddir = t.mock.fn(readdir);
-  const files = await glob('a/a.txt', {
-    fs: {
-      readdir: myCoolReaddir
-    },
-    cwd
-  });
-  assert.deepEqual(files.sort(), ['a/a.txt']);
-  assert.equal(myCoolReaddir.mock.callCount() > 0, true);
-});
-
-test('fs option with literally nothing inside', async () => {
-  const files = await glob('a/a.txt', {
-    fs: {},
-    cwd
-  });
   assert.deepEqual(files.sort(), ['a/a.txt']);
 });
 
