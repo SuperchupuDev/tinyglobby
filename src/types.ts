@@ -118,6 +118,6 @@ export interface GlobOptions {
 
 export type InternalOptions = Pick<
   Required<GlobOptions>,
-  'caseSensitiveMatch' | 'cwd' | 'debug' | 'expandDirectories' | 'followSymbolicLinks' | 'fs' | 'onlyFiles' | 'ignore'
+  'caseSensitiveMatch' | 'cwd' | 'debug' | 'expandDirectories' | 'followSymbolicLinks' | 'onlyFiles' | 'ignore'
 > &
   GlobOptions;

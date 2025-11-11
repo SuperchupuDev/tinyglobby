@@ -128,8 +128,8 @@ function formatPaths(paths: string[], relative: (p: string) => string) {
 
 const fsKeys = ['readdir', 'readdirSync', 'realpath', 'realpathSync', 'stat', 'statSync'];
 
-function normalizeFs(fs: Record<string, unknown>): FileSystemAdapter {
-  if (fs !== nativeFs) {
+function normalizeFs(fs?: Record<string, unknown>): FileSystemAdapter | undefined {
+  if (fs && fs !== nativeFs) {
     for (const key of fsKeys) {
       fs[key] = (fs[key] ? fs : (nativeFs as Record<string, unknown>))[key];
     }
@@ -145,7 +145,6 @@ const defaultOptions: GlobOptions = {
   debug: !!process.env.TINYGLOBBY_DEBUG,
   expandDirectories: true,
   followSymbolicLinks: true,
-  fs: nativeFs,
   onlyFiles: true
 };
 
