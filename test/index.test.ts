@@ -190,18 +190,18 @@ test("expandDirectories doesn't break common path inferring either", async () =>
 });
 
 test("handle absolute patterns that don't escape the cwd", async () => {
-  const files = await glob(`${escapedCwd}a/a.txt`, { cwd });
+  const files = await glob(`${escapedCwd}/a/a.txt`, { cwd });
   assert.deepEqual(files.sort(), ['a/a.txt']);
 });
 
 test('fully handle absolute patterns', async () => {
-  const files = await glob([`${escapedCwd}a/a.txt`, `${escapedCwd}b/a.txt`], { cwd: path.join(cwd, 'a') });
+  const files = await glob([`${escapedCwd}/a/a.txt`, `${escapedCwd}/b/a.txt`], { cwd: path.join(cwd, 'a') });
   assert.deepEqual(files.sort(), ['../b/a.txt', 'a.txt']);
 });
 
 test('escaped absolute patterns', async () => {
-  const files = await glob(`${escapedCwd}.\\[a\\]/a.txt`, { absolute: true, cwd: path.join(cwd, '.[a]') });
-  assert.deepEqual(files.sort(), [`${escapedCwd}.[a]/a.txt`]);
+  const files = await glob(`${escapedCwd}/.\\[a\\]/a.txt`, { absolute: true, cwd: path.join(cwd, '.[a]') });
+  assert.deepEqual(files.sort(), [`${escapedCwd}/.[a]/a.txt`]);
 });
 
 test('leading ../', async () => {
@@ -221,7 +221,7 @@ test('leading ../ plus normal pattern', async () => {
 
 test('leading ../ with absolute on', async () => {
   const files = await glob('../b/*.txt', { absolute: true, cwd: path.join(cwd, 'a') });
-  assert.deepEqual(files.sort(), [`${escapedCwd}b/a.txt`, `${escapedCwd}b/b.txt`]);
+  assert.deepEqual(files.sort(), [`${escapedCwd}/b/a.txt`, `${escapedCwd}/b/b.txt`]);
 });
 
 test('brace expansion', async () => {
@@ -286,17 +286,17 @@ test('globstar false with expandDirectories', async () => {
 
 test('absolute', async () => {
   const files = await glob('a/a.txt', { cwd, absolute: true });
-  assert.deepEqual(files.sort(), [`${escapedCwd}a/a.txt`]);
+  assert.deepEqual(files.sort(), [`${escapedCwd}/a/a.txt`]);
 });
 
 test('absolute + dot', async () => {
   const files = await glob('a/a.txt', { dot: true, cwd: path.join(cwd, '.a'), absolute: true });
-  assert.deepEqual(files.sort(), [`${escapedCwd}.a/a/a.txt`]);
+  assert.deepEqual(files.sort(), [`${escapedCwd}/.a/a/a.txt`]);
 });
 
 test('absolute + empty commonPath', async () => {
   const files = await glob('a/**.txt', { cwd, absolute: true, expandDirectories: false });
-  assert.deepEqual(files.sort(), [`${escapedCwd}a/a.txt`, `${escapedCwd}a/b.txt`]);
+  assert.deepEqual(files.sort(), [`${escapedCwd}/a/a.txt`, `${escapedCwd}/a/b.txt`]);
 });
 
 test('handle symlinks', async () => {
@@ -319,9 +319,9 @@ test('handle recursive symlinks', async () => {
 test('handle symlinks (absolute)', async () => {
   const files = await glob('.symlink/**', { absolute: true, cwd });
   assert.deepEqual(files.sort(), [
-    `${escapedCwd}.symlink/dir/a.txt`,
-    `${escapedCwd}.symlink/dir/b.txt`,
-    `${escapedCwd}.symlink/file`
+    `${escapedCwd}/.symlink/dir/a.txt`,
+    `${escapedCwd}/.symlink/dir/b.txt`,
+    `${escapedCwd}/.symlink/file`
   ]);
 });
 
@@ -332,12 +332,12 @@ test('handle recursive symlinks (absolute)', async () => {
     cwd
   });
   assert.deepEqual(files.sort(), [
-    `${escapedCwd}.symlink/.recursive/.[a]/a.txt`,
-    `${escapedCwd}.symlink/.recursive/.symlink/file`,
-    `${escapedCwd}.symlink/.recursive/a/a.txt`,
-    `${escapedCwd}.symlink/.recursive/a/b.txt`,
-    `${escapedCwd}.symlink/.recursive/b/a.txt`,
-    `${escapedCwd}.symlink/.recursive/b/b.txt`
+    `${escapedCwd}/.symlink/.recursive/.[a]/a.txt`,
+    `${escapedCwd}/.symlink/.recursive/.symlink/file`,
+    `${escapedCwd}/.symlink/.recursive/a/a.txt`,
+    `${escapedCwd}/.symlink/.recursive/a/b.txt`,
+    `${escapedCwd}/.symlink/.recursive/b/a.txt`,
+    `${escapedCwd}/.symlink/.recursive/b/b.txt`
   ]);
 });
 
@@ -358,7 +358,7 @@ test('. works', async () => {
 
 test('. works (absolute)', async () => {
   const files = await glob('.', { cwd, absolute: true, expandDirectories: false, onlyDirectories: true });
-  assert.deepEqual(files.sort(), [escapedCwd]);
+  assert.deepEqual(files.sort(), [`${escapedCwd}/`]);
 });
 
 test('works with non-absolute cwd', async () => {
@@ -418,10 +418,10 @@ test('negative patterns in options', async () => {
 });
 
 test('negative absolute patterns in options', async () => {
-  const files = await glob([`${escapedCwd}**/*.txt`, `!${escapedCwd}**/b.txt`], { cwd });
+  const files = await glob([`${escapedCwd}/**/*.txt`, `!${escapedCwd}/**/b.txt`], { cwd });
   assert.deepEqual(files.sort(), ['a/a.txt', 'b/a.txt']);
 
-  const files2 = await glob([`${escapedCwd}**/*.txt`, `!${escapedCwd}**/a.txt`], { cwd });
+  const files2 = await glob([`${escapedCwd}/**/*.txt`, `!${escapedCwd}/**/a.txt`], { cwd });
   assert.deepEqual(files2.sort(), ['a/b.txt', 'b/b.txt']);
 });
 
