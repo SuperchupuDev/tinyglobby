@@ -1,12 +1,13 @@
 import nativeFs from 'node:fs';
 import path, { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { type Options as FdirOptions, fdir } from 'fdir';
+import { type Options as FdirOptions, type FSLike, fdir } from 'fdir';
 import picomatch, { type PicomatchOptions } from 'picomatch';
-import type { GlobOptions, InternalProps } from './types.ts';
+import type { FileSystemAdapter, GlobInput, GlobOptions, InternalOptions, InternalProps } from './types.ts';
 import {
   buildFormat,
   buildRelative,
+  ensureStringArray,
   escapePath,
   getPartialMatcher,
   isDynamicPattern,
@@ -19,19 +20,14 @@ const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
 const BACKSLASHES = /\\/g;
 
-function normalizePattern(
-  pattern: string,
-  expandDirectories: boolean,
-  cwd: string,
-  props: InternalProps,
-  isIgnore: boolean
-) {
+function normalizePattern(pattern: string, opts: InternalOptions, props: InternalProps, isIgnore: boolean) {
+  const cwd = opts.cwd as string;
   let result: string = pattern;
   if (pattern.endsWith('/')) {
     result = pattern.slice(0, -1);
   }
   // using a directory as entry should match all files inside it
-  if (!result.endsWith('*') && expandDirectories) {
+  if (!result.endsWith('*') && opts.expandDirectories) {
     result += '/**';
   }
 
@@ -94,30 +90,17 @@ function normalizePattern(
   return result;
 }
 
-function processPatterns(
-  // defaulting to ['**/*'] is tinyglobby exclusive behavior, deprecated
-  { patterns = ['**/*'], ignore = [], expandDirectories = true }: GlobOptions,
-  cwd: string,
-  props: InternalProps
-) {
-  if (typeof patterns === 'string') {
-    patterns = [patterns];
-  }
-
-  if (typeof ignore === 'string') {
-    ignore = [ignore];
-  }
-
+function processPatterns(options: InternalOptions, patterns: readonly string[], props: InternalProps) {
   const matchPatterns: string[] = [];
   const ignorePatterns: string[] = [];
 
-  for (const pattern of ignore) {
+  for (const pattern of options.ignore) {
     if (!pattern) {
       continue;
     }
     // don't handle negated patterns here for consistency with fast-glob
     if (pattern[0] !== '!' || pattern[1] === '(') {
-      ignorePatterns.push(normalizePattern(pattern, expandDirectories, cwd, props, true));
+      ignorePatterns.push(normalizePattern(pattern, options, props, true));
     }
   }
 
@@ -126,9 +109,9 @@ function processPatterns(
       continue;
     }
     if (pattern[0] !== '!' || pattern[1] === '(') {
-      matchPatterns.push(normalizePattern(pattern, expandDirectories, cwd, props, false));
+      matchPatterns.push(normalizePattern(pattern, options, props, false));
     } else if (pattern[1] !== '!' || pattern[2] === '(') {
-      ignorePatterns.push(normalizePattern(pattern.slice(1), expandDirectories, cwd, props, true));
+      ignorePatterns.push(normalizePattern(pattern.slice(1), options, props, true));
     }
   }
 
@@ -143,25 +126,53 @@ function formatPaths(paths: string[], relative: (p: string) => string) {
   return paths;
 }
 
-function normalizeCwd(cwd?: string | URL) {
-  if (!cwd) {
-    return process.cwd().replace(BACKSLASHES, '/');
-  }
+const fsKeys = ['readdir', 'readdirSync', 'realpath', 'realpathSync', 'stat', 'statSync'];
 
-  if (cwd instanceof URL) {
-    return fileURLToPath(cwd).replace(BACKSLASHES, '/');
+function normalizeFs(fs?: Record<string, unknown>): FileSystemAdapter | undefined {
+  if (fs && fs !== nativeFs) {
+    for (const key of fsKeys) {
+      fs[key] = (fs[key] ? fs : (nativeFs as Record<string, unknown>))[key];
+    }
   }
-
-  return path.resolve(cwd).replace(BACKSLASHES, '/');
+  return fs;
 }
 
-function getCrawler(patterns?: string | readonly string[], inputOptions: Omit<GlobOptions, 'patterns'> = {}) {
-  const options = process.env.TINYGLOBBY_DEBUG ? { ...inputOptions, debug: true } : inputOptions;
-  const cwd = normalizeCwd(options.cwd);
+// Object containing all default options to ensure there is no hidden state difference
+// between false and undefined.
+const defaultOptions: GlobOptions = {
+  caseSensitiveMatch: true,
+  cwd: process.cwd(),
+  debug: !!process.env.TINYGLOBBY_DEBUG,
+  expandDirectories: true,
+  followSymbolicLinks: true,
+  onlyFiles: true
+};
 
-  if (options.debug) {
-    log('globbing with:', { patterns, options, cwd });
+function getOptions(options?: GlobOptions): InternalOptions {
+  const opts = { ...defaultOptions, ...options } as InternalOptions;
+
+  opts.cwd = (opts.cwd instanceof URL ? fileURLToPath(opts.cwd) : path.resolve(opts.cwd)).replace(BACKSLASHES, '/');
+  // Default value of [] will be inserted here if ignore is undefined
+  opts.ignore = ensureStringArray(opts.ignore);
+  opts.fs = normalizeFs(opts.fs);
+
+  if (opts.debug) {
+    log('globbing with options:', opts);
   }
+
+  return opts;
+}
+
+function getCrawler(globInput: GlobInput, inputOptions: GlobOptions = {}) {
+  if (globInput && inputOptions?.patterns) {
+    throw new Error('Cannot pass patterns as both an argument and an option');
+  }
+
+  const isModern = isReadonlyArray(globInput) || typeof globInput === 'string';
+  // defaulting to ['**/*'] is tinyglobby exclusive behavior, deprecated
+  const patterns = ensureStringArray((isModern ? globInput : globInput.patterns) ?? ['**/*']);
+  const options = getOptions(isModern ? inputOptions : globInput);
+  const cwd = options.cwd as string;
 
   if (Array.isArray(patterns) && patterns.length === 0) {
     return [
@@ -179,7 +190,7 @@ function getCrawler(patterns?: string | readonly string[], inputOptions: Omit<Gl
     depthOffset: 0
   };
 
-  const processed = processPatterns({ ...options, patterns }, cwd, props);
+  const processed = processPatterns(options, patterns, props);
 
   if (options.debug) {
     log('internal processing patterns:', processed);
@@ -188,7 +199,7 @@ function getCrawler(patterns?: string | readonly string[], inputOptions: Omit<Gl
   const matchOptions = {
     dot: options.dot,
     nobrace: options.braceExpansion === false,
-    nocase: options.caseSensitiveMatch === false,
+    nocase: !options.caseSensitiveMatch,
     noextglob: options.extglob === false,
     noglobstar: options.globstar === false,
     posix: true
@@ -233,16 +244,7 @@ function getCrawler(patterns?: string | readonly string[], inputOptions: Omit<Gl
           const relativePath = formatExclude(p, true);
           return (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
         },
-    fs: options.fs
-      ? {
-          readdir: options.fs.readdir || nativeFs.readdir,
-          readdirSync: options.fs.readdirSync || nativeFs.readdirSync,
-          realpath: options.fs.realpath || nativeFs.realpath,
-          realpathSync: options.fs.realpathSync || nativeFs.realpathSync,
-          stat: options.fs.stat || nativeFs.stat,
-          statSync: options.fs.statSync || nativeFs.statSync
-        }
-      : undefined,
+    fs: options.fs as FSLike,
     pathSeparator: '/',
     relativePaths: true,
     resolveSymlinks: true,
@@ -291,19 +293,8 @@ export function glob(patterns: string | readonly string[], options?: Omit<GlobOp
  * @deprecated Provide patterns as the first argument instead.
  */
 export function glob(options: GlobOptions): Promise<string[]>;
-export async function glob(
-  patternsOrOptions: string | readonly string[] | GlobOptions,
-  options?: GlobOptions
-): Promise<string[]> {
-  if (patternsOrOptions && options?.patterns) {
-    throw new Error('Cannot pass patterns as both an argument and an option');
-  }
-
-  const isModern = isReadonlyArray(patternsOrOptions) || typeof patternsOrOptions === 'string';
-  const opts = isModern ? options : patternsOrOptions;
-  const patterns = isModern ? patternsOrOptions : patternsOrOptions.patterns;
-
-  const [crawler, relative] = getCrawler(patterns, opts);
+export async function glob(globInput: GlobInput, options?: GlobOptions): Promise<string[]> {
+  const [crawler, relative] = getCrawler(globInput, options);
 
   if (!relative) {
     return crawler.withPromise();
@@ -320,16 +311,8 @@ export function globSync(patterns: string | readonly string[], options?: Omit<Gl
  * @deprecated Provide patterns as the first argument instead.
  */
 export function globSync(options: GlobOptions): string[];
-export function globSync(patternsOrOptions: string | readonly string[] | GlobOptions, options?: GlobOptions): string[] {
-  if (patternsOrOptions && options?.patterns) {
-    throw new Error('Cannot pass patterns as both an argument and an option');
-  }
-
-  const isModern = isReadonlyArray(patternsOrOptions) || typeof patternsOrOptions === 'string';
-  const opts = isModern ? options : patternsOrOptions;
-  const patterns = isModern ? patternsOrOptions : patternsOrOptions.patterns;
-
-  const [crawler, relative] = getCrawler(patterns, opts);
+export function globSync(globInput: GlobInput, options?: GlobOptions): string[] {
+  const [crawler, relative] = getCrawler(globInput, options);
 
   if (!relative) {
     return crawler.sync();
