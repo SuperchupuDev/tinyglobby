@@ -1,15 +1,8 @@
-import { posix } from 'node:path';
 import { type ExcludePredicate, type FSLike, fdir } from 'fdir';
 import picomatch, { type PicomatchOptions } from 'picomatch';
 import type { Crawler, GlobOptions, InternalProps, ProcessedPatterns, RelativeMapper } from './types.ts';
 import { BACKSLASHES, buildFormat, buildRelative, getPartialMatcher, log } from './utils.ts';
 
-// #region getRelativePath
-// TODO: this is slow, find a better way to do this
-export function getRelativePath(path: string, cwd: string, root: string): string {
-  return posix.relative(cwd, `${root}/${path}`) || '.';
-}
-// #endregion
 // #region buildCrawler
 export function buildCrawler(
   props: InternalProps,
