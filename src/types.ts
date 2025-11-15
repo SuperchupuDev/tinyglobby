@@ -4,7 +4,6 @@ export type FileSystemAdapter = Partial<FSLike>;
 // can't use `Matcher` from picomatch as it requires a second argument since @types/picomatch v4
 export type PartialMatcher = (test: string) => boolean;
 export type GlobInput = string | readonly string[] | GlobOptions;
-export type PredicateFormatter = (path: string, isDir: boolean) => string;
 export type RelativeMapper = ((path: string) => string);
 
 export interface InternalProps {
