@@ -4,7 +4,7 @@ export type FileSystemAdapter = Partial<FSLike>;
 // can't use `Matcher` from picomatch as it requires a second argument since @types/picomatch v4
 export type PartialMatcher = (test: string) => boolean;
 export type GlobInput = string | readonly string[] | GlobOptions;
-export type RelativeMapper = ((path: string) => string);
+export type RelativeMapper = (path: string) => string;
 
 export interface InternalProps {
   root: string;
@@ -23,7 +23,7 @@ export interface PartialMatcherOptions {
 }
 
 /**
- *  Mirror of `fdir`'s unexposed type `APIBuilder`. 
+ *  Mirror of `fdir`'s unexposed type `APIBuilder`.
  *  Unlike `APIBuilder`, it does not need the Generic `Output`, as it's always `PathsOutput` in `tinyglobby`.
  */
 export interface Crawler {

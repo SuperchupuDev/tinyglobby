@@ -1,7 +1,15 @@
 import nativeFs from 'node:fs';
-import path, { format, posix } from 'node:path';
+import path, { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { Crawler, FileSystemAdapter, GlobInput, GlobOptions, InternalOptions, InternalProps, RelativeMapper } from './types.ts';
+import type {
+  Crawler,
+  FileSystemAdapter,
+  GlobInput,
+  GlobOptions,
+  InternalOptions,
+  InternalProps,
+  RelativeMapper
+} from './types.ts';
 import {
   BACKSLASHES,
   ensureStringArray,
