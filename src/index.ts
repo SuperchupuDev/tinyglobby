@@ -8,6 +8,7 @@ import type {
   GlobOptions,
   InternalOptions,
   InternalProps,
+  ProcessedPatterns,
   RelativeMapper
 } from './types.ts';
 import {
@@ -94,7 +95,7 @@ function normalizePattern(pattern: string, opts: InternalOptions, props: Interna
   return result;
 }
 
-function processPatterns(options: InternalOptions, patterns: readonly string[], props: InternalProps) {
+function processPatterns(options: InternalOptions, patterns: readonly string[], props: InternalProps): ProcessedPatterns {
   const matchPatterns: string[] = [];
   const ignorePatterns: string[] = [];
 
