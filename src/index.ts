@@ -184,12 +184,7 @@ function getCrawler(globInput: GlobInput, inputOptions: GlobOptions = {}) {
     ] as const;
   }
 
-  const props = {
-    root: cwd,
-    commonPath: null,
-    depthOffset: 0
-  };
-
+  const props: InternalProps = { root: cwd, depthOffset: 0 };
   const processed = processPatterns(options, patterns, props);
 
   if (options.debug) {

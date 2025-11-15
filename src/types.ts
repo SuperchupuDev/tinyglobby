@@ -7,7 +7,7 @@ export type GlobInput = string | readonly string[] | GlobOptions;
 
 export interface InternalProps {
   root: string;
-  commonPath: string[] | null;
+  commonPath?: string[];
   depthOffset: number;
 }
 
