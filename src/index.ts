@@ -1,6 +1,7 @@
 import nativeFs from 'node:fs';
 import path, { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { buildCrawler } from './crawler.ts';
 import type {
   Crawler,
   FileSystemAdapter,
@@ -20,7 +21,6 @@ import {
   log,
   splitPattern
 } from './utils.ts';
-import { buildCrawler } from './crawler.ts';
 
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
@@ -95,7 +95,11 @@ function normalizePattern(pattern: string, opts: InternalOptions, props: Interna
   return result;
 }
 
-function processPatterns(options: InternalOptions, patterns: readonly string[], props: InternalProps): ProcessedPatterns {
+function processPatterns(
+  options: InternalOptions,
+  patterns: readonly string[],
+  props: InternalProps
+): ProcessedPatterns {
   const matchPatterns: string[] = [];
   const ignorePatterns: string[] = [];
 
