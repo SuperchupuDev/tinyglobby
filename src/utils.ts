@@ -4,6 +4,7 @@ import type { PartialMatcher, PartialMatcherOptions } from './types.ts';
 
 // The `Array.isArray` type guard doesn't work for readonly arrays.
 export const isReadonlyArray: (arg: unknown) => arg is readonly unknown[] = Array.isArray;
+export const BACKSLASHES: RegExp = /\\/g;
 
 const isWin = process.platform === 'win32';
 
