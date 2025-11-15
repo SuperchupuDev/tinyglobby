@@ -1,7 +1,7 @@
 import nativeFs from 'node:fs';
-import path, { posix } from 'node:path';
+import path, { format, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { FileSystemAdapter, GlobInput, GlobOptions, InternalOptions, InternalProps, RelativeMapper } from './types.ts';
+import type { Crawler, FileSystemAdapter, GlobInput, GlobOptions, InternalOptions, InternalProps, RelativeMapper } from './types.ts';
 import {
   BACKSLASHES,
   ensureStringArray,
@@ -114,10 +114,11 @@ function processPatterns(options: InternalOptions, patterns: readonly string[], 
   return { match: matchPatterns, ignore: ignorePatterns };
 }
 
-function formatPaths(paths: string[], relative: RelativeMapper) {
-  for (let i = paths.length - 1; i >= 0; i--) {
-    const path = paths[i];
-    paths[i] = relative(path);
+function formatPaths(paths: string[], mapper?: false | RelativeMapper) {
+  if (mapper) {
+    for (let i = paths.length - 1; i >= 0; i--) {
+      paths[i] = mapper(paths[i]);
+    }
   }
   return paths;
 }
@@ -159,7 +160,7 @@ function getOptions(options?: GlobOptions): InternalOptions {
   return opts;
 }
 
-function getCrawler(globInput: GlobInput, inputOptions: GlobOptions = {}) {
+function getCrawler(globInput: GlobInput, inputOptions: GlobOptions = {}): [] | [Crawler, false | RelativeMapper] {
   if (globInput && inputOptions?.patterns) {
     throw new Error('Cannot pass patterns as both an argument and an option');
   }
@@ -171,13 +172,7 @@ function getCrawler(globInput: GlobInput, inputOptions: GlobOptions = {}) {
   const cwd = options.cwd as string;
 
   if (Array.isArray(patterns) && patterns.length === 0) {
-    return [
-      {
-        sync: () => [],
-        withPromise: async () => []
-      },
-      false
-    ] as const;
+    return [];
   }
 
   const props: InternalProps = { root: cwd, depthOffset: 0 };
@@ -195,11 +190,7 @@ export function glob(patterns: string | readonly string[], options?: Omit<GlobOp
 export function glob(options: GlobOptions): Promise<string[]>;
 export async function glob(globInput: GlobInput, options?: GlobOptions): Promise<string[]> {
   const [crawler, relative] = getCrawler(globInput, options);
-
-  if (!relative) {
-    return crawler.withPromise();
-  }
-  return formatPaths(await crawler.withPromise(), relative);
+  return crawler ? formatPaths(await crawler.withPromise(), relative) : [];
 }
 
 /**
@@ -213,11 +204,7 @@ export function globSync(patterns: string | readonly string[], options?: Omit<Gl
 export function globSync(options: GlobOptions): string[];
 export function globSync(globInput: GlobInput, options?: GlobOptions): string[] {
   const [crawler, relative] = getCrawler(globInput, options);
-
-  if (!relative) {
-    return crawler.sync();
-  }
-  return formatPaths(crawler.sync(), relative);
+  return crawler ? formatPaths(crawler.sync(), relative) : [];
 }
 
 export type { GlobOptions } from './types.ts';
