@@ -1,4 +1,4 @@
-import { isAbsolute, posix } from 'path';
+import { isAbsolute, posix } from 'node:path';
 import type { InternalOptions, InternalProps, ProcessedPatterns } from './types.ts';
 import { escapePath, isDynamicPattern, splitPattern } from './utils.ts';
 
@@ -18,7 +18,9 @@ function normalizePattern(pattern: string, opts: InternalOptions, props: Interna
   }
 
   const escapedCwd = escapePath(cwd);
-  result = isAbsolute(result.replace(ESCAPING_BACKSLASHES, '')) ? posix.relative(escapedCwd, result) : posix.normalize(result)
+  result = isAbsolute(result.replace(ESCAPING_BACKSLASHES, ''))
+    ? posix.relative(escapedCwd, result)
+    : posix.normalize(result);
 
   const parentDir = PARENT_DIRECTORY.exec(result)?.[0];
   const parts = splitPattern(result);
@@ -30,7 +32,7 @@ function normalizePattern(pattern: string, opts: InternalOptions, props: Interna
     // normalize a pattern like `../foo/bar` to `bar` when cwd ends with `/foo`
     const cwdParts = escapedCwd.split('/');
     while (i < n && parts[i + n] === cwdParts[cwdParts.length + i - n]) {
-      result = `${result.slice(0, (n - i - 1) * 3)}${result.slice((n - i) * 3 + parts[i++ + n].length + 1) || '.'}`
+      result = `${result.slice(0, (n - i - 1) * 3)}${result.slice((n - i) * 3 + parts[i++ + n].length + 1) || '.'}`;
     }
 
     // move root `n` directories up
@@ -56,10 +58,9 @@ function normalizePattern(pattern: string, opts: InternalOptions, props: Interna
         break;
       }
 
-      if ( i === parts.length - 1 || part !== props.commonPath[i] || isDynamicPattern(part)) {
+      if (i === parts.length - 1 || part !== props.commonPath[i] || isDynamicPattern(part)) {
         break;
       }
-
     }
 
     props.depthOffset = newCommonPath.length;

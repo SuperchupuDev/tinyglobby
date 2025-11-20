@@ -47,7 +47,7 @@ export function getPartialMatcher(patterns: string[], options: PartialMatcherOpt
       const matcher = matchers[i];
       const inputPatternCount = inputParts.length;
       const minParts = Math.min(inputPatternCount, patternParts.length);
-    
+
       j = 0;
       while (j < minParts) {
         const part = patternParts[j];
@@ -124,7 +124,7 @@ export function buildRelative(cwd: string, root: string): (p: string) => string 
 
   return p => {
     const result = posix.relative(cwd, `${root}/${p}`);
-    return p[p.length - 1] === '/' && result !== '' ? `${result}/` : result || '.'
+    return p[p.length - 1] === '/' && result !== '' ? `${result}/` : result || '.';
   };
 }
 // #endregion
