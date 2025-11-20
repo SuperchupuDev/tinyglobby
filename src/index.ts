@@ -1,15 +1,21 @@
 import nativeFs from 'node:fs';
 import path, { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { type Options as FdirOptions, type FSLike, fdir } from 'fdir';
-import picomatch, { type PicomatchOptions } from 'picomatch';
-import type { FileSystemAdapter, GlobInput, GlobOptions, InternalOptions, InternalProps } from './types.ts';
+import { buildCrawler } from './crawler.ts';
+import type {
+  Crawler,
+  FileSystemAdapter,
+  GlobInput,
+  GlobOptions,
+  InternalOptions,
+  InternalProps,
+  ProcessedPatterns,
+  RelativeMapper
+} from './types.ts';
 import {
-  buildFormat,
-  buildRelative,
+  BACKSLASHES,
   ensureStringArray,
   escapePath,
-  getPartialMatcher,
   isDynamicPattern,
   isReadonlyArray,
   log,
@@ -18,7 +24,6 @@ import {
 
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
-const BACKSLASHES = /\\/g;
 
 function normalizePattern(pattern: string, opts: InternalOptions, props: InternalProps, isIgnore: boolean) {
   const cwd = opts.cwd as string;
@@ -90,7 +95,11 @@ function normalizePattern(pattern: string, opts: InternalOptions, props: Interna
   return result;
 }
 
-function processPatterns(options: InternalOptions, patterns: readonly string[], props: InternalProps) {
+function processPatterns(
+  options: InternalOptions,
+  patterns: readonly string[],
+  props: InternalProps
+): ProcessedPatterns {
   const matchPatterns: string[] = [];
   const ignorePatterns: string[] = [];
 
@@ -118,10 +127,11 @@ function processPatterns(options: InternalOptions, patterns: readonly string[], 
   return { match: matchPatterns, ignore: ignorePatterns };
 }
 
-function formatPaths(paths: string[], relative: (p: string) => string) {
-  for (let i = paths.length - 1; i >= 0; i--) {
-    const path = paths[i];
-    paths[i] = relative(path);
+function formatPaths(paths: string[], mapper?: false | RelativeMapper) {
+  if (mapper) {
+    for (let i = paths.length - 1; i >= 0; i--) {
+      paths[i] = mapper(paths[i]);
+    }
   }
   return paths;
 }
@@ -163,7 +173,7 @@ function getOptions(options?: GlobOptions): InternalOptions {
   return opts;
 }
 
-function getCrawler(globInput: GlobInput, inputOptions: GlobOptions = {}) {
+function getCrawler(globInput: GlobInput, inputOptions: GlobOptions = {}): [] | [Crawler, false | RelativeMapper] {
   if (globInput && inputOptions?.patterns) {
     throw new Error('Cannot pass patterns as both an argument and an option');
   }
@@ -175,113 +185,11 @@ function getCrawler(globInput: GlobInput, inputOptions: GlobOptions = {}) {
   const cwd = options.cwd as string;
 
   if (Array.isArray(patterns) && patterns.length === 0) {
-    return [
-      {
-        sync: () => [],
-        withPromise: async () => []
-      },
-      false
-    ] as const;
+    return [];
   }
 
-  const props = {
-    root: cwd,
-    commonPath: null,
-    depthOffset: 0
-  };
-
-  const processed = processPatterns(options, patterns, props);
-
-  if (options.debug) {
-    log('internal processing patterns:', processed);
-  }
-
-  const matchOptions = {
-    dot: options.dot,
-    nobrace: options.braceExpansion === false,
-    nocase: !options.caseSensitiveMatch,
-    noextglob: options.extglob === false,
-    noglobstar: options.globstar === false,
-    posix: true
-  } satisfies PicomatchOptions;
-
-  const matcher = picomatch(processed.match, { ...matchOptions, ignore: processed.ignore });
-  const ignore = picomatch(processed.ignore, matchOptions);
-  const partialMatcher = getPartialMatcher(processed.match, matchOptions);
-
-  const format = buildFormat(cwd, props.root, options.absolute);
-  const formatExclude = options.absolute ? format : buildFormat(cwd, props.root, true);
-  const fdirOptions: Partial<FdirOptions> = {
-    // use relative paths in the matcher
-    filters: [
-      options.debug
-        ? (p, isDirectory) => {
-            const path = format(p, isDirectory);
-            const matches = matcher(path);
-
-            if (matches) {
-              log(`matched ${path}`);
-            }
-
-            return matches;
-          }
-        : (p, isDirectory) => matcher(format(p, isDirectory))
-    ],
-    exclude: options.debug
-      ? (_, p) => {
-          const relativePath = formatExclude(p, true);
-          const skipped = (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
-
-          if (skipped) {
-            log(`skipped ${p}`);
-          } else {
-            log(`crawling ${p}`);
-          }
-
-          return skipped;
-        }
-      : (_, p) => {
-          const relativePath = formatExclude(p, true);
-          return (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
-        },
-    fs: options.fs as FSLike,
-    pathSeparator: '/',
-    relativePaths: true,
-    resolveSymlinks: true,
-    signal: options.signal
-  };
-
-  if (options.deep !== undefined) {
-    fdirOptions.maxDepth = Math.round(options.deep - props.depthOffset);
-  }
-
-  if (options.absolute) {
-    fdirOptions.relativePaths = false;
-    fdirOptions.resolvePaths = true;
-    fdirOptions.includeBasePath = true;
-  }
-
-  if (options.followSymbolicLinks === false) {
-    fdirOptions.resolveSymlinks = false;
-    fdirOptions.excludeSymlinks = true;
-  }
-
-  if (options.onlyDirectories) {
-    fdirOptions.excludeFiles = true;
-    fdirOptions.includeDirs = true;
-  } else if (options.onlyFiles === false) {
-    fdirOptions.includeDirs = true;
-  }
-
-  props.root = props.root.replace(BACKSLASHES, '');
-  const root = props.root;
-
-  if (options.debug) {
-    log('internal properties:', props);
-  }
-
-  const relative = cwd !== root && !options.absolute && buildRelative(cwd, props.root);
-  return [new fdir(fdirOptions).crawl(root), relative] as const;
+  const props: InternalProps = { root: cwd, depthOffset: 0 };
+  return buildCrawler(props, options, processPatterns(options, patterns, props), cwd);
 }
 
 /**
@@ -295,11 +203,7 @@ export function glob(patterns: string | readonly string[], options?: Omit<GlobOp
 export function glob(options: GlobOptions): Promise<string[]>;
 export async function glob(globInput: GlobInput, options?: GlobOptions): Promise<string[]> {
   const [crawler, relative] = getCrawler(globInput, options);
-
-  if (!relative) {
-    return crawler.withPromise();
-  }
-  return formatPaths(await crawler.withPromise(), relative);
+  return crawler ? formatPaths(await crawler.withPromise(), relative) : [];
 }
 
 /**
@@ -313,11 +217,7 @@ export function globSync(patterns: string | readonly string[], options?: Omit<Gl
 export function globSync(options: GlobOptions): string[];
 export function globSync(globInput: GlobInput, options?: GlobOptions): string[] {
   const [crawler, relative] = getCrawler(globInput, options);
-
-  if (!relative) {
-    return crawler.sync();
-  }
-  return formatPaths(crawler.sync(), relative);
+  return crawler ? formatPaths(crawler.sync(), relative) : [];
 }
 
 export type { GlobOptions } from './types.ts';
