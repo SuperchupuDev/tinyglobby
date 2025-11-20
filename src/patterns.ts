@@ -4,7 +4,7 @@ import { escapePath, isDynamicPattern, splitPattern } from './utils.ts';
 
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
-
+//#region normalizePattern
 function normalizePattern(pattern: string, opts: InternalOptions, props: InternalProps, isIgnore: boolean) {
   const cwd = opts.cwd as string;
   let result: string = pattern;
@@ -71,7 +71,9 @@ function normalizePattern(pattern: string, opts: InternalOptions, props: Interna
 
   return result;
 }
+//#endregion normalizePattern
 
+//#region processPatterns
 export default function processPatterns(
   options: InternalOptions,
   patterns: readonly string[],
@@ -99,3 +101,4 @@ export default function processPatterns(
 
   return { match: matchPatterns, ignore: ignorePatterns };
 }
+//#endregion processPatterns
