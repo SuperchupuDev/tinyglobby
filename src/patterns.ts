@@ -1,6 +1,6 @@
-import path, { posix } from "path";
-import type { InternalOptions, InternalProps, ProcessedPatterns } from "./types.ts";
-import { escapePath, isDynamicPattern, splitPattern } from "./utils.ts";
+import path, { isAbsolute, posix } from 'path';
+import type { InternalOptions, InternalProps, ProcessedPatterns } from './types.ts';
+import { escapePath, isDynamicPattern, splitPattern } from './utils.ts';
 
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
@@ -8,38 +8,34 @@ const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
 function normalizePattern(pattern: string, opts: InternalOptions, props: InternalProps, isIgnore: boolean) {
   const cwd = opts.cwd as string;
   let result: string = pattern;
-  if (pattern.endsWith('/')) {
+  if (pattern[pattern.length - 1] === '/') {
     result = pattern.slice(0, -1);
   }
   // using a directory as entry should match all files inside it
-  if (!result.endsWith('*') && opts.expandDirectories) {
+  if (result[result.length - 1] !== '*' && opts.expandDirectories) {
     result += '/**';
   }
 
   const escapedCwd = escapePath(cwd);
-  if (path.isAbsolute(result.replace(ESCAPING_BACKSLASHES, ''))) {
-    result = posix.relative(escapedCwd, result);
-  } else {
-    result = posix.normalize(result);
-  }
+  result = isAbsolute(result.replace(ESCAPING_BACKSLASHES, '')) ? posix.relative(escapedCwd, result) : posix.normalize(result)
 
-  const parentDirectoryMatch = PARENT_DIRECTORY.exec(result);
+  const parentDir = PARENT_DIRECTORY.exec(result)?.[0];
   const parts = splitPattern(result);
-  if (parentDirectoryMatch?.[0]) {
-    const n = (parentDirectoryMatch[0].length + 1) / 3;
+  let i = 0;
+
+  if (parentDir) {
+    const n = (parentDir.length + 1) / 3;
 
     // normalize a pattern like `../foo/bar` to `bar` when cwd ends with `/foo`
-    let i = 0;
     const cwdParts = escapedCwd.split('/');
     while (i < n && parts[i + n] === cwdParts[cwdParts.length + i - n]) {
-      result = result.slice(0, (n - i - 1) * 3) + result.slice((n - i) * 3 + parts[i + n].length + 1) || '.';
-      i++;
+      result = `${result.slice(0, (n - i - 1) * 3)}${result.slice((n - i) * 3 + parts[i++ + n].length + 1) || '.'}`
     }
 
     // move root `n` directories up
-    const potentialRoot = posix.join(cwd, parentDirectoryMatch[0].slice(i * 3));
+    const potentialRoot = posix.join(cwd, parentDir.slice(i * 3));
     // windows can make the potential root something like `../C:`, we don't want that
-    if (!potentialRoot.startsWith('.') && props.root.length > potentialRoot.length) {
+    if (potentialRoot[0] !== '.' && props.root.length > potentialRoot.length) {
       props.root = potentialRoot;
       props.depthOffset = -n + i;
     }
@@ -51,7 +47,7 @@ function normalizePattern(pattern: string, opts: InternalOptions, props: Interna
     const newCommonPath: string[] = [];
     const length = Math.min(props.commonPath.length, parts.length);
 
-    for (let i = 0; i < length; i++) {
+    for (i = 0; i < length; i++) {
       const part = parts[i];
 
       if (part === '**' && !parts[i + 1]) {
@@ -84,23 +80,19 @@ export default function processPatterns(
   const ignorePatterns: string[] = [];
 
   for (const pattern of options.ignore) {
-    if (!pattern) {
-      continue;
-    }
     // don't handle negated patterns here for consistency with fast-glob
-    if (pattern[0] !== '!' || pattern[1] === '(') {
+    if (pattern && (pattern[0] !== '!' || pattern[1] === '(')) {
       ignorePatterns.push(normalizePattern(pattern, options, props, true));
     }
   }
 
   for (const pattern of patterns) {
-    if (!pattern) {
-      continue;
-    }
-    if (pattern[0] !== '!' || pattern[1] === '(') {
-      matchPatterns.push(normalizePattern(pattern, options, props, false));
-    } else if (pattern[1] !== '!' || pattern[2] === '(') {
-      ignorePatterns.push(normalizePattern(pattern.slice(1), options, props, true));
+    if (pattern) {
+      if (pattern[0] !== '!' || pattern[1] === '(') {
+        matchPatterns.push(normalizePattern(pattern, options, props, false));
+      } else if (pattern[1] !== '!' || pattern[2] === '(') {
+        ignorePatterns.push(normalizePattern(pattern.slice(1), options, props, true));
+      }
     }
   }
 

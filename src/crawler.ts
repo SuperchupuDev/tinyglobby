@@ -8,7 +8,7 @@ import processPatterns from './patterns.ts';
 export function buildCrawler(options: InternalOptions, patterns: readonly string[]): [Crawler, false | RelativeMapper] {
   const cwd = options.cwd as string;
   const props: InternalProps = { root: cwd, depthOffset: 0 };
-  const processed = processPatterns(options, patterns, props)
+  const processed = processPatterns(options, patterns, props);
 
   if (options.debug) {
     log('internal processing patterns:', processed);

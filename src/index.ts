@@ -2,20 +2,8 @@ import nativeFs from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildCrawler } from './crawler.ts';
-import type {
-  Crawler,
-  FileSystemAdapter,
-  GlobInput,
-  GlobOptions,
-  InternalOptions,
-  RelativeMapper
-} from './types.ts';
-import {
-  BACKSLASHES,
-  ensureStringArray,
-  isReadonlyArray,
-  log,
-} from './utils.ts';
+import type { Crawler, FileSystemAdapter, GlobInput, GlobOptions, InternalOptions, RelativeMapper } from './types.ts';
+import { BACKSLASHES, ensureStringArray, isReadonlyArray, log } from './utils.ts';
 
 function formatPaths(paths: string[], mapper?: false | RelativeMapper) {
   if (mapper) {
@@ -72,8 +60,8 @@ function getCrawler(globInput: GlobInput, inputOptions: GlobOptions = {}): [] | 
   // defaulting to ['**/*'] is tinyglobby exclusive behavior, deprecated
   const patterns = ensureStringArray((isModern ? globInput : globInput.patterns) ?? '**/*');
   const options = getOptions(isModern ? inputOptions : globInput);
-  
-  return patterns.length > 0 ? buildCrawler(options, patterns) : []
+
+  return patterns.length > 0 ? buildCrawler(options, patterns) : [];
 }
 
 /**
