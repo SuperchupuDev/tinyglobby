@@ -1,8 +1,8 @@
 import { type ExcludePredicate, type FSLike, fdir } from 'fdir';
 import picomatch, { type PicomatchOptions } from 'picomatch';
+import processPatterns from './patterns.ts';
 import type { Crawler, InternalOptions, InternalProps, RelativeMapper } from './types.ts';
 import { BACKSLASHES, buildFormat, buildRelative, getPartialMatcher, log } from './utils.ts';
-import processPatterns from './patterns.ts';
 
 // #region buildCrawler
 export function buildCrawler(options: InternalOptions, patterns: readonly string[]): [Crawler, false | RelativeMapper] {
