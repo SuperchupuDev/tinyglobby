@@ -1,4 +1,4 @@
-import path, { isAbsolute, posix } from 'path';
+import { isAbsolute, posix } from 'path';
 import type { InternalOptions, InternalProps, ProcessedPatterns } from './types.ts';
 import { escapePath, isDynamicPattern, splitPattern } from './utils.ts';
 
@@ -8,6 +8,7 @@ const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
 function normalizePattern(pattern: string, opts: InternalOptions, props: InternalProps, isIgnore: boolean) {
   const cwd = opts.cwd as string;
   let result: string = pattern;
+
   if (pattern[pattern.length - 1] === '/') {
     result = pattern.slice(0, -1);
   }
@@ -55,11 +56,10 @@ function normalizePattern(pattern: string, opts: InternalOptions, props: Interna
         break;
       }
 
-      if (part !== props.commonPath[i] || isDynamicPattern(part) || i === parts.length - 1) {
+      if ( i === parts.length - 1 || part !== props.commonPath[i] || isDynamicPattern(part)) {
         break;
       }
 
-      newCommonPath.push(part);
     }
 
     props.depthOffset = newCommonPath.length;

@@ -17,15 +17,18 @@ export function getPartialMatcher(patterns: string[], options: PartialMatcherOpt
   const patternsCount = patterns.length;
   const patternsParts: string[][] = Array(patternsCount);
   const matchers: Matcher[][] = Array(patternsCount);
-  const globstarEnabled = !options.noglobstar;
-  for (let i = 0; i < patternsCount; i++) {
+  let i: number, j: number;
+
+  for (i = 0; i < patternsCount; i++) {
     const parts = splitPattern(patterns[i]);
     patternsParts[i] = parts;
     const partsCount = parts.length;
     const partMatchers: Matcher[] = Array(partsCount);
-    for (let j = 0; j < partsCount; j++) {
+
+    for (j = 0; j < partsCount; j++) {
       partMatchers[j] = picomatch(parts[j], options);
     }
+
     matchers[i] = partMatchers;
   }
   return (input: string) => {
@@ -38,12 +41,14 @@ export function getPartialMatcher(patterns: string[], options: PartialMatcherOpt
     if (inputParts[0] === '..' && ONLY_PARENT_DIRECTORIES.test(input)) {
       return true;
     }
-    for (let i = 0; i < patterns.length; i++) {
+
+    for (i = 0; i < patternsCount; i++) {
       const patternParts = patternsParts[i];
       const matcher = matchers[i];
       const inputPatternCount = inputParts.length;
       const minParts = Math.min(inputPatternCount, patternParts.length);
-      let j = 0;
+    
+      j = 0;
       while (j < minParts) {
         const part = patternParts[j];
 
@@ -54,16 +59,14 @@ export function getPartialMatcher(patterns: string[], options: PartialMatcherOpt
           return true;
         }
 
-        const match = matcher[j](inputParts[j]);
-
-        if (!match) {
+        if (!matcher[j](inputParts[j])) {
           break;
         }
 
         // unlike popular belief, `**` doesn't return true in *all* cases
         // some examples are when matching it to `.a` with dot: false or `..`
         // so it needs to match to return early
-        if (globstarEnabled && part === '**') {
+        if (!options.noglobstar && part === '**') {
           return true;
         }
 
@@ -90,7 +93,7 @@ const isRoot = isWin ? (p: string) => WIN32_ROOT_DIR.test(p) : (p: string) => p 
 export function buildFormat(cwd: string, root: string, absolute?: boolean): (p: string, isDir: boolean) => string {
   if (cwd === root || root.startsWith(`${cwd}/`)) {
     if (absolute) {
-      const start = isRoot(cwd) ? cwd.length : cwd.length + 1;
+      const start = cwd.length + +!isRoot(cwd);
       return (p: string, isDir: boolean) => p.slice(start, isDir ? -1 : undefined) || '.';
     }
     const prefix = root.slice(cwd.length + 1);
@@ -121,10 +124,7 @@ export function buildRelative(cwd: string, root: string): (p: string) => string 
 
   return p => {
     const result = posix.relative(cwd, `${root}/${p}`);
-    if (p.endsWith('/') && result !== '') {
-      return `${result}/`;
-    }
-    return result || '.';
+    return p[p.length - 1] === '/' && result !== '' ? `${result}/` : result || '.'
   };
 }
 // #endregion
@@ -208,7 +208,7 @@ export function isDynamicPattern(pattern: string, options?: { caseSensitiveMatch
 
 // #region log
 export function log(...tasks: unknown[]): void {
-  console.log(`[tinyglobby ${new Date().toLocaleTimeString('es')}]`, ...tasks);
+  console.log(`[tinyglobby ${new Date()}]`, ...tasks);
 }
 // #endregion
 // #region ensureStringArray
