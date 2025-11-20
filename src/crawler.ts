@@ -1,15 +1,15 @@
 import { type ExcludePredicate, type FSLike, fdir } from 'fdir';
 import picomatch, { type PicomatchOptions } from 'picomatch';
-import type { Crawler, GlobOptions, InternalProps, ProcessedPatterns, RelativeMapper } from './types.ts';
+import type { Crawler, InternalOptions, InternalProps, RelativeMapper } from './types.ts';
 import { BACKSLASHES, buildFormat, buildRelative, getPartialMatcher, log } from './utils.ts';
+import processPatterns from './patterns.ts';
 
 // #region buildCrawler
-export function buildCrawler(
-  props: InternalProps,
-  options: GlobOptions,
-  processed: ProcessedPatterns,
-  cwd: string
-): [Crawler, false | RelativeMapper] {
+export function buildCrawler(options: InternalOptions, patterns: readonly string[]): [Crawler, false | RelativeMapper] {
+  const cwd = options.cwd as string;
+  const props: InternalProps = { root: cwd, depthOffset: 0 };
+  const processed = processPatterns(options, patterns, props)
+
   if (options.debug) {
     log('internal processing patterns:', processed);
   }

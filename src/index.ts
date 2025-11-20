@@ -1,5 +1,5 @@
 import nativeFs from 'node:fs';
-import path from 'node:path';
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildCrawler } from './crawler.ts';
 import type {
@@ -8,7 +8,6 @@ import type {
   GlobInput,
   GlobOptions,
   InternalOptions,
-  InternalProps,
   RelativeMapper
 } from './types.ts';
 import {
@@ -17,7 +16,6 @@ import {
   isReadonlyArray,
   log,
 } from './utils.ts';
-import processPatterns from './patterns.ts';
 
 function formatPaths(paths: string[], mapper?: false | RelativeMapper) {
   if (mapper) {
@@ -53,7 +51,7 @@ const defaultOptions: GlobOptions = {
 function getOptions(options?: GlobOptions): InternalOptions {
   const opts = { ...defaultOptions, ...options } as InternalOptions;
 
-  opts.cwd = (opts.cwd instanceof URL ? fileURLToPath(opts.cwd) : path.resolve(opts.cwd)).replace(BACKSLASHES, '/');
+  opts.cwd = (opts.cwd instanceof URL ? fileURLToPath(opts.cwd) : resolve(opts.cwd)).replace(BACKSLASHES, '/');
   // Default value of [] will be inserted here if ignore is undefined
   opts.ignore = ensureStringArray(opts.ignore);
   opts.fs = normalizeFs(opts.fs);
@@ -72,16 +70,10 @@ function getCrawler(globInput: GlobInput, inputOptions: GlobOptions = {}): [] | 
 
   const isModern = isReadonlyArray(globInput) || typeof globInput === 'string';
   // defaulting to ['**/*'] is tinyglobby exclusive behavior, deprecated
-  const patterns = ensureStringArray((isModern ? globInput : globInput.patterns) ?? ['**/*']);
+  const patterns = ensureStringArray((isModern ? globInput : globInput.patterns) ?? '**/*');
   const options = getOptions(isModern ? inputOptions : globInput);
-  const cwd = options.cwd as string;
-
-  if (Array.isArray(patterns) && patterns.length === 0) {
-    return [];
-  }
-
-  const props: InternalProps = { root: cwd, depthOffset: 0 };
-  return buildCrawler(props, options, processPatterns(options, patterns, props), cwd);
+  
+  return patterns.length > 0 ? buildCrawler(options, patterns) : []
 }
 
 /**
