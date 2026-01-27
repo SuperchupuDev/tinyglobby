@@ -1,7 +1,7 @@
 import { buildCrawler } from './crawler.ts';
 import { getOptions } from './options.ts';
-import { sortFiles } from './sort.ts';
-import type { Crawler, GlobInput, GlobOptions, RelativeMapper } from './types.ts';
+import { internalSortFiles } from './sort.ts';
+import type { Crawler, CrawlerInfo, GlobInput, GlobOptions, RelativeMapper } from './types.ts';
 import { ensureStringArray, isReadonlyArray } from './utils.ts';
 
 function formatPaths(paths: string[], mapper?: false | RelativeMapper) {
@@ -16,7 +16,7 @@ function formatPaths(paths: string[], mapper?: false | RelativeMapper) {
 function getCrawler(
   globInput: GlobInput,
   inputOptions: GlobOptions = {}
-): [] | [Crawler, false | RelativeMapper, GlobOptions, readonly string[]] {
+): [] | [Crawler, false | RelativeMapper, GlobOptions, readonly string[], CrawlerInfo] {
   if (globInput && inputOptions?.patterns) {
     throw new Error('Cannot pass patterns as both an argument and an option');
   }
@@ -24,23 +24,23 @@ function getCrawler(
   const isModern = isReadonlyArray(globInput) || typeof globInput === 'string';
   // defaulting to ['**/*'] is tinyglobby exclusive behavior, deprecated
   const patterns = ensureStringArray((isModern ? globInput : globInput.patterns) ?? '**/*');
-  const options = getOptions(isModern ? inputOptions : globInput);
 
   if (patterns.length === 0) {
     return [];
   }
 
-  const [crawler, relative] = buildCrawler(options, patterns);
-  return [crawler, relative, options, patterns];
+  const options = getOptions(isModern ? inputOptions : globInput);
+  const [crawler, relative, crawlerInfo] = buildCrawler(options, patterns);
+  return [crawler, relative, options, patterns, crawlerInfo];
 }
 
 function processResults(
   paths: string[],
   relative: false | RelativeMapper,
   options: GlobOptions,
-  patterns: readonly string[]
+  crawlerInfo: CrawlerInfo
 ): string[] {
-  return sortFiles(formatPaths(paths, relative), patterns, options);
+  return internalSortFiles(formatPaths(paths, relative), crawlerInfo, options.sort);
 }
 
 /**
@@ -57,8 +57,8 @@ export async function glob(globInput: GlobInput, options?: GlobOptions): Promise
   if (result.length === 0) {
     return [];
   }
-  const [crawler, relative, opts, patterns] = result;
-  return processResults(await crawler.withPromise(), relative, opts, patterns);
+  const [crawler, relative, opts, _, crawlerInfo] = result;
+  return processResults(await crawler.withPromise(), relative, opts, crawlerInfo);
 }
 
 /**
@@ -75,10 +75,10 @@ export function globSync(globInput: GlobInput, options?: GlobOptions): string[] 
   if (result.length === 0) {
     return [];
   }
-  const [crawler, relative, opts, patterns] = result;
-  return processResults(crawler.sync(), relative, opts, patterns);
+  const [crawler, relative, opts, _, crawlerInfo] = result;
+  return processResults(crawler.sync(), relative, opts, crawlerInfo);
 }
 
 export { compileMatchers, sortFiles, sortFilesByPatternPrecedence } from './sort.ts';
-export type { GlobOptions } from './types.ts';
+export type { GlobOptions, Sort } from './types.ts';
 export { convertPathToPattern, escapePath, isDynamicPattern } from './utils.ts';

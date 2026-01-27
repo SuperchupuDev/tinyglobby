@@ -1,11 +1,11 @@
 import { type ExcludePredicate, type FSLike, fdir } from 'fdir';
 import picomatch, { type PicomatchOptions } from 'picomatch';
 import processPatterns from './patterns.ts';
-import type { Crawler, InternalOptions, InternalProps, RelativeMapper } from './types.ts';
+import type { Crawler, CrawlerInfo, InternalOptions, InternalProps, RelativeMapper } from './types.ts';
 import { BACKSLASHES, buildFormat, buildRelative, getPartialMatcher, log } from './utils.ts';
 
-// #region buildCrawler
-export function buildCrawler(options: InternalOptions, patterns: readonly string[]): [Crawler, false | RelativeMapper] {
+// #region buildCrawlerInfo
+export function buildCrawlerInfo(options: InternalOptions, patterns: readonly string[]): CrawlerInfo {
   const cwd = options.cwd as string;
   const props: InternalProps = { root: cwd, depthOffset: 0 };
   const processed = processPatterns(options, patterns, props);
@@ -14,7 +14,7 @@ export function buildCrawler(options: InternalOptions, patterns: readonly string
     log('internal processing patterns:', processed);
   }
 
-  const { absolute, caseSensitiveMatch, debug, dot, followSymbolicLinks, onlyDirectories } = options;
+  const { absolute, caseSensitiveMatch, dot } = options;
   const root = props.root.replace(BACKSLASHES, '');
   // For some of these options, false and undefined are two different states!
   const matchOptions = {
@@ -26,11 +26,25 @@ export function buildCrawler(options: InternalOptions, patterns: readonly string
     posix: true
   } satisfies PicomatchOptions;
 
+  const format = buildFormat(cwd, root, absolute);
+
+  return { processed, matchOptions, cwd, root, absolute, props, format };
+}
+// #endregion buildCrawlerInfo
+
+// #region buildCrawler
+export function buildCrawler(
+  options: InternalOptions,
+  patterns: readonly string[]
+): [Crawler, false | RelativeMapper, CrawlerInfo] {
+  const info = buildCrawlerInfo(options, patterns);
+  const { processed, matchOptions, cwd, root, absolute, props, format } = info;
+  const { debug, followSymbolicLinks, onlyDirectories } = options;
+
   const matcher = picomatch(processed.match, { ...matchOptions, ignore: processed.ignore });
   const ignore = picomatch(processed.ignore, matchOptions);
   const partialMatcher = getPartialMatcher(processed.match, matchOptions);
 
-  const format = buildFormat(cwd, root, absolute);
   const excludeFormatter = absolute ? format : buildFormat(cwd, root, true);
 
   const excludePredicate: ExcludePredicate = (_, p): boolean => {
@@ -83,6 +97,6 @@ export function buildCrawler(options: InternalOptions, patterns: readonly string
     log('internal properties:', { ...props, root });
   }
 
-  return [crawler, cwd !== root && !absolute && buildRelative(cwd, root)];
+  return [crawler, cwd !== root && !absolute && buildRelative(cwd, root), info];
 }
 // #endregion buildCrawler

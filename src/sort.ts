@@ -1,9 +1,18 @@
-import picomatch, { type PicomatchOptions } from 'picomatch';
+import picomatch from 'picomatch';
+import { buildCrawlerInfo } from './crawler.ts';
 import { getOptions } from './options.ts';
-import processPatterns from './patterns.ts';
-import type { GlobOptions, InternalProps } from './types.ts';
-import { BACKSLASHES, buildFormat, ensureStringArray, log } from './utils.ts';
+import type { CrawlerInfo, GlobOptions, Sort } from './types.ts';
+import { ensureStringArray } from './utils.ts';
 
+export function* internalCompileMatchers(
+  crawlerInfo: CrawlerInfo
+): Generator<readonly [glob: string, match: (path: string) => boolean], undefined, void> {
+  const { processed, matchOptions, format } = crawlerInfo;
+  for (const match of processed.match) {
+    const isMatch = picomatch(match, { ...matchOptions, ignore: processed.ignore });
+    yield [match, (filePath: string): boolean => isMatch(format(filePath, false))] as const;
+  }
+}
 /**
  * Compiles glob patterns into matcher functions using the exact same logic as `glob` and `globSync`.
  *
@@ -91,40 +100,28 @@ export function* compileMatchers(
   patterns: string | readonly string[],
   options?: Omit<GlobOptions, 'patterns'>
 ): Generator<readonly [glob: string, match: (path: string) => boolean], undefined, void> {
-  // defaulting to ['**/*'] is tinyglobby exclusive behavior, deprecated
-  const usePatterns = ensureStringArray(patterns);
-  const useOptions = getOptions(options);
-
-  const cwd = useOptions.cwd as string;
-  const props: InternalProps = { root: cwd, depthOffset: 0 };
-  const processed = processPatterns(useOptions, usePatterns, props);
-
-  if (useOptions.debug) {
-    log('internal processing patterns:', processed);
-  }
-
-  const { absolute, caseSensitiveMatch, dot } = useOptions;
-  const root = props.root.replace(BACKSLASHES, '');
-  // For some of these options, false and undefined are two different states!
-  const matchOptions = {
-    dot,
-    nobrace: useOptions.braceExpansion === false,
-    nocase: !caseSensitiveMatch,
-    noextglob: useOptions.extglob === false,
-    noglobstar: useOptions.globstar === false,
-    posix: true
-  } satisfies PicomatchOptions;
-
-  const format = buildFormat(cwd, root, absolute);
-
-  for (const match of processed.match) {
-    const isMatch = picomatch(match, { ...matchOptions, ignore: processed.ignore });
-    yield [match, (filePath: string): boolean => isMatch(format(filePath, false))] as const;
-  }
+  yield* internalCompileMatchers(buildCrawlerInfo(getOptions(options), ensureStringArray(patterns)));
 }
 
 const sortAsc = (a: string, b: string) => a.localeCompare(b);
 const sortDesc = (a: string, b: string) => b.localeCompare(a);
+
+export function internalSortFiles(files: string[], crawlerInfo: CrawlerInfo, sort?: Sort): string[] {
+  switch (true) {
+    case typeof sort === 'function':
+      return files.sort(sort);
+    case sort === 'asc':
+      return files.sort(sortAsc);
+    case sort === 'desc':
+      return files.sort(sortDesc);
+    case sort === 'pattern':
+    case sort === 'pattern-asc':
+    case sort === 'pattern-desc':
+      return [...internalSortFilesByPatternPrecedence(files, crawlerInfo, sort)];
+    default:
+      return files;
+  }
+}
 
 /**
  * Sort files from a glob scan.
@@ -154,19 +151,12 @@ export function sortFiles(
   }
 }
 
-/**
- * Sort files from a glob scan.
- * @param files The files from a glob scan.
- * @param patterns The glob pattern(s).
- * @param options The options.
- * @yields The files from a glob scan sorted.
- */
-export function* sortFilesByPatternPrecedence(
+export function* internalSortFilesByPatternPrecedence(
   files: string[],
-  patterns: string | readonly string[],
-  options?: Omit<GlobOptions, 'patterns'>
+  crawlerInfo: CrawlerInfo,
+  sort?: Sort
 ): Generator<string, undefined, void> {
-  const sort = options?.sort ?? 'pattern';
+  sort ??= 'pattern';
   if (sort !== 'pattern' && sort !== 'pattern-asc' && sort !== 'pattern-desc') {
     for (const file of files) {
       yield file;
@@ -174,7 +164,7 @@ export function* sortFilesByPatternPrecedence(
     return;
   }
 
-  const matcher = compileMatchers(patterns, options);
+  const matcher = internalCompileMatchers(crawlerInfo);
   const processedFiles = new Set<string>();
   if (sort === 'pattern') {
     for (const [_, match] of matcher) {
@@ -199,4 +189,23 @@ export function* sortFilesByPatternPrecedence(
       matches.length = 0;
     }
   }
+}
+
+/**
+ * Sort files from a glob scan.
+ * @param files The files from a glob scan.
+ * @param patterns The glob pattern(s).
+ * @param options The options.
+ * @yields The files from a glob scan sorted.
+ */
+export function* sortFilesByPatternPrecedence(
+  files: string[],
+  patterns: string | readonly string[],
+  options?: Omit<GlobOptions, 'patterns'>
+): Generator<string, undefined, void> {
+  yield* internalSortFilesByPatternPrecedence(
+    files,
+    buildCrawlerInfo(getOptions(options), ensureStringArray(patterns)),
+    options?.sort
+  );
 }
