@@ -26,7 +26,7 @@ import { BACKSLASHES, buildFormat, ensureStringArray, log } from './utils.ts';
  * function would continue to work without any changes.
  *
  * @param patterns The glob pattern(s).
- * @param options The options object if the first argument is the pattern(s).
+ * @param options The options.
  * @yields A readonly tuple `[glob, matcher]` containing:
  * - `glob`: The normalized and processed glob pattern.
  * - `matcher`: The pre-compiled matcher function for that specific pattern.
@@ -89,7 +89,7 @@ import { BACKSLASHES, buildFormat, ensureStringArray, log } from './utils.ts';
  */
 export function* compileMatchers(
   patterns: string | readonly string[],
-  options?: GlobOptions
+  options?: Omit<GlobOptions, 'patterns'>
 ): Generator<readonly [glob: string, match: (path: string) => boolean], undefined, void> {
   // defaulting to ['**/*'] is tinyglobby exclusive behavior, deprecated
   const usePatterns = ensureStringArray(patterns);
@@ -130,10 +130,14 @@ const sortDesc = (a: string, b: string) => b.localeCompare(a);
  * Sort files from a glob scan.
  * @param files The files from a glob scan.
  * @param patterns The glob pattern(s).
- * @param options The options object if the first argument is the pattern(s).
+ * @param options The options.
  * @returns The files from a glob scan sorted.
  */
-export function sortFiles(files: string[], patterns: string | readonly string[], options?: GlobOptions): string[] {
+export function sortFiles(
+  files: string[],
+  patterns: string | readonly string[],
+  options?: Omit<GlobOptions, 'patterns'>
+): string[] {
   switch (true) {
     case typeof options?.sort === 'function':
       return files.sort(options.sort);
@@ -154,13 +158,13 @@ export function sortFiles(files: string[], patterns: string | readonly string[],
  * Sort files from a glob scan.
  * @param files The files from a glob scan.
  * @param patterns The glob pattern(s).
- * @param options The options object if the first argument is the pattern(s).
+ * @param options The options.
  * @yields The files from a glob scan sorted.
  */
 export function* sortFilesByPatternPrecedence(
   files: string[],
   patterns: string | readonly string[],
-  options?: GlobOptions
+  options?: Omit<GlobOptions, 'patterns'>
 ): Generator<string, undefined, void> {
   const sort = options?.sort ?? 'pattern';
   if (sort !== 'pattern' && sort !== 'pattern-asc' && sort !== 'pattern-desc') {
