@@ -1,5 +1,6 @@
 import { buildCrawler } from './crawler.ts';
-import { getOptions, sortFiles } from './sort.ts';
+import { getOptions } from './options.ts';
+import { sortFiles } from './sort.ts';
 import type { Crawler, GlobInput, GlobOptions, RelativeMapper } from './types.ts';
 import { ensureStringArray, isReadonlyArray } from './utils.ts';
 
