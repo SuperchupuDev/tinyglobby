@@ -1,0 +1,235 @@
+import nativeFs from 'node:fs';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import picomatch, { type PicomatchOptions } from 'picomatch';
+import processPatterns from './patterns.ts';
+import type { FileSystemAdapter, GlobOptions, InternalOptions, InternalProps } from './types.ts';
+import { BACKSLASHES, buildFormat, ensureStringArray, log } from './utils.ts';
+
+const fsKeys = ['readdir', 'readdirSync', 'realpath', 'realpathSync', 'stat', 'statSync'];
+
+function normalizeFs(fs?: Record<string, unknown>): FileSystemAdapter | undefined {
+  if (fs && fs !== nativeFs) {
+    for (const key of fsKeys) {
+      fs[key] = (fs[key] ? fs : (nativeFs as Record<string, unknown>))[key];
+    }
+  }
+  return fs;
+}
+
+// Object containing all default options to ensure there is no hidden state difference
+// between false and undefined.
+const defaultOptions: GlobOptions = {
+  caseSensitiveMatch: true,
+  cwd: process.cwd(),
+  debug: !!process.env.TINYGLOBBY_DEBUG,
+  expandDirectories: true,
+  followSymbolicLinks: true,
+  onlyFiles: true
+};
+
+export function getOptions(options?: GlobOptions): InternalOptions {
+  const opts = { ...defaultOptions, ...options } as InternalOptions;
+
+  opts.cwd = (opts.cwd instanceof URL ? fileURLToPath(opts.cwd) : resolve(opts.cwd)).replace(BACKSLASHES, '/');
+  // Default value of [] will be inserted here if ignore is undefined
+  opts.ignore = ensureStringArray(opts.ignore);
+  opts.fs = normalizeFs(opts.fs);
+
+  if (opts.debug) {
+    log('globbing with options:', opts);
+  }
+
+  return opts;
+}
+
+/**
+ * Compiles glob patterns into matcher functions using the exact same logic as `glob` and `globSync`.
+ *
+ * This is an advanced utility function designed to be a **companion** to `glob` and `globSync`.
+ * Its primary use case is to enable advanced post-processing of the files returned by a scan.
+ *
+ * For example, since the order of files from a glob scan is not guaranteed, this function
+ * provides the necessary tools to implement **deterministic sorting**. By yielding a matcher for
+ * each original pattern, you can iterate through them in their intended order of precedence
+ * and sort the results of a `globSync` call accordingly.
+ *
+ * This function is key because it uses the **exact same internal pattern normalization and
+ * option processing as `glob` and `globSync`**. This guarantees that your post-processing
+ * logic (like sorting) will be perfectly consistent with the file scan that produced the results.
+ *
+ * A key benefit of this approach is **decoupling**. Your code only depends on
+ * the returned matcher's signature `(path: string) => boolean`, not on the
+ * underlying matching library (currently `picomatch`). If `tinyglobby` were to
+ * switch to a different matching engine in the future, your code using this
+ * function would continue to work without any changes.
+ *
+ * @param patterns The glob pattern(s).
+ * @param options The options object if the first argument is the pattern(s).
+ * @yields A readonly tuple `[glob, matcher]` containing:
+ * - `glob`: The normalized and processed glob pattern.
+ * - `matcher`: The pre-compiled matcher function for that specific pattern.
+ * @returns A generator that yields the `[glob, matcher]` tuples.
+ *
+ * @example Implementing deterministic sorting of `globSync` results
+ * ```javascript
+ * // Assume the following file structure:
+ * // /project
+ * // ├── common
+ * // │   ├── Button.js
+ * // │   └── Card.js
+ * // └── overrides
+ * //     └── Button.js
+ *
+ * import { globSync, compileMatchers } from 'tinyglobby';
+ *
+ * // 1. Define your globs and options ONCE.
+ * // The order of this array defines the desired sorting precedence.
+ * const globs = [
+ *   'overrides/**' + '/*.js', // Highest priority
+ *   'common/**' + '/*.js',   // Normal priority
+ * ];
+ * const options = { cwd: '/project', absolute: true };
+ *
+ * // 2. Scan the filesystem using the defined globs.
+ * // `globSync` uses the patterns to find files but does not guarantee order.
+ * const files = globSync(globs, options);
+ * // Let's assume `files` is now (in a non-deterministic order):
+ * // [
+ * //   '/project/common/Button.js',
+ * //   '/project/common/Card.js',
+ * //   '/project/overrides/Button.js'
+ * // ]
+ *
+ * // 3. Compile the exact same globs to get matchers in their intended order.
+ * const matchersGenerator = compileMatchers(globs, options);
+ *
+ * // 4. Use the generated matchers to sort the file list.
+ * const sortedFiles = [];
+ * const processedFiles = new Set();
+ *
+ * for (const [glob, match] of matchersGenerator) {
+ *   for (const file of files) {
+ *     if (!processedFiles.has(file) && match(file)) {
+ *       processedFiles.add(file);
+ *       sortedFiles.push(file);
+ *     }
+ *   }
+ * }
+ *
+ * console.log(sortedFiles);
+ * // The correctly sorted output, respecting the original glob order:
+ * // [
+ * //   '/project/overrides/Button.js',
+ * //   '/project/common/Button.js',
+ * //   '/project/common/Card.js'
+ * // ]
+ * ```
+ */
+export function* compileMatchers(
+  patterns: string | readonly string[],
+  options?: GlobOptions
+): Generator<readonly [glob: string, match: (path: string) => boolean], undefined, void> {
+  // defaulting to ['**/*'] is tinyglobby exclusive behavior, deprecated
+  const usePatterns = ensureStringArray(patterns);
+  const useOptions = getOptions(options);
+
+  const cwd = useOptions.cwd as string;
+  const props: InternalProps = { root: cwd, depthOffset: 0 };
+  const processed = processPatterns(useOptions, usePatterns, props);
+
+  if (useOptions.debug) {
+    log('internal processing patterns:', processed);
+  }
+
+  const { absolute, caseSensitiveMatch, dot } = useOptions;
+  const root = props.root.replace(BACKSLASHES, '');
+  // For some of these options, false and undefined are two different states!
+  const matchOptions = {
+    dot,
+    nobrace: useOptions.braceExpansion === false,
+    nocase: !caseSensitiveMatch,
+    noextglob: useOptions.extglob === false,
+    noglobstar: useOptions.globstar === false,
+    posix: true
+  } satisfies PicomatchOptions;
+
+  const format = buildFormat(cwd, root, absolute);
+
+  for (const match of processed.match) {
+    const isMatch = picomatch(match, { ...matchOptions, ignore: processed.ignore });
+    yield [match, (filePath: string): boolean => isMatch(format(filePath, false))] as const;
+  }
+}
+
+const sortAsc = (a: string, b: string) => a.localeCompare(b);
+const sortDesc = (a: string, b: string) => b.localeCompare(a);
+
+/**
+ * Sort files from a glob scan.
+ * @param files The files from a glob scan.
+ * @param patterns The glob pattern(s).
+ * @param options The options object if the first argument is the pattern(s).
+ * @returns The files from a glob scan sorted.
+ */
+export function sortFiles(files: string[], patterns: string | readonly string[], options?: GlobOptions): string[] {
+  switch (true) {
+    case options?.sort === 'asc':
+      return files.sort(sortAsc);
+    case options?.sort === 'desc':
+      return files.sort(sortDesc);
+    case options?.sort === 'pattern':
+    case options?.sort === 'pattern-asc':
+    case options?.sort === 'pattern-desc':
+      return [...sortFilesByPatternPrecedence(files, patterns, options)];
+    default:
+      return files;
+  }
+}
+
+/**
+ * Sort files from a glob scan.
+ * @param files The files from a glob scan.
+ * @param patterns The glob pattern(s).
+ * @param options The options object if the first argument is the pattern(s).
+ * @yields The files from a glob scan sorted.
+ */
+export function* sortFilesByPatternPrecedence(
+  files: string[],
+  patterns: string | readonly string[],
+  options?: GlobOptions
+): Generator<string, undefined, void> {
+  const sort = options?.sort ?? 'pattern';
+  if (sort !== 'pattern' && sort !== 'pattern-asc' && sort !== 'pattern-desc') {
+    for (const file of files) {
+      yield file;
+    }
+    return;
+  }
+
+  const matcher = compileMatchers(patterns, options);
+  const processedFiles = new Set<string>();
+  if (sort === 'pattern') {
+    for (const [_, match] of matcher) {
+      for (const file of files) {
+        if (!processedFiles.has(file) && match(file)) {
+          processedFiles.add(file);
+          yield file;
+        }
+      }
+    }
+  } else {
+    const matches: string[] = [];
+    const sortFn = sort === 'pattern-asc' ? sortAsc : sortDesc;
+    for (const [_, match] of matcher) {
+      for (const file of files) {
+        if (!processedFiles.has(file) && match(file)) {
+          processedFiles.add(file);
+          matches.push(file);
+        }
+      }
+      yield* matches.sort(sortFn);
+      matches.length = 0;
+    }
+  }
+}

@@ -498,3 +498,32 @@ test('relative self + normal pattern', () => {
   });
   assert.deepEqual(files.sort(), ['.', 'a/a.txt']);
 });
+
+test('sort asc', async () => {
+  const files = await glob('**/*', { cwd, sort: 'asc' });
+  assert.deepEqual(files, ['a/a.txt', 'a/b.txt', 'b/a.txt', 'b/b.txt']);
+});
+
+test('sort desc', async () => {
+  const files = await glob('**/*', { cwd, sort: 'desc' });
+  assert.deepEqual(files, ['b/b.txt', 'b/a.txt', 'a/b.txt', 'a/a.txt']);
+});
+
+test('sort pattern', async () => {
+  const files = await glob(['b/*', 'a/*'], { cwd, sort: 'pattern' });
+  assert.equal(files.length, 4);
+  assert.ok(files[0].startsWith('b/'));
+  assert.ok(files[1].startsWith('b/'));
+  assert.ok(files[2].startsWith('a/'));
+  assert.ok(files[3].startsWith('a/'));
+});
+
+test('sort pattern-asc', async () => {
+  const files = await glob(['b/*', 'a/*'], { cwd, sort: 'pattern-asc' });
+  assert.deepEqual(files, ['b/a.txt', 'b/b.txt', 'a/a.txt', 'a/b.txt']);
+});
+
+test('sort pattern-desc', async () => {
+  const files = await glob(['b/*', 'a/*'], { cwd, sort: 'pattern-desc' });
+  assert.deepEqual(files, ['b/b.txt', 'b/a.txt', 'a/b.txt', 'a/a.txt']);
+});

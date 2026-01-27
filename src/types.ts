@@ -130,6 +130,16 @@ export interface GlobOptions {
    * @default undefined
    */
   signal?: AbortSignal;
+  /**
+   * Sort the results.
+   * - `asc`: Sorts the results in ascending order.
+   * - `desc`: Sorts the results in descending order.
+   * - `pattern`: Sorts the results by pattern precedence.
+   * - `pattern-asc`: Sorts the results by pattern precedence and then ascending.
+   * - `pattern-desc`: Sorts the results by pattern precedence and then descending.
+   * @default undefined
+   */
+  sort?: 'asc' | 'desc' | 'pattern' | 'pattern-asc' | 'pattern-desc';
 }
 
 export type InternalOptions = Pick<
