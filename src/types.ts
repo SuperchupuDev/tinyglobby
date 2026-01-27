@@ -137,9 +137,10 @@ export interface GlobOptions {
    * - `pattern`: Sorts the results by pattern precedence.
    * - `pattern-asc`: Sorts the results by pattern precedence and then ascending.
    * - `pattern-desc`: Sorts the results by pattern precedence and then descending.
+   * - `(a: string, b: string) => number`: A custom sort function.
    * @default undefined
    */
-  sort?: 'asc' | 'desc' | 'pattern' | 'pattern-asc' | 'pattern-desc';
+  sort?: 'asc' | 'desc' | 'pattern' | 'pattern-asc' | 'pattern-desc' | ((a: string, b: string) => number);
 }
 
 export type InternalOptions = Pick<

@@ -135,6 +135,8 @@ const sortDesc = (a: string, b: string) => b.localeCompare(a);
  */
 export function sortFiles(files: string[], patterns: string | readonly string[], options?: GlobOptions): string[] {
   switch (true) {
+    case typeof options?.sort === 'function':
+      return files.sort(options.sort);
     case options?.sort === 'asc':
       return files.sort(sortAsc);
     case options?.sort === 'desc':

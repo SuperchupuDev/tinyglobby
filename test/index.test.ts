@@ -527,3 +527,8 @@ test('sort pattern-desc', async () => {
   const files = await glob(['b/*', 'a/*'], { cwd, sort: 'pattern-desc' });
   assert.deepEqual(files, ['b/b.txt', 'b/a.txt', 'a/b.txt', 'a/a.txt']);
 });
+
+test('sort custom', async () => {
+  const files = await glob('**/*', { cwd, sort: (a, b) => a.localeCompare(b) });
+  assert.deepEqual(files, ['a/a.txt', 'a/b.txt', 'b/a.txt', 'b/b.txt']);
+});
