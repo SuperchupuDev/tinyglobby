@@ -106,7 +106,50 @@ export function* compileMatchers(
 const sortAsc = (a: string, b: string) => a.localeCompare(b);
 const sortDesc = (a: string, b: string) => b.localeCompare(a);
 
+function* internalYieldFiles(files: string[], sort?: Sort): Generator<string, undefined, void> {
+  switch (true) {
+    case sort === 'asc':
+    case sort === 'pattern-asc':
+      yield* files.sort(sortAsc);
+      return;
+    case sort === 'desc':
+    case sort === 'pattern-desc':
+      yield* files.sort(sortDesc);
+      return;
+    case typeof sort === 'function':
+      yield* files.sort(sort);
+      return;
+  }
+
+  for (const file of files) {
+    yield file;
+  }
+}
+
+function internalReturnSortedFiles(files: string[], sort?: Sort): string[] {
+  switch (true) {
+    case sort === 'asc':
+    case sort === 'pattern-asc':
+      return files.sort(sortAsc);
+    case sort === 'desc':
+    case sort === 'pattern-desc':
+      return files.sort(sortDesc);
+    case typeof sort === 'function':
+      return files.sort(sort);
+  }
+
+  return files;
+}
+
 export function internalSortFiles(files: string[], crawlerInfo: CrawlerInfo, sort?: Sort): string[] {
+  if (sort === undefined) {
+    return files;
+  }
+
+  if (crawlerInfo.patterns.length === 1) {
+    return internalReturnSortedFiles(files, sort);
+  }
+
   switch (true) {
     case typeof sort === 'function':
       return files.sort(sort);
@@ -135,17 +178,23 @@ export function sortFiles(
   patterns: string | readonly string[],
   options?: Omit<GlobOptions, 'patterns'>
 ): string[] {
+  const sort = options?.sort;
+  const patternArray = ensureStringArray(patterns);
+  if (patternArray.length === 1) {
+    return internalReturnSortedFiles(files, sort);
+  }
+
   switch (true) {
-    case typeof options?.sort === 'function':
-      return files.sort(options.sort);
-    case options?.sort === 'asc':
+    case typeof sort === 'function':
+      return files.sort(sort);
+    case sort === 'asc':
       return files.sort(sortAsc);
-    case options?.sort === 'desc':
+    case sort === 'desc':
       return files.sort(sortDesc);
-    case options?.sort === 'pattern':
-    case options?.sort === 'pattern-asc':
-    case options?.sort === 'pattern-desc':
-      return [...sortFilesByPatternPrecedence(files, patterns, options)];
+    case sort === 'pattern':
+    case sort === 'pattern-asc':
+    case sort === 'pattern-desc':
+      return [...sortFilesByPatternPrecedence(files, patternArray, options)];
     default:
       return files;
   }
@@ -161,6 +210,11 @@ export function* internalSortFilesByPatternPrecedence(
     for (const file of files) {
       yield file;
     }
+    return;
+  }
+
+  if (crawlerInfo.patterns.length === 1) {
+    yield* internalYieldFiles(files, sort);
     return;
   }
 
@@ -203,9 +257,17 @@ export function* sortFilesByPatternPrecedence(
   patterns: string | readonly string[],
   options?: Omit<GlobOptions, 'patterns'>
 ): Generator<string, undefined, void> {
+  // avoid creating crawler info
+  const sort = options?.sort;
+  const patternArray = ensureStringArray(patterns);
+  if (patternArray.length === 1) {
+    yield* internalYieldFiles(files, sort);
+    return;
+  }
+
   yield* internalSortFilesByPatternPrecedence(
     files,
-    buildCrawlerInfo(getOptions(options), ensureStringArray(patterns)),
+    buildCrawlerInfo(getOptions(options), patternArray),
     options?.sort
   );
 }

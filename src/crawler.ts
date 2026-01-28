@@ -28,7 +28,7 @@ export function buildCrawlerInfo(options: InternalOptions, patterns: readonly st
 
   const format = buildFormat(cwd, root, absolute);
 
-  return { processed, matchOptions, cwd, root, absolute, props, format };
+  return { processed, matchOptions, cwd, root, absolute, props, format, patterns };
 }
 // #endregion buildCrawlerInfo
 

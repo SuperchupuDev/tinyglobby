@@ -45,6 +45,7 @@ export interface CrawlerInfo {
   root: string;
   absolute?: boolean;
   props: InternalProps;
+  patterns: readonly string[];
   format: (p: string, isDir: boolean) => string;
 }
 

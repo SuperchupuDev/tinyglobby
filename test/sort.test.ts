@@ -1,7 +1,15 @@
 import assert from 'node:assert/strict';
 import { after, test } from 'node:test';
 import { createFixture } from 'fs-fixture';
-import { compileMatchers, sortFiles, sortFilesByPatternPrecedence } from '../src/sort.ts';
+import { buildCrawlerInfo } from '../src/crawler.ts';
+import { getOptions } from '../src/options.ts';
+import {
+  compileMatchers,
+  internalSortFiles,
+  internalSortFilesByPatternPrecedence,
+  sortFiles,
+  sortFilesByPatternPrecedence
+} from '../src/sort.ts';
 import type { GlobInput } from '../src/types.ts';
 
 const fixture = await createFixture({
@@ -131,11 +139,14 @@ test('sort files with custom function', () => {
   ]);
 });
 
-test('sort files by precedence returns unsorted if sort option is not pattern-related', () => {
-  const files = [`${escapedCwd}/common/Button.js`, `${escapedCwd}/common/Card.js`, `${escapedCwd}/overrides/Button.js`];
-  // sort: 'asc' is not a pattern sort, so it should return files as is from this generator
-  const useOptions = { ...options, sort: 'asc' } satisfies GlobInput;
-  assert.deepEqual([...sortFilesByPatternPrecedence(files, patterns, useOptions)], files);
+test('sort files with no options', () => {
+  const files = [`${escapedCwd}/overrides/Button.js`, `${escapedCwd}/common/Card.js`, `${escapedCwd}/common/Button.js`];
+  // sort without options
+  assert.deepEqual(sortFiles(files, patterns), [
+    `${escapedCwd}/overrides/Button.js`,
+    `${escapedCwd}/common/Card.js`,
+    `${escapedCwd}/common/Button.js`
+  ]);
 });
 
 test('sort files by precedence with no options', () => {
@@ -153,4 +164,75 @@ test('sort files by precedence with no options', () => {
   } finally {
     process.chdir(originalCwd);
   }
+});
+
+test('sort files with single pattern', () => {
+  const files = [`${escapedCwd}/common/Button.js`, `${escapedCwd}/common/Card.js`];
+  const singlePattern = ['common/**/*.js'];
+
+  // pattern (no sort)
+  assert.deepEqual(sortFiles(files, singlePattern, { ...options, sort: 'pattern' }), files);
+
+  // pattern-asc (sort asc)
+  assert.deepEqual(sortFiles(files, singlePattern, { ...options, sort: 'pattern-asc' }), [
+    `${escapedCwd}/common/Button.js`,
+    `${escapedCwd}/common/Card.js`
+  ]);
+
+  // pattern-desc (sort desc)
+  assert.deepEqual(sortFiles(files, singlePattern, { ...options, sort: 'pattern-desc' }), [
+    `${escapedCwd}/common/Card.js`,
+    `${escapedCwd}/common/Button.js`
+  ]);
+});
+
+test('sort files by precedence with single pattern', () => {
+  const files = [`${escapedCwd}/common/Button.js`, `${escapedCwd}/common/Card.js`];
+  const singlePattern = ['common/**/*.js'];
+
+  // pattern (no sort)
+  assert.deepEqual([...sortFilesByPatternPrecedence(files, singlePattern, { ...options, sort: 'pattern' })], files);
+
+  // pattern-asc (sort asc)
+  assert.deepEqual(
+    [...sortFilesByPatternPrecedence(files, singlePattern, { ...options, sort: 'pattern-asc' })],
+    [`${escapedCwd}/common/Button.js`, `${escapedCwd}/common/Card.js`]
+  );
+
+  // pattern-desc (sort desc)
+  assert.deepEqual(
+    [...sortFilesByPatternPrecedence(files, singlePattern, { ...options, sort: 'pattern-desc' })],
+    [`${escapedCwd}/common/Card.js`, `${escapedCwd}/common/Button.js`]
+  );
+});
+
+test('sort files by precedence with single pattern and custom sort', () => {
+  const files = [`${escapedCwd}/common/Button.js`, `${escapedCwd}/common/Card.js`];
+  const singlePattern = ['common/**/*.js'];
+  const useOptions = { ...options, sort: (a, b) => a.localeCompare(b) } satisfies GlobInput;
+
+  assert.deepEqual(
+    [...sortFilesByPatternPrecedence(files, singlePattern, useOptions)],
+    [`${escapedCwd}/common/Button.js`, `${escapedCwd}/common/Card.js`]
+  );
+});
+
+test('sort files with invalid sort option', () => {
+  const files = [`${escapedCwd}/override/Button.js`, `${escapedCwd}/common/Button.js`, `${escapedCwd}/common/Card.js`];
+  assert.deepEqual(
+    internalSortFiles(
+      files,
+      buildCrawlerInfo(getOptions(options), patterns),
+      // @ts-expect-error force add coverage for L165
+      'invalid'
+    ),
+    files
+  );
+});
+test('sort files with single pattern and pattern sort option', () => {
+  const files = [`${escapedCwd}/common/Button.js`, `${escapedCwd}/common/Card.js`];
+  assert.deepEqual(
+    [...internalSortFilesByPatternPrecedence(files, buildCrawlerInfo(getOptions(options), [patterns[1]]), 'pattern')],
+    files
+  );
 });
