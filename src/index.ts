@@ -1,9 +1,8 @@
-import nativeFs from 'node:fs';
-import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { buildCrawler } from './crawler.ts';
-import type { Crawler, FileSystemAdapter, GlobInput, GlobOptions, InternalOptions, RelativeMapper } from './types.ts';
-import { BACKSLASHES, ensureStringArray, isReadonlyArray, log } from './utils.ts';
+import { getOptions } from './options.ts';
+import { internalSortFiles } from './sort.ts';
+import type { Crawler, CrawlerInfo, GlobInput, GlobOptions, RelativeMapper } from './types.ts';
+import { ensureStringArray, isReadonlyArray } from './utils.ts';
 
 function formatPaths(paths: string[], mapper?: false | RelativeMapper) {
   if (mapper) {
@@ -14,44 +13,10 @@ function formatPaths(paths: string[], mapper?: false | RelativeMapper) {
   return paths;
 }
 
-const fsKeys = ['readdir', 'readdirSync', 'realpath', 'realpathSync', 'stat', 'statSync'];
-
-function normalizeFs(fs?: Record<string, unknown>): FileSystemAdapter | undefined {
-  if (fs && fs !== nativeFs) {
-    for (const key of fsKeys) {
-      fs[key] = (fs[key] ? fs : (nativeFs as Record<string, unknown>))[key];
-    }
-  }
-  return fs;
-}
-
-// Object containing all default options to ensure there is no hidden state difference
-// between false and undefined.
-const defaultOptions: GlobOptions = {
-  caseSensitiveMatch: true,
-  cwd: process.cwd(),
-  debug: !!process.env.TINYGLOBBY_DEBUG,
-  expandDirectories: true,
-  followSymbolicLinks: true,
-  onlyFiles: true
-};
-
-function getOptions(options?: GlobOptions): InternalOptions {
-  const opts = { ...defaultOptions, ...options } as InternalOptions;
-
-  opts.cwd = (opts.cwd instanceof URL ? fileURLToPath(opts.cwd) : resolve(opts.cwd)).replace(BACKSLASHES, '/');
-  // Default value of [] will be inserted here if ignore is undefined
-  opts.ignore = ensureStringArray(opts.ignore);
-  opts.fs = normalizeFs(opts.fs);
-
-  if (opts.debug) {
-    log('globbing with options:', opts);
-  }
-
-  return opts;
-}
-
-function getCrawler(globInput: GlobInput, inputOptions: GlobOptions = {}): [] | [Crawler, false | RelativeMapper] {
+function getCrawler(
+  globInput: GlobInput,
+  inputOptions: GlobOptions = {}
+): [] | [Crawler, false | RelativeMapper, GlobOptions, readonly string[], CrawlerInfo] {
   if (globInput && inputOptions?.patterns) {
     throw new Error('Cannot pass patterns as both an argument and an option');
   }
@@ -59,9 +24,23 @@ function getCrawler(globInput: GlobInput, inputOptions: GlobOptions = {}): [] | 
   const isModern = isReadonlyArray(globInput) || typeof globInput === 'string';
   // defaulting to ['**/*'] is tinyglobby exclusive behavior, deprecated
   const patterns = ensureStringArray((isModern ? globInput : globInput.patterns) ?? '**/*');
-  const options = getOptions(isModern ? inputOptions : globInput);
 
-  return patterns.length > 0 ? buildCrawler(options, patterns) : [];
+  if (patterns.length === 0) {
+    return [];
+  }
+
+  const options = getOptions(isModern ? inputOptions : globInput);
+  const [crawler, relative, crawlerInfo] = buildCrawler(options, patterns);
+  return [crawler, relative, options, patterns, crawlerInfo];
+}
+
+function processResults(
+  paths: string[],
+  relative: false | RelativeMapper,
+  options: GlobOptions,
+  crawlerInfo: CrawlerInfo
+): string[] {
+  return internalSortFiles(formatPaths(paths, relative), crawlerInfo, options.sort);
 }
 
 /**
@@ -74,8 +53,12 @@ export function glob(patterns: string | readonly string[], options?: Omit<GlobOp
  */
 export function glob(options: GlobOptions): Promise<string[]>;
 export async function glob(globInput: GlobInput, options?: GlobOptions): Promise<string[]> {
-  const [crawler, relative] = getCrawler(globInput, options);
-  return crawler ? formatPaths(await crawler.withPromise(), relative) : [];
+  const result = getCrawler(globInput, options);
+  if (result.length === 0) {
+    return [];
+  }
+  const [crawler, relative, opts, _, crawlerInfo] = result;
+  return processResults(await crawler.withPromise(), relative, opts, crawlerInfo);
 }
 
 /**
@@ -88,9 +71,14 @@ export function globSync(patterns: string | readonly string[], options?: Omit<Gl
  */
 export function globSync(options: GlobOptions): string[];
 export function globSync(globInput: GlobInput, options?: GlobOptions): string[] {
-  const [crawler, relative] = getCrawler(globInput, options);
-  return crawler ? formatPaths(crawler.sync(), relative) : [];
+  const result = getCrawler(globInput, options);
+  if (result.length === 0) {
+    return [];
+  }
+  const [crawler, relative, opts, _, crawlerInfo] = result;
+  return processResults(crawler.sync(), relative, opts, crawlerInfo);
 }
 
-export type { GlobOptions } from './types.ts';
+export { compileMatchers, sortFiles, sortFilesByPatternPrecedence } from './sort.ts';
+export type { GlobOptions, Sort } from './types.ts';
 export { convertPathToPattern, escapePath, isDynamicPattern } from './utils.ts';

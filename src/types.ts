@@ -1,4 +1,5 @@
 import type { FSLike, PathsOutput, ResultCallback } from 'fdir';
+import type { PicomatchOptions } from 'picomatch';
 
 export type FileSystemAdapter = Partial<FSLike>;
 // can't use `Matcher` from picomatch as it requires a second argument since @types/picomatch v4
@@ -36,6 +37,19 @@ export interface ProcessedPatterns {
   match: string[];
   ignore: string[];
 }
+
+export interface CrawlerInfo {
+  processed: ProcessedPatterns;
+  matchOptions: PicomatchOptions;
+  cwd: string;
+  root: string;
+  absolute?: boolean;
+  props: InternalProps;
+  patterns: readonly string[];
+  format: (p: string, isDir: boolean) => string;
+}
+
+export type Sort = 'asc' | 'desc' | 'pattern' | 'pattern-asc' | 'pattern-desc' | ((a: string, b: string) => number);
 
 export interface GlobOptions {
   /**
@@ -130,6 +144,17 @@ export interface GlobOptions {
    * @default undefined
    */
   signal?: AbortSignal;
+  /**
+   * Sort the results.
+   * - `asc`: Sorts the results in ascending order.
+   * - `desc`: Sorts the results in descending order.
+   * - `pattern`: Sorts the results by pattern precedence.
+   * - `pattern-asc`: Sorts the results by pattern precedence and then ascending.
+   * - `pattern-desc`: Sorts the results by pattern precedence and then descending.
+   * - `(a: string, b: string) => number`: A custom sort function.
+   * @default undefined
+   */
+  sort?: Sort;
 }
 
 export type InternalOptions = Pick<
