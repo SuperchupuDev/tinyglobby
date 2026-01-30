@@ -26,7 +26,7 @@ export function buildCrawler(options: InternalOptions, patterns: readonly string
     posix: true
   } satisfies PicomatchOptions;
 
-  const matcher = picomatch(processed.match, { ...matchOptions, ignore: processed.ignore });
+  const matcher = picomatch(processed.match, matchOptions);
   const ignore = picomatch(processed.ignore, matchOptions);
   const partialMatcher = getPartialMatcher(processed.match, matchOptions);
 
@@ -49,7 +49,7 @@ export function buildCrawler(options: InternalOptions, patterns: readonly string
       debug
         ? (p, isDirectory) => {
             const path = format(p, isDirectory);
-            const matches = matcher(path);
+            const matches = matcher(path) && !ignore(path);
 
             if (matches) {
               log(`matched ${path}`);
@@ -57,7 +57,10 @@ export function buildCrawler(options: InternalOptions, patterns: readonly string
 
             return matches;
           }
-        : (p, isDirectory) => matcher(format(p, isDirectory))
+        : (p, isDirectory) => {
+            const path = format(p, isDirectory);
+            return matcher(path) && !ignore(path);
+          }
     ],
     exclude: debug
       ? (_, p) => {
