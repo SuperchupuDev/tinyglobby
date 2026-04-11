@@ -160,8 +160,6 @@ test('debug option', async t => {
   const files = await glob('a', { debug: true, cwd });
   assert.deepEqual(files.sort(), ['a/a.txt', 'a/b.txt']);
   assert.equal(mock.callCount(), 11);
-
-  mock.restore();
 });
 
 test('onlyDirectories has preference over onlyFiles', async () => {
@@ -305,12 +303,10 @@ test('common path prefix is respected across multiple patterns', async () => {
 });
 
 test('cwd defaults to process.cwd() evaluated at call time, not import time', async t => {
-  const { mock } = t.mock.method(process, 'cwd', () => cwd); // cwd !== importTimeCwd (fixture is in a temp dir)
+  t.mock.method(process, 'cwd', () => cwd); // cwd !== importTimeCwd (fixture is in a temp dir)
 
   const files = await glob('a/*.txt'); // no cwd passed - must use call-time process.cwd()
   assert.deepEqual(files.sort(), ['a/a.txt', 'a/b.txt']);
-
-  mock.restore();
 });
 
 test('explicit undefined options fall back to defaults', async () => {
