@@ -15,10 +15,10 @@ function formatPaths(paths: string[], mapper?: false | RelativeMapper) {
 }
 
 // Object containing all default options to ensure there is no hidden state difference
-// between false and undefined.
+// between false and undefined. cwd is intentionally excluded as process.cwd() must be
+// evaluated at call time, not at module load time.
 const defaultOptions: GlobOptions = {
   caseSensitiveMatch: true,
-  cwd: process.cwd(),
   debug: !!process.env.TINYGLOBBY_DEBUG,
   expandDirectories: true,
   followSymbolicLinks: true,
@@ -26,9 +26,16 @@ const defaultOptions: GlobOptions = {
 };
 
 function getOptions(options?: GlobOptions): InternalOptions {
-  const opts = { ...defaultOptions, ...options } as InternalOptions;
+  const opts = Object.assign({}, options) as InternalOptions;
+  for (const key in defaultOptions) {
+    if (opts[key as keyof GlobOptions] === undefined) {
+      Object.assign(opts, { [key]: defaultOptions[key as keyof GlobOptions] });
+    }
+  }
 
-  opts.cwd = (opts.cwd instanceof URL ? fileURLToPath(opts.cwd) : resolve(opts.cwd)).replace(BACKSLASHES, '/');
+  const resolvedCwd = opts.cwd instanceof URL ? fileURLToPath(opts.cwd) : resolve(opts.cwd || process.cwd());
+  opts.cwd = resolvedCwd.replace(BACKSLASHES, '/');
+
   // Default value of [] will be inserted here if ignore is undefined
   opts.ignore = ensureStringArray(opts.ignore);
 

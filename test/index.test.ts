@@ -299,6 +299,37 @@ test('absolute + empty commonPath', async () => {
   assert.deepEqual(files.sort(), [`${escapedCwd}/a/a.txt`, `${escapedCwd}/a/b.txt`]);
 });
 
+test('common path prefix is respected across multiple patterns', async () => {
+  const files = await glob(['a/a.txt', 'a/b.txt'], { cwd });
+  assert.deepEqual(files.sort(), ['a/a.txt', 'a/b.txt']);
+});
+
+test('cwd defaults to process.cwd() evaluated at call time, not import time', async t => {
+  const { mock } = t.mock.method(process, 'cwd', () => cwd); // cwd !== importTimeCwd (fixture is in a temp dir)
+
+  const files = await glob('a/*.txt'); // no cwd passed - must use call-time process.cwd()
+  assert.deepEqual(files.sort(), ['a/a.txt', 'a/b.txt']);
+
+  mock.restore();
+});
+
+test('explicit undefined options fall back to defaults', async () => {
+  // cwd: undefined should not throw
+  await assert.doesNotReject(() => glob('*', { cwd: undefined }));
+
+  // expandDirectories defaults to true - directories should be expanded
+  const expandFiles = await glob('a', { cwd, expandDirectories: undefined });
+  assert.deepEqual(expandFiles.sort(), ['a/a.txt', 'a/b.txt']);
+
+  // onlyFiles defaults to true - directories should not appear
+  const onlyFilesResult = await glob('a', { cwd, onlyFiles: undefined });
+  assert.ok(!onlyFilesResult.includes('a/'));
+
+  // caseSensitiveMatch defaults to true - uppercase pattern should not match
+  const caseFiles = await glob('**/A.TXT', { cwd, caseSensitiveMatch: undefined });
+  assert.deepEqual(caseFiles, []);
+});
+
 test('handle symlinks', async () => {
   const files = await glob('.symlink/**', { cwd });
   assert.deepEqual(files.sort(), ['.symlink/dir/a.txt', '.symlink/dir/b.txt', '.symlink/file']);
