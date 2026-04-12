@@ -1,6 +1,6 @@
 import { isAbsolute, posix } from 'node:path';
 import type { InternalOptions, InternalProps, ProcessedPatterns } from './types.ts';
-import { escapePath, ensureNonDriveRelativePath, isDynamicPattern, splitPattern } from './utils.ts';
+import { ensureNonDriveRelativePath, escapePath, isDynamicPattern, splitPattern } from './utils.ts';
 
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
