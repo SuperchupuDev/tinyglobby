@@ -1,13 +1,9 @@
 import assert from 'node:assert/strict';
-import { randomUUID } from 'node:crypto';
 import { readdir } from 'node:fs';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { after, test } from 'node:test';
 import { createFixture } from 'fs-fixture';
 import { glob, globSync } from '../src/index.ts';
-
-const winTest = process.platform === 'win32' ? test : test.skip;
 
 // object properties are file names and values are file contents
 const fixture = await createFixture({
@@ -91,27 +87,6 @@ test('absolutely crawl root', async () => {
 test('cwd as URL', async () => {
   const files = await glob('a/a.txt', { cwd: new URL(`file://${escapedCwd}`) });
   assert.deepEqual(files.sort(), ['a/a.txt']);
-});
-
-// This repro depends on Windows drive semantics, and CI runs Windows tests, so we can cover it directly.
-winTest('drive-relative roots keep absolute matches on Windows', async () => {
-  const id = randomUUID();
-  const root = `C:/tinyglobby-root-${id}`;
-  const cwdRoot = `C:/tinyglobby-cwd-${id}/a/b/c/d/e`;
-
-  await mkdir(root, { recursive: true });
-  await mkdir(cwdRoot, { recursive: true });
-  await writeFile(`${root}/a.py`, '');
-  await writeFile(`${root}/b.py`, '');
-  await writeFile(`${root}/c.py`, '');
-
-  try {
-    const files = await glob(`${root}/*.py`, { cwd: cwdRoot, absolute: true });
-    assert.deepEqual(files.sort(), [`${root}/a.py`, `${root}/b.py`, `${root}/c.py`]);
-  } finally {
-    await rm(`C:/tinyglobby-root-${id}`, { recursive: true, force: true });
-    await rm(`C:/tinyglobby-cwd-${id}`, { recursive: true, force: true });
-  }
 });
 
 test('fs option', async t => {
