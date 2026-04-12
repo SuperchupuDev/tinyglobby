@@ -1,7 +1,7 @@
 # tinyglobby
 
 [![npm version](https://img.shields.io/npm/v/tinyglobby.svg?maxAge=3600)](https://npmjs.com/package/tinyglobby)
-[![monthly downloads](https://img.shields.io/npm/dm/tinyglobby.svg?maxAge=3600)](https://npmjs.com/package/tinyglobby)
+[![monthly downloads](https://img.shields.io/npm/dw/tinyglobby.svg?maxAge=3600)](https://npmjs.com/package/tinyglobby)
 
 A fast and minimal alternative to globby and fast-glob, meant to behave the same way.
 
