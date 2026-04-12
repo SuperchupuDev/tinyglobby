@@ -5,6 +5,9 @@ import type { PartialMatcher, PartialMatcherOptions } from './types.ts';
 // The `Array.isArray` type guard doesn't work for readonly arrays.
 export const isReadonlyArray: (arg: unknown) => arg is readonly unknown[] = Array.isArray;
 export const BACKSLASHES: RegExp = /\\/g;
+// We only guard bare drive roots like `L:`; longer drive-relative strings like
+// `L:foo` don't come out of our normalization path.
+const DRIVE_RELATIVE_PATH: RegExp = /^[A-Za-z]:$/;
 
 const isWin = process.platform === 'win32';
 
@@ -126,6 +129,11 @@ export function buildRelative(cwd: string, root: string): (p: string) => string 
     const result = posix.relative(cwd, `${root}/${p}`);
     return p[p.length - 1] === '/' && result !== '' ? `${result}/` : result || '.';
   };
+}
+
+export function ensureNonDriveRelativePath(path: string): string {
+  // On Windows, drive-relative paths like `L:` resolve against cwd, which is undesirable. See #196.
+  return path.replace(DRIVE_RELATIVE_PATH, match => `${match}/`);
 }
 // #endregion
 

@@ -1,6 +1,6 @@
 import { isAbsolute, posix } from 'node:path';
 import type { InternalOptions, InternalProps, ProcessedPatterns } from './types.ts';
-import { escapePath, isDynamicPattern, splitPattern } from './utils.ts';
+import { ensureNonDriveRelativePath, escapePath, isDynamicPattern, splitPattern } from './utils.ts';
 
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
@@ -39,7 +39,7 @@ function normalizePattern(pattern: string, opts: InternalOptions, props: Interna
     const potentialRoot = posix.join(cwd, parentDir.slice(i * 3));
     // windows can make the potential root something like `../C:`, we don't want that
     if (potentialRoot[0] !== '.' && props.root.length > potentialRoot.length) {
-      props.root = potentialRoot;
+      props.root = ensureNonDriveRelativePath(potentialRoot);
       props.depthOffset = -n + i;
     }
   }
@@ -68,7 +68,7 @@ function normalizePattern(pattern: string, opts: InternalOptions, props: Interna
     props.depthOffset = newCommonPath.length;
     props.commonPath = newCommonPath;
 
-    props.root = newCommonPath.length > 0 ? posix.join(cwd, ...newCommonPath) : cwd;
+    props.root = ensureNonDriveRelativePath(newCommonPath.length > 0 ? posix.join(cwd, ...newCommonPath) : cwd);
   }
 
   return result;
