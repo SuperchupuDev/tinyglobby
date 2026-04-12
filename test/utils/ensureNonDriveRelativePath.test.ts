@@ -11,7 +11,7 @@ describe('ensureNonDriveRelativePath', () => {
     assert.equal(ensureNonDriveRelativePath('L:/'), 'L:/');
   });
 
-  test("Non-Windows paths shouldn't be affected", () => {
+  test("non-Windows paths shouldn't be affected", () => {
     assert.equal(ensureNonDriveRelativePath('/test1/a'), '/test1/a');
   });
 
