@@ -96,5 +96,5 @@ export function globSync(globInput: GlobInput, options?: GlobOptions): string[] 
   return crawler ? formatPaths(crawler.sync(), relative) : [];
 }
 
-export type { GlobOptions } from './types.ts';
+export type { FileSystemAdapter, GlobOptions } from './types.ts';
 export { convertPathToPattern, escapePath, isDynamicPattern } from './utils.ts';
