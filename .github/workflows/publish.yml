@@ -28,8 +28,6 @@ jobs:
 
       - name: Build
         run: node --run build
-        env:
-          IS_RELEASE: true
 
       - name: Publish to npm
         run: pnpm publish --no-git-checks
