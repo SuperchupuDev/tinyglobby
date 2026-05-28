@@ -3,6 +3,7 @@
   "timezone": "Europe/Madrid",
   "schedule": ["after 2pm on sunday"],
   "extends": ["config:recommended", "group:allNonMajor", "helpers:pinGitHubActionDigestsToSemver"],
+  "minimumReleaseAge": "1 day",
   "rangeStrategy": "bump",
   "ignoreDeps": ["node"],
   "postUpdateOptions": ["pnpmDedupe"]
