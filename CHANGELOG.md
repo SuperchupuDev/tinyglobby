@@ -1,3 +1,15 @@
+### [0.2.17](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.16...0.2.17)
+
+#### Changed
+
+- Enabled staged publishing for stronger supply-chain security
+
+#### Fixed
+
+- Defaults when `undefined` is passed to any of the options by [chloeelim](https://github.com/chloeelim)
+- Drive-relative paths on Windows by [Andrej730](https://github.com/Andrej730)
+- `FileSystemAdapter` is now exported again
+
 ### [0.2.16](https://github.com/SuperchupuDev/tinyglobby/compare/0.2.15...0.2.16)
 
 #### Fixed
