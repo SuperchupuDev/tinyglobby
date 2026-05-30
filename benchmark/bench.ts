@@ -1,12 +1,22 @@
-import { glob as native } from 'node:fs/promises';
+import { access, glob as native } from 'node:fs/promises';
 import { join } from 'node:path';
+import process from 'node:process';
+import { styleText } from 'node:util';
 import fastGlob from 'fast-glob';
 import { glob } from 'glob';
 import { Bench } from 'tinybench';
 import { glob as tinyglobby } from '../src/index.ts';
 
+try {
+  await access(join(import.meta.dirname, 'fixtures', 'typescript-eslint'));
+} catch {
+  console.error(`${styleText('red', 'Error:')} no benchmark fixtures`);
+  console.error(`To generate them, run: ${styleText('blue', 'node --run bench:setup')}`);
+  process.exit(1);
+}
+
 const bench = new Bench({ name: 'packages/*/tsconfig.json (typescript-eslint)' });
-const cwd = join(import.meta.dirname, 'typescript-eslint');
+const cwd = join(import.meta.dirname, 'fixtures', 'typescript-eslint');
 
 bench
   .add('tinyglobby', async () => {

@@ -1,13 +1,14 @@
 import { spawn } from 'node:child_process';
-import { access } from 'node:fs/promises';
+import { access, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
 try {
-  await access(join(import.meta.dirname, 'typescript-eslint'));
+  await access(join(import.meta.dirname, 'fixtures', 'typescript-eslint'));
   console.log('No need to clone typescript-eslint, skipping...');
 } catch {
+  await mkdir(join(import.meta.dirname, 'fixtures'));
   spawn('git', ['clone', '--depth', '1', 'https://github.com/typescript-eslint/typescript-eslint'], {
-    cwd: import.meta.dirname
+    cwd: join(import.meta.dirname, 'fixtures')
   });
   console.log('Cloned typescript-eslint');
 }
