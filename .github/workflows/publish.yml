@@ -30,4 +30,4 @@ jobs:
         run: node --run build
 
       - name: Publish to npm
-        run: pnpm publish --no-git-checks
+        run: pnpm stage publish --no-git-checks
