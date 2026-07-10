@@ -4,6 +4,11 @@ import { ensureNonDriveRelativePath, escapePath, isDynamicPattern, splitPattern 
 
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
+// patterns made up entirely of these characters carry no special meaning to the matcher, so
+// matching them by string equality is equivalent to running them through it. anything else
+// (glob syntax, escapes, quotes, `|`, `$$`, `++`, non-ascii) keeps the matcher path: a false
+// negative here only costs speed, while a false positive would change results.
+const STATIC_PATTERN = /^[\w./@-]+$/;
 
 function normalizePattern(pattern: string, opts: InternalOptions, props: InternalProps, isIgnore: boolean) {
   const cwd = opts.cwd as string;
@@ -81,6 +86,9 @@ export default function processPatterns(
 ): ProcessedPatterns {
   const matchPatterns: string[] = [];
   const ignorePatterns: string[] = [];
+  const staticPatterns: string[] = [];
+  // case-insensitive matching never matches literally, so it always needs the matcher
+  const canBeStatic = options.caseSensitiveMatch !== false;
 
   for (const pattern of options.ignore) {
     if (!pattern) {
@@ -97,11 +105,16 @@ export default function processPatterns(
       continue;
     }
     if (pattern[0] !== '!' || pattern[1] === '(') {
-      matchPatterns.push(normalizePattern(pattern, options, props, false));
+      const result = normalizePattern(pattern, options, props, false);
+      if (canBeStatic && STATIC_PATTERN.test(result)) {
+        staticPatterns.push(result);
+      } else {
+        matchPatterns.push(result);
+      }
     } else if (pattern[1] !== '!' || pattern[2] === '(') {
       ignorePatterns.push(normalizePattern(pattern.slice(1), options, props, true));
     }
   }
 
-  return { match: matchPatterns, ignore: ignorePatterns };
+  return { match: matchPatterns, ignore: ignorePatterns, static: staticPatterns };
 }
