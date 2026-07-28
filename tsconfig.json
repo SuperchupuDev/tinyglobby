@@ -12,5 +12,5 @@
     "skipLibCheck": true,
     "declaration": true
   },
-  "exclude": ["./benchmark/typescript-eslint"]
+  "exclude": ["./benchmark/fixtures"]
 }

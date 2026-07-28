@@ -51,21 +51,21 @@
   },
   "dependencies": {
     "fdir": "^6.5.0",
-    "picomatch": "^4.0.4"
+    "picomatch": "^4.0.5"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.16",
-    "@types/node": "^25.9.1",
+    "@biomejs/biome": "^2.5.5",
+    "@types/node": "^26.1.1",
     "@types/picomatch": "^4.0.3",
     "fast-glob": "^3.3.3",
     "fs-fixture": "^2.14.0",
     "glob": "^13.0.6",
-    "tinybench": "^6.0.2",
-    "tsdown": "^0.22.1",
-    "typescript": "^6.0.3"
+    "tinybench": "^6.1.2",
+    "tsdown": "^0.22.14",
+    "typescript": "^7.0.2"
   },
   "engines": {
     "node": ">=12.0.0"
   },
-  "packageManager": "pnpm@11.5.0"
+  "packageManager": "pnpm@11.17.0"
 }
