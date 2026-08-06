@@ -423,6 +423,30 @@ test('extglob false', async () => {
   assert.deepEqual(files.sort(), []);
 });
 
+test('negation extglob at the end of a pattern is not re-included by directory expansion', async () => {
+  const localFixture = await createFixture({
+    'loc/one/en.po': '',
+    'loc/one/fr.po': '',
+    'loc/two/en.po': '',
+    'loc/two/de.po': ''
+  });
+  const files = await glob(['loc/**/!(en.po)'], { cwd: localFixture.path });
+  assert.deepEqual(files.sort(), ['loc/one/fr.po', 'loc/two/de.po']);
+  await localFixture.rm();
+});
+
+test('negation extglob not at the end of a pattern still works', async () => {
+  const localFixture = await createFixture({
+    'loc/one/en.po': '',
+    'loc/one/fr.po': '',
+    'loc/two/en.po': '',
+    'loc/two/de.po': ''
+  });
+  const files = await glob(['loc/**/!(en).po'], { cwd: localFixture.path });
+  assert.deepEqual(files.sort(), ['loc/one/fr.po', 'loc/two/de.po']);
+  await localFixture.rm();
+});
+
 test('using negated bracket expression', async () => {
   const files = await glob('**/[!a].*', { cwd });
   assert.deepEqual(files.sort(), ['a/b.txt', 'b/b.txt']);
