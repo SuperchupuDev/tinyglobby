@@ -3,7 +3,9 @@ import { readdir } from 'node:fs';
 import path from 'node:path';
 import { after, test } from 'node:test';
 import { createFixture } from 'fs-fixture';
-import { glob, globSync } from '../src/index.ts';
+import { escapePath, glob, globSync } from '../src/index.ts';
+
+const isWindows = process.platform === 'win32';
 
 // object properties are file names and values are file contents
 const fixture = await createFixture({
@@ -18,6 +20,24 @@ const fixture = await createFixture({
   '.a/a/a.txt': 'a',
   '.[a]/a.txt': 'a',
   '.deep/a/a/a.txt': 'a',
+  // names windows rejects (`" | * ? \`) only exist on posix, where the tests using them run
+  '.deep/static': {
+    chars: { '#': '', $: '', $$: '', '%': '', '&': '', '+': '', '++': '', '=': '', '@': '', '^': '', '~': '' },
+    brackets: { '[': '', '[+': '', '[a': '', '[ab': '', ...(isWindows ? {} : { '[*': '', '[?': '' }) },
+    hoisted: {
+      'deep/common/a.d.ts': '',
+      'deep/common/a.d.ts.map': '',
+      'deep/common/b.d.ts': '',
+      'deep/common/src/keep.js': '',
+      'deep/common/src/skip.ts': ''
+    },
+    ...(isWindows
+      ? {}
+      : {
+          backslash: { 'a\\name.txt': 'a' },
+          quoted: { plain: '', '"plain"': '', nested: { a: '', 'a|': '' } }
+        })
+  },
   '.symlink': {
     file: ({ symlink }) => symlink('../a/a.txt'),
     dir: ({ symlink }) => symlink('../a'),
@@ -27,6 +47,9 @@ const fixture = await createFixture({
 
 const cwd = fixture.path;
 const escapedCwd = cwd.replaceAll('\\', '/');
+// the static pattern fixtures live under `.deep` so the tests that crawl the fixture root stay
+// unaffected: they either skip dotfiles or already prune `.deep`
+const staticCwd = (dir: string) => path.join(cwd, '.deep/static', dir);
 
 after(() => fixture.rm());
 
@@ -524,4 +547,186 @@ test('relative self + normal pattern', () => {
     expandDirectories: false
   });
   assert.deepEqual(files.sort(), ['.', 'a/a.txt']);
+});
+
+test('static pattern with missing file', async () => {
+  const files = await glob(['a/a.txt', 'a/c.txt'], { expandDirectories: false, cwd });
+  assert.deepEqual(files.sort(), ['a/a.txt']);
+});
+
+test('static pattern overlapping with dynamic pattern', async () => {
+  const files = await glob(['a/a.txt', 'a/*.txt'], { expandDirectories: false, cwd });
+  assert.deepEqual(files.sort(), ['a/a.txt', 'a/b.txt']);
+});
+
+test('static patterns preserve crawler order', () => {
+  const expected = globSync('{a/a.txt,b/b.txt}', { expandDirectories: false, cwd });
+  const files = globSync(['b/b.txt', 'a/a.txt'], { expandDirectories: false, cwd });
+  assert.deepEqual(files, expected);
+});
+
+test('static pattern with wrong case matches nothing', async () => {
+  const files = await glob('a/A.txt', { expandDirectories: false, cwd });
+  assert.deepEqual(files.sort(), []);
+});
+
+test('static pattern supports case-insensitive matching', async () => {
+  const files = await glob('A.TXT', {
+    caseSensitiveMatch: false,
+    expandDirectories: false,
+    cwd: path.join(cwd, 'a')
+  });
+  assert.deepEqual(files, ['a.txt']);
+});
+
+test('static pattern respects deep', async () => {
+  const files = await glob('a/a.txt', { deep: 0, expandDirectories: false, cwd });
+  assert.deepEqual(files, []);
+});
+
+test('static pattern respects aborted signal', async () => {
+  const files = await glob('a/a.txt', { signal: AbortSignal.abort(), expandDirectories: false, cwd });
+  assert.deepEqual(files, []);
+});
+
+test('static pattern supports onlyDirectories', async () => {
+  const files = await glob('a', { onlyDirectories: true, expandDirectories: false, cwd });
+  assert.deepEqual(files, ['a/']);
+});
+
+test('static pattern respects ignore', async () => {
+  const files = await glob(['a/a.txt', 'b/a.txt'], { expandDirectories: false, ignore: ['a/**'], cwd });
+  assert.deepEqual(files.sort(), ['b/a.txt']);
+});
+
+test('static pattern respects ignored directory in mixed input', async () => {
+  const files = await glob(['a/a.txt', 'b/*.txt'], { expandDirectories: false, ignore: ['a'], cwd });
+  assert.deepEqual(files.sort(), ['b/a.txt', 'b/b.txt']);
+});
+
+test('static pattern with absolute option', async () => {
+  const files = await glob('a/a.txt', { absolute: true, expandDirectories: false, cwd });
+  assert.deepEqual(files.sort(), [`${escapedCwd}/a/a.txt`]);
+});
+
+test('static pattern as absolute path', async () => {
+  const files = await glob(`${escapedCwd}/a/a.txt`, { expandDirectories: false, cwd });
+  assert.deepEqual(files.sort(), ['a/a.txt']);
+});
+
+test('static pattern to symlink', async () => {
+  const files = await glob('.symlink/file', { expandDirectories: false, cwd });
+  assert.deepEqual(files.sort(), ['.symlink/file']);
+});
+
+test('static pattern to symlink without followSymbolicLinks', async () => {
+  const files = await glob('.symlink/file', { expandDirectories: false, followSymbolicLinks: false, cwd });
+  assert.deepEqual(files.sort(), []);
+});
+
+test('static pattern to directory symlink matches nothing', async () => {
+  const files = await glob('.symlink/dir', { expandDirectories: false, cwd });
+  assert.deepEqual(files.sort(), []);
+});
+
+test('static pattern with escaped symbols', async () => {
+  const files = await glob('.\\[a\\]/a.txt', { expandDirectories: false, cwd });
+  assert.deepEqual(files.sort(), ['.[a]/a.txt']);
+});
+
+test('static pattern with escaped backslash', { skip: isWindows }, async () => {
+  const files = await glob(escapePath('a\\name.txt'), { expandDirectories: false, cwd: staticCwd('backslash') });
+  assert.deepEqual(files, ['a\\name.txt']);
+});
+
+test('static pattern with repeated picomatch syntax', async () => {
+  const files = await glob(['$$', '++'], { expandDirectories: false, cwd: staticCwd('chars') });
+  assert.deepEqual(files.sort(), ['$', '$$', '+', '++']);
+});
+
+test('static pattern with quoted picomatch syntax', { skip: isWindows }, async () => {
+  const files = await glob(['"plain"', 'nested/a|'], { expandDirectories: false, cwd: staticCwd('quoted') });
+  assert.deepEqual(files.sort(), ['"plain"', 'nested/a', 'nested/a|', 'plain']);
+});
+
+test('static pattern with unfinished glob syntax', { skip: isWindows }, async () => {
+  const files = await glob('[*', { expandDirectories: false, cwd: staticCwd('brackets') });
+  assert.deepEqual(files.sort(), ['[', '[*', '[+', '[?', '[a', '[ab']);
+});
+
+test('static pattern to dotted path without dot option', async () => {
+  const files = await glob('.a/a/a.txt', { expandDirectories: false, cwd });
+  assert.deepEqual(files.sort(), ['.a/a/a.txt']);
+});
+
+test('static pattern into parent directory', () => {
+  const files = globSync('../a/a.txt', { cwd: path.join(cwd, 'a'), expandDirectories: false });
+  assert.deepEqual(files.sort(), ['a.txt']);
+});
+
+test('static pattern into sibling directory', () => {
+  const files = globSync('../a/a.txt', { cwd: path.join(cwd, 'b'), expandDirectories: false });
+  assert.deepEqual(files.sort(), ['../a/a.txt']);
+});
+
+test('static pattern below symlink respects followSymbolicLinks in mixed input', async () => {
+  const files = await glob(['.symlink/dir/a.txt', 'b/*.txt'], {
+    expandDirectories: false,
+    followSymbolicLinks: false,
+    cwd
+  });
+  assert.deepEqual(files.sort(), ['b/a.txt', 'b/b.txt']);
+});
+
+test('static pattern with fs option', async t => {
+  const myCoolReaddir = t.mock.fn(readdir);
+  const files = await glob('a/a.txt', {
+    fs: {
+      readdir: myCoolReaddir
+    },
+    expandDirectories: false,
+    cwd
+  });
+  assert.deepEqual(files.sort(), ['a/a.txt']);
+  assert.equal(myCoolReaddir.mock.callCount() > 0, true);
+});
+
+test('many static patterns sharing a hoisted common root', async () => {
+  // already sorted, so every pattern resolving to its own file gives back the input
+  const patterns = [
+    'deep/common/a.d.ts',
+    'deep/common/a.d.ts.map',
+    'deep/common/b.d.ts',
+    'deep/common/src/keep.js',
+    'deep/common/src/skip.ts'
+  ];
+  const files = await glob(patterns, { expandDirectories: false, cwd: staticCwd('hoisted') });
+  assert.deepEqual(files.sort(), patterns);
+});
+
+test('static pattern with special literal characters', async () => {
+  const files = await glob(['$', '^', '@', '%', '#', '&', '=', '~'], {
+    expandDirectories: false,
+    cwd: staticCwd('chars')
+  });
+  assert.deepEqual(files.sort(), ['#', '$', '%', '&', '=', '@', '^', '~']);
+});
+
+test('static pattern does not match a sibling sharing its prefix', async () => {
+  const files = await glob('deep/common/a.d.ts', { expandDirectories: false, cwd: staticCwd('hoisted') });
+  assert.deepEqual(files, ['deep/common/a.d.ts']);
+});
+
+test('static and dynamic patterns combine under a hoisted root', async () => {
+  const files = await glob(['deep/common/a.d.ts', 'deep/common/b.d.ts', 'deep/common/src/*.js'], {
+    expandDirectories: false,
+    cwd: staticCwd('hoisted')
+  });
+  assert.deepEqual(files.sort(), ['deep/common/a.d.ts', 'deep/common/b.d.ts', 'deep/common/src/keep.js']);
+});
+
+// `|` is alternation rather than a literal, so it must stay on the matcher path on every platform
+test('pipe pattern stays dynamic and matches by alternation', async () => {
+  const files = await glob(['a/a.txt|'], { expandDirectories: false, cwd });
+  assert.deepEqual(files, ['a/a.txt']);
 });

@@ -1,8 +1,22 @@
+import { posix } from 'node:path';
 import { type ExcludePredicate, type FSLike, fdir } from 'fdir';
 import picomatch, { type PicomatchOptions } from 'picomatch';
 import processPatterns from './patterns.ts';
-import type { Crawler, InternalOptions, InternalProps, RelativeMapper } from './types.ts';
+import type { Crawler, InternalOptions, InternalProps, PartialMatcher, RelativeMapper } from './types.ts';
 import { BACKSLASHES, buildFormat, buildRelative, getPartialMatcher, log } from './utils.ts';
+
+function getStaticMatchers(patterns: string[]): [PartialMatcher, PartialMatcher] {
+  const matches = new Set(patterns);
+  const prefixes = new Set<string>();
+  for (const pattern of patterns) {
+    let prefix = pattern;
+    while (prefix !== '.' && prefix !== '/') {
+      prefixes.add(prefix);
+      prefix = posix.dirname(prefix);
+    }
+  }
+  return [path => matches.has(path), path => prefixes.has(path)];
+}
 
 export function buildCrawler(options: InternalOptions, patterns: readonly string[]): [Crawler, false | RelativeMapper] {
   const cwd = options.cwd as string;
@@ -25,9 +39,21 @@ export function buildCrawler(options: InternalOptions, patterns: readonly string
     posix: true
   } satisfies PicomatchOptions;
 
-  const matcher = picomatch(processed.match, matchOptions);
+  const dynamicMatcher = picomatch(processed.match, matchOptions) as PartialMatcher;
+  const dynamicPartialMatcher = getPartialMatcher(processed.match, matchOptions);
+  let matcher = dynamicMatcher;
+  let partialMatcher = dynamicPartialMatcher;
+  if (processed.static.length > 0) {
+    const [staticMatcher, staticPartialMatcher] = getStaticMatchers(processed.static);
+    if (processed.match.length > 0) {
+      matcher = path => staticMatcher(path) || dynamicMatcher(path);
+      partialMatcher = path => staticPartialMatcher(path) || dynamicPartialMatcher(path);
+    } else {
+      matcher = staticMatcher;
+      partialMatcher = staticPartialMatcher;
+    }
+  }
   const ignore = picomatch(processed.ignore, matchOptions);
-  const partialMatcher = getPartialMatcher(processed.match, matchOptions);
 
   const format = buildFormat(cwd, root, absolute);
   const excludeFormatter = absolute ? format : buildFormat(cwd, root, true);
