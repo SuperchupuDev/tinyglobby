@@ -140,4 +140,31 @@ describe('getPartialMatcher', () => {
     assert.ok(matcher('src/utils'));
     assert.ok(!matcher('src/gaming'));
   });
+
+  test('leading ** matches zero segments', () => {
+    // `**` matching nothing is what makes `**/.a` match `.a` at the root.
+    // With `dot: false` the `**` matcher itself rejects `.a`, so the rest of
+    // the pattern has to be tried against the same input part.
+    const matcher = getPartialMatcher(['**/.a/*.txt']);
+    assert.ok(matcher('.a'));
+    assert.ok(matcher('.a/b.txt'));
+    assert.ok(matcher('src/.a'));
+    assert.ok(!matcher('.b'));
+  });
+
+  test('** matches zero segments in the middle of a pattern', () => {
+    const matcher = getPartialMatcher(['test/**/.a/*.txt']);
+    assert.ok(matcher('test'));
+    assert.ok(matcher('test/.a'));
+    assert.ok(matcher('test/utils/.a'));
+    assert.ok(!matcher('test/.b'));
+  });
+
+  test('** matching zero segments does not create false positives', () => {
+    const matcher = getPartialMatcher(['a/**/.b/c']);
+    assert.ok(matcher('a'));
+    assert.ok(matcher('a/.b'));
+    assert.ok(!matcher('.b'));
+    assert.ok(!matcher('a/.c'));
+  });
 });
