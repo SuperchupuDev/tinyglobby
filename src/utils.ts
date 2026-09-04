@@ -20,7 +20,8 @@ export function getPartialMatcher(patterns: string[], options: PartialMatcherOpt
   const patternsCount = patterns.length;
   const patternsParts: string[][] = Array(patternsCount);
   const matchers: Matcher[][] = Array(patternsCount);
-  let i: number, j: number;
+  const globstar = !options.noglobstar;
+  let i: number, j: number, k: number;
 
   for (i = 0; i < patternsCount; i++) {
     const parts = splitPattern(patterns[i]);
@@ -45,14 +46,18 @@ export function getPartialMatcher(patterns: string[], options: PartialMatcherOpt
       return true;
     }
 
+    const inputPartsCount = inputParts.length;
+
     for (i = 0; i < patternsCount; i++) {
       const patternParts = patternsParts[i];
       const matcher = matchers[i];
-      const inputPatternCount = inputParts.length;
-      const minParts = Math.min(inputPatternCount, patternParts.length);
+      const patternPartsCount = patternParts.length;
 
+      // `j` walks the pattern, `k` walks the input. They only go out of sync when a
+      // `**` matches zero path segments, which is the one case where the two differ.
       j = 0;
-      while (j < minParts) {
+      k = 0;
+      while (j < patternPartsCount && k < inputPartsCount) {
         const part = patternParts[j];
 
         // handling slashes in parts is very hard, not even fast-glob does it
@@ -62,20 +67,29 @@ export function getPartialMatcher(patterns: string[], options: PartialMatcherOpt
           return true;
         }
 
-        if (!matcher[j](inputParts[j])) {
+        if (globstar && part === '**') {
+          // unlike popular belief, `**` doesn't return true in *all* cases
+          // some examples are when matching it to `.a` with dot: false or `..`
+          // so it needs to match to consume one or more segments and return early
+          if (matcher[j](inputParts[k])) {
+            return true;
+          }
+
+          // `**` also matches zero segments, so the rest of the pattern still has to
+          // be tried against the same input part. Without this, a pattern like
+          // `**/.a/*.ts` would never crawl into `.a` when `dot` is false.
+          j++;
+          continue;
+        }
+
+        if (!matcher[j](inputParts[k])) {
           break;
         }
 
-        // unlike popular belief, `**` doesn't return true in *all* cases
-        // some examples are when matching it to `.a` with dot: false or `..`
-        // so it needs to match to return early
-        if (!options.noglobstar && part === '**') {
-          return true;
-        }
-
         j++;
+        k++;
       }
-      if (j === inputPatternCount) {
+      if (k === inputPartsCount) {
         return true;
       }
     }

@@ -207,6 +207,18 @@ test('leading ../', async () => {
   assert.deepEqual(files.sort(), ['../b/a.txt', '../b/b.txt']);
 });
 
+// `**` also matches zero path segments, so `**/.a/**` has to reach `.a` at the
+// root even though `dot` is false and `**` on its own doesn't match `.a`.
+test('leading ** before a dot directory', async () => {
+  const files = await glob('**/.a/a/*.txt', { cwd, expandDirectories: false });
+  assert.deepEqual(files.sort(), ['.a/a/a.txt']);
+});
+
+test('** before a dot directory with a trailing **', async () => {
+  const files = await glob('**/.deep/a/**/*.txt', { cwd, expandDirectories: false });
+  assert.deepEqual(files.sort(), ['.deep/a/a/a.txt']);
+});
+
 test('leading ../ with only dirs', async () => {
   const files = await glob('../.a/*', { cwd: path.join(cwd, 'a'), onlyDirectories: true, expandDirectories: false });
   assert.deepEqual(files.sort(), ['../.a/a/']);
