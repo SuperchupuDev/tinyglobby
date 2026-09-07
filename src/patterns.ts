@@ -4,6 +4,7 @@ import { ensureNonDriveRelativePath, escapePath, isDynamicPattern, splitPattern 
 
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
+const TERMINAL_NEGATION_EXTGLOB = /(?:^|\/)!\([^/]*\)$/;
 
 function normalizePattern(pattern: string, opts: InternalOptions, props: InternalProps, isIgnore: boolean) {
   const cwd = opts.cwd as string;
@@ -13,7 +14,8 @@ function normalizePattern(pattern: string, opts: InternalOptions, props: Interna
     result = pattern.slice(0, -1);
   }
   // using a directory as entry should match all files inside it
-  if (result[result.length - 1] !== '*' && opts.expandDirectories) {
+  // don't do it if the pattern ends in a negation extglob though, as that would re-include the excluded files (#188)
+  if (result[result.length - 1] !== '*' && opts.expandDirectories && !TERMINAL_NEGATION_EXTGLOB.test(result)) {
     result += '/**';
   }
 
