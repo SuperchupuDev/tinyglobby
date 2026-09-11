@@ -54,14 +54,14 @@
     "picomatch": "^4.0.7"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.11",
-    "@types/node": "^26.4.0",
+    "@biomejs/biome": "^2.5.13",
+    "@types/node": "^26.5.1",
     "@types/picomatch": "^4.0.3",
     "fast-glob": "^3.3.3",
-    "fs-fixture": "^2.14.0",
+    "fs-fixture": "^2.16.0",
     "glob": "^13.0.6",
-    "tinybench": "^6.1.4",
-    "tsdown": "^0.22.14",
+    "tinybench": "^6.2.0",
+    "tsdown": "^0.23.0",
     "typescript": "^7.0.2"
   },
   "engines": {
