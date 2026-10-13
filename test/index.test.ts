@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readdir } from 'node:fs';
+import { readdir, statSync } from 'node:fs';
 import path from 'node:path';
 import { after, test } from 'node:test';
 import { createFixture } from 'fs-fixture';
@@ -206,6 +206,153 @@ test('leading ../', async () => {
   const files = await glob('../b/*.txt', { cwd: path.join(cwd, 'a') });
   assert.deepEqual(files.sort(), ['../b/a.txt', '../b/b.txt']);
 });
+
+test('leading ../** includes cwd files', async () => {
+  const files = await glob('../**/*.txt', { cwd: path.join(cwd, 'a') });
+  assert.deepEqual(files.sort(), ['../b/a.txt', '../b/b.txt', 'a.txt', 'b.txt']);
+});
+
+test('leading ../** includes cwd files (sync)', () => {
+  const files = globSync('../**/*.txt', { cwd: path.join(cwd, 'a') });
+  assert.deepEqual(files.sort(), ['../b/a.txt', '../b/b.txt', 'a.txt', 'b.txt']);
+});
+
+test('leading ../** includes cwd files (absolute)', async () => {
+  const files = await glob('../**/*.txt', { cwd: path.join(cwd, 'a'), absolute: true });
+  assert.deepEqual(files.sort(), [
+    `${escapedCwd}/a/a.txt`,
+    `${escapedCwd}/a/b.txt`,
+    `${escapedCwd}/b/a.txt`,
+    `${escapedCwd}/b/b.txt`
+  ]);
+});
+
+test('leading ../** plus normal pattern and cwd-relative ignore', async () => {
+  const files = await glob(['../**/a.txt', 'b.txt'], { cwd: path.join(cwd, 'a'), ignore: '**/a.txt' });
+  assert.deepEqual(files.sort(), ['../b/a.txt', 'b.txt']);
+});
+
+test('leading ../** with a negative parent pattern', async () => {
+  const files = await glob(['../**/*.txt', '!../b/b.txt'], { cwd: path.join(cwd, 'a') });
+  assert.deepEqual(files.sort(), ['../b/a.txt', 'a.txt', 'b.txt']);
+});
+
+test('leading ../ preserves literal directory names and nested cwd matches', async t => {
+  const fixture = await createFixture({
+    'a[1]': { 'a.txt': '', 'nested/a.txt': '' },
+    '!b/a.txt': ''
+  });
+  t.after(() => fixture.rm());
+
+  const files = await glob(['../!b/*.txt', '*.txt', 'nested/*.txt'], { cwd: path.join(fixture.path, 'a[1]') });
+  assert.deepEqual(files.sort(), ['../!b/a.txt', 'a.txt', 'nested/a.txt']);
+});
+
+for (const globber of [glob, globSync]) {
+  test(`parent patterns preserve cwd semantics (${globber.name})`, async t => {
+    const fixture = await createFixture({
+      'a/local.txt': '',
+      'A/foreign.txt': '',
+      'b/parent.txt': ''
+    });
+    t.after(() => fixture.rm());
+    const cwd = path.join(fixture.path, 'a');
+    const caseSensitiveFs = statSync(cwd).ino !== statSync(path.join(fixture.path, 'A')).ino;
+    const cases = [
+      {
+        name: 'case-insensitive local pattern',
+        patterns: ['../b/*.txt', '*.txt'],
+        options: { caseSensitiveMatch: false },
+        expected: ['../b/parent.txt', 'local.txt']
+      },
+      {
+        name: 'case-insensitive local ignore',
+        patterns: '../**/*.txt',
+        options: { ignore: '*.txt', caseSensitiveMatch: false },
+        expected: ['../A/foreign.txt', '../b/parent.txt']
+      },
+      {
+        name: 'local globstar with only directories',
+        patterns: ['../b/*.txt', '**'],
+        options: { onlyDirectories: true, expandDirectories: false },
+        expected: []
+      },
+      {
+        name: 'local globstar with files and directories',
+        patterns: ['../b/*.txt', '**'],
+        options: { onlyFiles: false, expandDirectories: false },
+        expected: caseSensitiveFs ? ['../b/parent.txt', 'local.txt'] : ['../b/parent.txt', 'foreign.txt', 'local.txt']
+      }
+    ];
+    for (const scenario of cases) {
+      for (const absolute of [false, true]) {
+        await t.test(
+          `${scenario.name} (absolute: ${absolute})`,
+          { skip: scenario.options.caseSensitiveMatch === false && !caseSensitiveFs },
+          async () => {
+            const files = await globber(scenario.patterns, { ...scenario.options, cwd, absolute });
+            const expected = absolute
+              ? scenario.expected.map(file => path.resolve(cwd, file).replaceAll('\\', '/'))
+              : [...scenario.expected];
+            assert.deepEqual(files.sort(), expected.sort());
+          }
+        );
+      }
+    }
+  });
+}
+
+test('mixed parent depths preserve each anchor with case-insensitive matching', async t => {
+  const fixture = await createFixture({
+    a: { 'c/local.txt': '', 'C/near-foreign.txt': '', 'peer/near.txt': '' },
+    A: { 'c/outer-foreign.txt': '', 'peer/outer-near-foreign.txt': '' },
+    'b/parent.txt': ''
+  });
+  t.after(() => fixture.rm());
+  if (
+    statSync(path.join(fixture.path, 'a')).ino === statSync(path.join(fixture.path, 'A')).ino ||
+    statSync(path.join(fixture.path, 'a/c')).ino === statSync(path.join(fixture.path, 'a/C')).ino
+  ) {
+    t.skip('Requires case-sensitive directory names');
+    return;
+  }
+
+  for (const globber of [glob, globSync]) {
+    const files = await globber(['../peer/*.txt', '../../b/*.txt', '*.txt'], {
+      cwd: path.join(fixture.path, 'a/c'),
+      caseSensitiveMatch: false
+    });
+    assert.deepEqual(files.sort(), ['../../b/parent.txt', '../peer/near.txt', 'local.txt']);
+  }
+});
+
+for (const globber of [glob, globSync]) {
+  test(`parent extglobs preserve paths outside the literal parent anchor (${globber.name})`, async t => {
+    const fixture = await createFixture({
+      a: { 'c/local.txt': '', 'peer/near.txt': '' },
+      b: { 'marker.txt': '', 'extra.txt': '' }
+    });
+    t.after(() => fixture.rm());
+    const cwd = path.join(fixture.path, 'a/c');
+
+    await t.test('positive pattern', async () => {
+      const files = await globber(['../@(peer|../b)/*.txt', '../../b/marker.txt'], {
+        cwd,
+        expandDirectories: false
+      });
+      assert.deepEqual(files.sort(), ['../../b/extra.txt', '../../b/marker.txt', '../peer/near.txt']);
+    });
+
+    await t.test('ignore pattern', async () => {
+      const files = await globber(['../../b/*.txt', '../peer/*.txt'], {
+        cwd,
+        ignore: '../@(peer|../b)/extra.txt',
+        expandDirectories: false
+      });
+      assert.deepEqual(files.sort(), ['../../b/marker.txt', '../peer/near.txt']);
+    });
+  });
+}
 
 test('leading ../ with only dirs', async () => {
   const files = await glob('../.a/*', { cwd: path.join(cwd, 'a'), onlyDirectories: true, expandDirectories: false });
