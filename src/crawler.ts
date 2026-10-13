@@ -1,8 +1,59 @@
+import { posix } from 'node:path';
 import { type ExcludePredicate, type FSLike, fdir } from 'fdir';
 import picomatch, { type PicomatchOptions } from 'picomatch';
 import processPatterns from './patterns.ts';
-import type { Crawler, InternalOptions, InternalProps, RelativeMapper } from './types.ts';
+import type { Crawler, InternalOptions, InternalProps, PartialMatcher, RelativeMapper } from './types.ts';
 import { BACKSLASHES, buildFormat, buildRelative, getPartialMatcher, log } from './utils.ts';
+
+const PARENT_PREFIX = /^(?:\.\.\/)*\.\.(?=\/|$)/;
+
+function buildParentMatcher(
+  patterns: string[],
+  cwd: string,
+  options: PicomatchOptions,
+  partial = false
+): PartialMatcher {
+  const parentPatterns = new Map<string, string[]>();
+  for (const pattern of patterns) {
+    const prefix = PARENT_PREFIX.exec(pattern)?.[0];
+    if (prefix) {
+      const group = parentPatterns.get(prefix);
+      if (group) {
+        group.push(pattern);
+      } else {
+        parentPatterns.set(prefix, [pattern]);
+      }
+    }
+  }
+
+  const factory = partial ? getPartialMatcher : picomatch;
+  const canonicalMatcher = factory(patterns, options);
+  if (parentPatterns.size === 0) {
+    return canonicalMatcher;
+  }
+  const groups = [...parentPatterns].map(([prefix, patterns]) => ({
+    prefix,
+    suffix: posix.relative(posix.join(cwd, prefix), cwd),
+    matcher: factory(patterns, options)
+  }));
+
+  return input => {
+    if (canonicalMatcher(input)) {
+      return true;
+    }
+    for (const { prefix, suffix, matcher } of groups) {
+      const relative = posix.join(suffix, input);
+      if (relative === '..' || relative.startsWith('../')) {
+        continue;
+      }
+      // Preserve the parent prefix when the path points back into cwd.
+      if (matcher(relative === '.' ? prefix : `${prefix}/${relative}`)) {
+        return true;
+      }
+    }
+    return false;
+  };
+}
 
 export function buildCrawler(options: InternalOptions, patterns: readonly string[]): [Crawler, false | RelativeMapper] {
   const cwd = options.cwd as string;
@@ -25,9 +76,16 @@ export function buildCrawler(options: InternalOptions, patterns: readonly string
     posix: true
   } satisfies PicomatchOptions;
 
-  const matcher = picomatch(processed.match, matchOptions);
-  const ignore = picomatch(processed.ignore, matchOptions);
-  const partialMatcher = getPartialMatcher(processed.match, matchOptions);
+  const outsideCwd = props.depthOffset < 0;
+  const matcher = outsideCwd
+    ? buildParentMatcher(processed.match, cwd, matchOptions)
+    : picomatch(processed.match, matchOptions);
+  const ignore = outsideCwd
+    ? buildParentMatcher(processed.ignore, cwd, matchOptions)
+    : picomatch(processed.ignore, matchOptions);
+  const partialMatcher = outsideCwd
+    ? buildParentMatcher(processed.match, cwd, matchOptions, true)
+    : getPartialMatcher(processed.match, matchOptions);
 
   const format = buildFormat(cwd, root, absolute);
   const excludeFormatter = absolute ? format : buildFormat(cwd, root, true);
