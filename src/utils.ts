@@ -150,12 +150,39 @@ export function splitPattern(path: string): string[] {
 
 // #region convertPathToPattern
 const ESCAPED_WIN32_BACKSLASHES = /\\(?![()[\]{}!+@])/g;
+/**
+ * A Windows file name cannot contain `*` or `?`, so their presence means the input is a pattern
+ * rather than a path.
+ */
+const WIN32_GLOB_WILDCARDS = /[*?]/;
+
 export function convertPosixPathToPattern(path: string): string {
   return escapePosixPath(path);
 }
 
 export function convertWin32PathToPattern(path: string): string {
-  return escapeWin32Path(path).replace(ESCAPED_WIN32_BACKSLASHES, '/');
+  if (WIN32_GLOB_WILDCARDS.test(path)) {
+    /*
+     * A pattern: a backslash escapes the character after it, and the other backslashes are
+     * separators.
+     */
+    return escapeWin32Path(path).replace(ESCAPED_WIN32_BACKSLASHES, '/');
+  }
+
+  /*
+   * A path: a backslash separates two segments. The name of a segment may start with a glob
+   * character - a file called `(paren.txt` is a perfectly ordinary file - so the separator has to be
+   * kept, and the glob character after it has to be escaped.
+   *
+   * A single leading backslash has no segment before it, so it escapes the character after it.
+   */
+  const hasLeadingEscape = path.startsWith('\\') && !path.startsWith('\\\\');
+  const segments = path.split('\\');
+  const pattern = segments
+    .map((segment, index) => (index === 0 || (hasLeadingEscape && index === 1) ? segment : `/${segment}`))
+    .join('');
+
+  return escapeWin32Path(pattern);
 }
 
 /**
