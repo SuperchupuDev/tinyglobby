@@ -4,6 +4,13 @@ import { ensureNonDriveRelativePath, escapePath, isDynamicPattern, splitPattern 
 
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
+const UNC_ROOT = /^\/\/[^/]+\/[^/]+/;
+
+function joinRoot(cwd: string, ...parts: string[]): string {
+  // POSIX normalization would collapse the leading // and allow .. to remove the share.
+  const uncRoot = UNC_ROOT.exec(cwd)?.[0];
+  return uncRoot ? uncRoot + posix.join('/', cwd.slice(uncRoot.length), ...parts) : posix.join(cwd, ...parts);
+}
 
 function normalizePattern(pattern: string, opts: InternalOptions, props: InternalProps, isIgnore: boolean) {
   const cwd = opts.cwd as string;
@@ -36,7 +43,7 @@ function normalizePattern(pattern: string, opts: InternalOptions, props: Interna
     }
 
     // move root `n` directories up
-    const potentialRoot = posix.join(cwd, parentDir.slice(i * 3));
+    const potentialRoot = joinRoot(cwd, parentDir.slice(i * 3));
     // windows can make the potential root something like `../C:`, we don't want that
     if (potentialRoot[0] !== '.' && props.root.length > potentialRoot.length) {
       props.root = ensureNonDriveRelativePath(potentialRoot);
@@ -68,7 +75,7 @@ function normalizePattern(pattern: string, opts: InternalOptions, props: Interna
     props.depthOffset = newCommonPath.length;
     props.commonPath = newCommonPath;
 
-    props.root = ensureNonDriveRelativePath(newCommonPath.length > 0 ? posix.join(cwd, ...newCommonPath) : cwd);
+    props.root = ensureNonDriveRelativePath(newCommonPath.length > 0 ? joinRoot(cwd, ...newCommonPath) : cwd);
   }
 
   return result;
