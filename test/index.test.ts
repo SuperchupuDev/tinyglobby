@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readdir } from 'node:fs';
+import { readdir, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { after, test } from 'node:test';
 import { createFixture } from 'fs-fixture';
@@ -175,6 +175,48 @@ test('matching only a directory works', async () => {
 test('expandDirectories true', async () => {
   const files = await glob('a', { expandDirectories: true, cwd });
   assert.deepEqual(files.sort(), ['a/a.txt', 'a/b.txt']);
+});
+
+test('UNC cwd preserves static and parent crawl roots', { skip: process.platform !== 'win32' }, async t => {
+  const uncCwd = '//tinyglobby/share/project';
+  const reads: string[] = [];
+  const localPath = (p: Parameters<typeof readdir>[0]) => {
+    const directory = String(p).replaceAll('\\', '/');
+    reads.push(directory);
+    assert.ok(directory.startsWith(`${uncCwd}/`), `Unexpected crawl directory: ${directory}`);
+    return path.join(cwd, directory.slice(uncCwd.length + 1));
+  };
+  const fs = {
+    readdir: ((...args: Parameters<typeof readdir>) => {
+      args[0] = localPath(args[0]);
+      return readdir(...args);
+    }) as typeof readdir,
+    readdirSync: ((...args: Parameters<typeof readdirSync>) => {
+      args[0] = localPath(args[0]);
+      return readdirSync(...args);
+    }) as typeof readdirSync
+  };
+
+  for (const absolute of [false, true]) {
+    for (const entry of [
+      { patterns: ['a/*.txt'], cwd: uncCwd, root: `${uncCwd}/a/`, files: ['a/a.txt', 'a/b.txt'] },
+      { patterns: ['a/a.txt', 'a/b.txt'], cwd: uncCwd, root: `${uncCwd}/a/`, files: ['a/a.txt', 'a/b.txt'] },
+      { patterns: ['../b/*.txt'], cwd: `${uncCwd}/a`, root: `${uncCwd}/`, files: ['../b/a.txt', '../b/b.txt'] }
+    ]) {
+      for (const run of [glob, globSync]) {
+        await t.test(`${run.name}: ${entry.patterns.join(', ')} with absolute: ${absolute}`, async () => {
+          const options = { cwd: entry.cwd, fs, absolute, followSymbolicLinks: false };
+          const expected = absolute
+            ? entry.files.map(p => path.resolve(entry.cwd, p).replaceAll('\\', '/'))
+            : entry.files;
+
+          reads.length = 0;
+          assert.deepEqual((await run(entry.patterns, options)).sort(), expected);
+          assert.equal(reads[0], entry.root);
+        });
+      }
+    }
+  }
 });
 
 test("no expandDirectories doesn't break common path inferring", async () => {
