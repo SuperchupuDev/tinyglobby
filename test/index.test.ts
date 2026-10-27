@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
-import { readdir } from 'node:fs';
+import { readdir, readdirSync, realpath, realpathSync, stat, statSync } from 'node:fs';
 import path from 'node:path';
 import { after, test } from 'node:test';
 import { createFixture } from 'fs-fixture';
 import { glob, globSync } from '../src/index.ts';
+import type { FileSystemAdapter } from '../src/types.ts';
 
 // object properties are file names and values are file contents
 const fixture = await createFixture({
@@ -524,4 +525,67 @@ test('relative self + normal pattern', () => {
     expandDirectories: false
   });
   assert.deepEqual(files.sort(), ['.', 'a/a.txt']);
+});
+
+// macOS' APFS stores the normalization form a filename was created with, but
+// looks names up ignoring it, so a pattern written in NFC opens a directory
+// stored in NFD. `root` is derived from the pattern, so without care the prefix
+// of a returned path comes from the pattern while the rest comes from `readdir`.
+// Emulate only that case-insensitive-style lookup on top of the real fs, so
+// these tests are deterministic on every platform.
+const NFC_DIR = 'éxample'.normalize('NFC');
+const NFD_DIR = 'éxample'.normalize('NFD');
+const NFD_FILE = 'café.txt'.normalize('NFD');
+
+const nfdFixture = await createFixture({
+  [NFD_DIR]: {
+    'a.txt': 'a',
+    [NFD_FILE]: 'c'
+  }
+});
+
+after(() => nfdFixture.rm());
+
+const nfdCwd = nfdFixture.path;
+type AnyFsFn = (...args: unknown[]) => unknown;
+const toDiskPath = (path: unknown) => String(path).split(NFC_DIR).join(NFD_DIR);
+const insensitive =
+  (fn: AnyFsFn) =>
+  (...args: unknown[]) =>
+    fn(toDiskPath(args[0]), ...args.slice(1));
+const normalizationInsensitiveFs = {
+  readdir: insensitive(readdir as unknown as AnyFsFn),
+  readdirSync: insensitive(readdirSync as unknown as AnyFsFn),
+  realpath: insensitive(realpath as unknown as AnyFsFn),
+  realpathSync: insensitive(realpathSync as unknown as AnyFsFn),
+  stat: insensitive(stat as unknown as AnyFsFn),
+  statSync: insensitive(statSync as unknown as AnyFsFn)
+} as unknown as FileSystemAdapter;
+
+test('does not mix unicode normalization forms', async () => {
+  const files = await glob(`${NFC_DIR}/*`, { cwd: nfdCwd, fs: normalizationInsensitiveFs });
+  assert.deepEqual(files.sort(), [`${NFD_DIR}/a.txt`, `${NFD_DIR}/${NFD_FILE}`]);
+  // every segment must come from the disk, not from the pattern
+  for (const file of files) {
+    assert.equal(file, file.normalize('NFD'));
+  }
+});
+
+test('does not mix unicode normalization forms (absolute)', async () => {
+  const files = await glob(`${NFC_DIR}/*`, { cwd: nfdCwd, fs: normalizationInsensitiveFs, absolute: true });
+  assert.deepEqual(files.map(file => file.slice(nfdCwd.length + 1)).sort(), [
+    `${NFD_DIR}/a.txt`,
+    `${NFD_DIR}/${NFD_FILE}`
+  ]);
+});
+
+test('same file has the same path regardless of the pattern', async () => {
+  const fromLiteral = await glob(`${NFC_DIR}/*.txt`, { cwd: nfdCwd, fs: normalizationInsensitiveFs });
+  const fromGlobstar = await glob('**/*.txt', { cwd: nfdCwd, fs: normalizationInsensitiveFs });
+  assert.deepEqual(fromLiteral.sort(), fromGlobstar.sort());
+});
+
+test('unicode normalization forms are not mixed by globSync', () => {
+  const files = globSync(`${NFC_DIR}/*`, { cwd: nfdCwd, fs: normalizationInsensitiveFs });
+  assert.deepEqual(files.sort(), [`${NFD_DIR}/a.txt`, `${NFD_DIR}/${NFD_FILE}`]);
 });

@@ -2,7 +2,7 @@ import { type ExcludePredicate, type FSLike, fdir } from 'fdir';
 import picomatch, { type PicomatchOptions } from 'picomatch';
 import processPatterns from './patterns.ts';
 import type { Crawler, InternalOptions, InternalProps, RelativeMapper } from './types.ts';
-import { BACKSLASHES, buildFormat, buildRelative, getPartialMatcher, log } from './utils.ts';
+import { BACKSLASHES, buildFormat, buildRelative, getPartialMatcher, log, resolveDiskPrefix } from './utils.ts';
 
 export function buildCrawler(options: InternalOptions, patterns: readonly string[]): [Crawler, false | RelativeMapper] {
   const cwd = options.cwd as string;
@@ -83,6 +83,17 @@ export function buildCrawler(options: InternalOptions, patterns: readonly string
 
   if (options.debug) {
     log('internal properties:', { ...props, root });
+  }
+
+  // Matching keeps using the pattern's spelling of `root`, but the paths we hand
+  // back must be spelled the way the disk spells them. See `resolveDiskPrefix`.
+  const diskPrefix = resolveDiskPrefix(cwd, root, options.fs);
+  if (diskPrefix !== undefined) {
+    if (absolute) {
+      const start = root.length;
+      return [crawler, p => `${cwd}/${diskPrefix}${p.slice(start)}`];
+    }
+    return [crawler, buildRelative(cwd, `${cwd}/${diskPrefix}`)];
   }
 
   return [crawler, cwd !== root && !absolute && buildRelative(cwd, root)];

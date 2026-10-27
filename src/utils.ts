@@ -1,6 +1,7 @@
+import { readdirSync as nodeReaddirSync } from 'node:fs';
 import { posix } from 'node:path';
 import picomatch, { type Matcher } from 'picomatch';
-import type { PartialMatcher, PartialMatcherOptions } from './types.ts';
+import type { FileSystemAdapter, PartialMatcher, PartialMatcherOptions } from './types.ts';
 
 // The `Array.isArray` type guard doesn't work for readonly arrays.
 export const isReadonlyArray: (arg: unknown) => arg is readonly unknown[] = Array.isArray;
@@ -129,6 +130,63 @@ export function buildRelative(cwd: string, root: string): (p: string) => string 
     const result = posix.relative(cwd, `${root}/${p}`);
     return p[p.length - 1] === '/' && result !== '' ? `${result}/` : result || '.';
   };
+}
+
+// Filesystems like macOS' APFS keep the Unicode normalization form a name was
+// created with, but look names up ignoring it. `root` is built out of the
+// pattern (see `patterns.ts`), so a pattern written in NFC happily opens a
+// directory stored in NFD. Gluing that prefix in front of names coming from
+// `readdir` would return paths whose segments disagree on normalization, and
+// the same file would come out as a different string depending on the pattern.
+// Re-read the prefix off the disk so every segment of a returned path has a
+// single source. Returns `undefined` when the prefix already matches the disk.
+const NON_ASCII = /[\u0080-\uFFFF]/;
+
+export function resolveDiskPrefix(cwd: string, root: string, fs?: FileSystemAdapter): string | undefined {
+  if (!root.startsWith(`${cwd}/`)) {
+    return;
+  }
+
+  const prefix = root.slice(cwd.length + 1);
+  // An ASCII-only prefix cannot have a second normalization form, so the common
+  // case returns here without ever touching the disk.
+  if (!NON_ASCII.test(prefix)) {
+    return;
+  }
+
+  const readdir = fs?.readdirSync || nodeReaddirSync;
+  const parts = prefix.split('/');
+  let dir = cwd;
+  let changed = false;
+
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+
+    if (NON_ASCII.test(part)) {
+      let entries: string[];
+      try {
+        entries = readdir(dir) as string[];
+      } catch {
+        // Unreadable parent: keep the pattern's spelling, as we do today.
+        return changed ? parts.join('/') : undefined;
+      }
+
+      if (!entries.includes(part)) {
+        const target = part.normalize('NFC');
+        for (const entry of entries) {
+          if (entry.normalize('NFC') === target) {
+            parts[i] = entry;
+            changed = true;
+            break;
+          }
+        }
+      }
+    }
+
+    dir = `${dir}/${parts[i]}`;
+  }
+
+  return changed ? parts.join('/') : undefined;
 }
 
 export function ensureNonDriveRelativePath(path: string): string {
