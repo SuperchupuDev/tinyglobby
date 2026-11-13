@@ -1,9 +1,26 @@
-import { isAbsolute, posix } from 'node:path';
+import { statSync } from 'node:fs';
+import { isAbsolute, posix, resolve } from 'node:path';
 import type { InternalOptions, InternalProps, ProcessedPatterns } from './types.ts';
 import { ensureNonDriveRelativePath, escapePath, isDynamicPattern, splitPattern } from './utils.ts';
 
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
+const BRACE_SYMBOLS = /[{},]/g;
+
+// like globby, a pattern ending with a glob segment is only expanded when it's the path of an existing directory,
+// so `**/*.md` doesn't return the other files of a `foo.md/` directory
+function shouldExpandDirectory(pattern: string, opts: InternalOptions): boolean {
+  const parts = splitPattern(pattern);
+  // unlike globby, keep expanding brace lists of names like `{src,lib}`
+  if (!isDynamicPattern(parts[parts.length - 1].replace(BRACE_SYMBOLS, ''))) {
+    return true;
+  }
+  try {
+    return (opts.fs?.statSync ?? statSync)(resolve(opts.cwd as string, pattern)).isDirectory();
+  } catch {
+    return false;
+  }
+}
 
 function normalizePattern(pattern: string, opts: InternalOptions, props: InternalProps, isIgnore: boolean) {
   const cwd = opts.cwd as string;
@@ -13,7 +30,7 @@ function normalizePattern(pattern: string, opts: InternalOptions, props: Interna
     result = pattern.slice(0, -1);
   }
   // using a directory as entry should match all files inside it
-  if (result[result.length - 1] !== '*' && opts.expandDirectories) {
+  if (result[result.length - 1] !== '*' && opts.expandDirectories && shouldExpandDirectory(result, opts)) {
     result += '/**';
   }
 
