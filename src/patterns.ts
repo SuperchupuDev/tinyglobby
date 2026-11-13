@@ -1,9 +1,27 @@
 import { isAbsolute, posix } from 'node:path';
 import type { InternalOptions, InternalProps, ProcessedPatterns } from './types.ts';
-import { ensureNonDriveRelativePath, escapePath, isDynamicPattern, splitPattern } from './utils.ts';
+import { ensureNonDriveRelativePath, escapePath, escapePosixPath, isDynamicPattern, splitPattern } from './utils.ts';
 
 const PARENT_DIRECTORY = /^(\/?\.\.)+/;
 const ESCAPING_BACKSLASHES = /\\(?=[()[\]{}!*+?@|])/g;
+const BRACE_SYMBOLS = /[{},]/g;
+
+// using a directory as entry should match all files inside it.
+// like globby, a pattern ending with a glob segment like `**/*.md` is only expanded when it's the path of an existing
+// directory: its escaped version only matches the files of that directory, without reading the filesystem
+function expandDirectoryPattern(pattern: string, opts: InternalOptions): string[] {
+  const result = pattern[pattern.length - 1] === '/' ? pattern.slice(0, -1) : pattern;
+  if (!opts.expandDirectories || result[result.length - 1] === '*') {
+    return [pattern];
+  }
+  const parts = splitPattern(result);
+  // unlike globby, keep expanding brace lists of names like `{src,lib}`
+  if (!isDynamicPattern(parts[parts.length - 1].replace(BRACE_SYMBOLS, ''))) {
+    return [`${result}/**`];
+  }
+  // patterns use posix syntax, `escapePath` doesn't escape `*` and `?` on windows
+  return [pattern, `${escapePosixPath(result)}/**`];
+}
 
 function normalizePattern(pattern: string, opts: InternalOptions, props: InternalProps, isIgnore: boolean) {
   const cwd = opts.cwd as string;
@@ -11,10 +29,6 @@ function normalizePattern(pattern: string, opts: InternalOptions, props: Interna
 
   if (pattern[pattern.length - 1] === '/') {
     result = pattern.slice(0, -1);
-  }
-  // using a directory as entry should match all files inside it
-  if (result[result.length - 1] !== '*' && opts.expandDirectories) {
-    result += '/**';
   }
 
   const escapedCwd = escapePath(cwd);
@@ -88,7 +102,9 @@ export default function processPatterns(
     }
     // don't handle negated patterns here for consistency with fast-glob
     if (pattern[0] !== '!' || pattern[1] === '(') {
-      ignorePatterns.push(normalizePattern(pattern, options, props, true));
+      for (const expanded of expandDirectoryPattern(pattern, options)) {
+        ignorePatterns.push(normalizePattern(expanded, options, props, true));
+      }
     }
   }
 
@@ -97,9 +113,13 @@ export default function processPatterns(
       continue;
     }
     if (pattern[0] !== '!' || pattern[1] === '(') {
-      matchPatterns.push(normalizePattern(pattern, options, props, false));
+      for (const expanded of expandDirectoryPattern(pattern, options)) {
+        matchPatterns.push(normalizePattern(expanded, options, props, false));
+      }
     } else if (pattern[1] !== '!' || pattern[2] === '(') {
-      ignorePatterns.push(normalizePattern(pattern.slice(1), options, props, true));
+      for (const expanded of expandDirectoryPattern(pattern.slice(1), options)) {
+        ignorePatterns.push(normalizePattern(expanded, options, props, true));
+      }
     }
   }
 

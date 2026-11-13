@@ -177,6 +177,33 @@ test('expandDirectories true', async () => {
   assert.deepEqual(files.sort(), ['a/a.txt', 'a/b.txt']);
 });
 
+test('expandDirectories does not expand wildcard patterns matching a directory', async t => {
+  const localFixture = await createFixture({
+    'doc.md': '',
+    'foo.md': {
+      'inner.md': '',
+      'notes.txt': ''
+    }
+  });
+  t.after(() => localFixture.rm());
+
+  const files = await glob('**/*.md', { expandDirectories: true, cwd: localFixture.path });
+  assert.deepEqual(files.sort(), ['doc.md', 'foo.md/inner.md']);
+});
+
+test('expandDirectories expands directories with glob characters in their name', async t => {
+  const localFixture = await createFixture({ 'blog [old]/post.md': '' });
+  t.after(() => localFixture.rm());
+
+  const files = await glob('blog [old]', { expandDirectories: true, cwd: localFixture.path });
+  assert.deepEqual(files.sort(), ['blog [old]/post.md']);
+});
+
+test('expandDirectories expands brace lists of directories', async () => {
+  const files = await glob('{a,b}', { expandDirectories: true, cwd });
+  assert.deepEqual(files.sort(), ['a/a.txt', 'a/b.txt', 'b/a.txt', 'b/b.txt']);
+});
+
 test("no expandDirectories doesn't break common path inferring", async () => {
   const files = await glob('a/a.txt', { expandDirectories: false, cwd });
   assert.deepEqual(files.sort(), ['a/a.txt']);
