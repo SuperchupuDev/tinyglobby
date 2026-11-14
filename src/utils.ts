@@ -12,7 +12,7 @@ const DRIVE_RELATIVE_PATH: RegExp = /^[A-Za-z]:$/;
 const isWin = process.platform === 'win32';
 
 // #region PARTIAL MATCHER
-const ONLY_PARENT_DIRECTORIES = /^(\/?\.\.)+$/;
+export const ONLY_PARENT_DIRECTORIES: RegExp = /^(\/?\.\.)+$/;
 
 // the result of over 4 months of figuring stuff out and a LOT of help
 export function getPartialMatcher(patterns: string[], options: PartialMatcherOptions = {}): PartialMatcher {

@@ -525,3 +525,147 @@ test('relative self + normal pattern', () => {
   });
   assert.deepEqual(files.sort(), ['.', 'a/a.txt']);
 });
+
+test('globstar ignore works when globbing outside cwd with absolute patterns', async t => {
+  const docusaurusFixture = await createFixture({
+    website: {
+      'docusaurus.config.js': ''
+    },
+    'packages/docusaurus-theme-classic/src/theme/Tabs': {
+      'index.tsx': '',
+      'styles.module.css': '',
+      '__tests__/index.test.tsx': ''
+    }
+  });
+  t.after(() => docusaurusFixture.rm());
+
+  const root = docusaurusFixture.path.replaceAll('\\', '/');
+  const websiteCwd = path.join(docusaurusFixture.path, 'website');
+  const pattern = `${root}/packages/docusaurus-theme-classic/src/theme/Tabs/**/*`;
+
+  const relativeFiles = await glob(pattern, { cwd: websiteCwd, ignore: ['**/__tests__/*'] });
+  assert.deepEqual(relativeFiles.sort(), [
+    '../packages/docusaurus-theme-classic/src/theme/Tabs/index.tsx',
+    '../packages/docusaurus-theme-classic/src/theme/Tabs/styles.module.css'
+  ]);
+
+  const absoluteFiles = await glob(pattern, { cwd: websiteCwd, absolute: true, ignore: ['**/__tests__/*'] });
+  assert.deepEqual(absoluteFiles.sort(), [
+    `${root}/packages/docusaurus-theme-classic/src/theme/Tabs/index.tsx`,
+    `${root}/packages/docusaurus-theme-classic/src/theme/Tabs/styles.module.css`
+  ]);
+
+  const syncFiles = globSync(pattern, { cwd: websiteCwd, ignore: ['**/__tests__/*'] });
+  assert.deepEqual(syncFiles.sort(), [
+    '../packages/docusaurus-theme-classic/src/theme/Tabs/index.tsx',
+    '../packages/docusaurus-theme-classic/src/theme/Tabs/styles.module.css'
+  ]);
+});
+
+test('globstar ignore works with leading ../ and negative patterns across multiple parent levels', async t => {
+  const parentFixture = await createFixture({
+    'apps/web/src/keep.ts': '',
+    'apps/web/src/__tests__/web.test.ts': '',
+    'packages/ui/button.ts': '',
+    'packages/ui/__tests__/button.test.ts': ''
+  });
+  t.after(() => parentFixture.rm());
+
+  const nestedCwd = path.join(parentFixture.path, 'apps/web');
+
+  const withIgnoreOption = await glob(['../../packages/ui/**/*', 'src/**/*'], {
+    cwd: nestedCwd,
+    ignore: ['**/__tests__/*', '**/.*']
+  });
+  assert.deepEqual(withIgnoreOption.sort(), ['../../packages/ui/button.ts', 'src/keep.ts']);
+
+  const withNegativePattern = await glob(['../../packages/ui/**/*', 'src/**/*', '!**/__tests__/*'], {
+    cwd: nestedCwd
+  });
+  assert.deepEqual(withNegativePattern.sort(), ['../../packages/ui/button.ts', 'src/keep.ts']);
+});
+
+test('cwd-anchored ignore does not over-ignore parent directories, including in mixed ignore lists', async t => {
+  const mixedFixture = await createFixture({
+    website: {
+      'index.ts': '',
+      'local/only-here.ts': '',
+      '__tests__/web.test.ts': ''
+    },
+    'packages/tabs': {
+      'index.ts': '',
+      'local/keep-in-sibling.ts': '',
+      'skip.ts': '',
+      '__tests__/tabs.test.ts': ''
+    }
+  });
+  t.after(() => mixedFixture.rm());
+
+  const websiteCwd = path.join(mixedFixture.path, 'website');
+
+  // Non-globstar ignore stays anchored to cwd
+  const localOnly = await glob(['../packages/tabs/**/*', '**/*'], {
+    cwd: websiteCwd,
+    ignore: ['local/**']
+  });
+  assert.deepEqual(localOnly.sort(), [
+    '../packages/tabs/__tests__/tabs.test.ts',
+    '../packages/tabs/index.ts',
+    '../packages/tabs/local/keep-in-sibling.ts',
+    '../packages/tabs/skip.ts',
+    '__tests__/web.test.ts',
+    'index.ts'
+  ]);
+
+  // Mixed globstar + cwd-anchored + explicit parent ignore
+  const mixedIgnore = await glob(['../packages/tabs/**/*', '**/*'], {
+    cwd: websiteCwd,
+    ignore: ['**/__tests__/*', 'local/**', '../packages/tabs/skip.ts']
+  });
+  assert.deepEqual(mixedIgnore.sort(), [
+    '../packages/tabs/index.ts',
+    '../packages/tabs/local/keep-in-sibling.ts',
+    'index.ts'
+  ]);
+});
+
+test('globstar ignore prunes ignored directories outside cwd and respects globstar: false', async t => {
+  const pruneFixture = await createFixture({
+    website: {
+      'index.ts': ''
+    },
+    'packages/tabs': {
+      'index.ts': '',
+      '__tests__/nested/index.test.ts': ''
+    }
+  });
+  t.after(() => pruneFixture.rm());
+
+  const visitedDirs: string[] = [];
+  const trackingReaddir: typeof readdir = ((dirPath: string, ...args: unknown[]) => {
+    visitedDirs.push(String(dirPath).replaceAll('\\', '/'));
+    // @ts-expect-error forwarding variadic fs.readdir arguments
+    return readdir(dirPath, ...args);
+  }) as typeof readdir;
+
+  const websiteCwd = path.join(pruneFixture.path, 'website');
+  const files = await glob('../packages/tabs/**/*', {
+    cwd: websiteCwd,
+    ignore: ['**/__tests__'],
+    fs: { readdir: trackingReaddir }
+  });
+  assert.deepEqual(files, ['../packages/tabs/index.ts']);
+  assert.equal(
+    visitedDirs.some(dir => dir.endsWith('/__tests__')),
+    false
+  );
+
+  // With globstar: false, ** behaves like * relative to cwd rather than matching arbitrary parent depths
+  const withGlobstarDisabled = await glob('../packages/tabs/__tests__/nested/*.ts', {
+    cwd: websiteCwd,
+    globstar: false,
+    expandDirectories: false,
+    ignore: ['**/*.ts']
+  });
+  assert.deepEqual(withGlobstarDisabled, ['../packages/tabs/__tests__/nested/index.test.ts']);
+});

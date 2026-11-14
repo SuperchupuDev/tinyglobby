@@ -1,8 +1,42 @@
 import { type ExcludePredicate, type FSLike, fdir } from 'fdir';
 import picomatch, { type PicomatchOptions } from 'picomatch';
 import processPatterns from './patterns.ts';
-import type { Crawler, InternalOptions, InternalProps, RelativeMapper } from './types.ts';
-import { BACKSLASHES, buildFormat, buildRelative, getPartialMatcher, log } from './utils.ts';
+import type { Crawler, InternalOptions, InternalProps, PartialMatcher, RelativeMapper } from './types.ts';
+import { BACKSLASHES, buildFormat, buildRelative, getPartialMatcher, log, ONLY_PARENT_DIRECTORIES } from './utils.ts';
+
+const LEADING_PARENT_DIRECTORIES = /^(?:\.\.\/)+/;
+
+function buildIgnoreMatcher(patterns: string[], options: PicomatchOptions, outsideCwd: boolean): PartialMatcher {
+  if (!outsideCwd || options.noglobstar) {
+    return picomatch(patterns, options);
+  }
+
+  const globstarPatterns: string[] = [];
+  const otherPatterns: string[] = [];
+  for (const pattern of patterns) {
+    if (pattern.startsWith('**')) {
+      globstarPatterns.push(pattern);
+    } else {
+      otherPatterns.push(pattern);
+    }
+  }
+
+  if (globstarPatterns.length === 0) {
+    return picomatch(otherPatterns, options);
+  }
+
+  const globstarMatcher = picomatch(globstarPatterns, options);
+  const matchGlobstar: PartialMatcher = input =>
+    !ONLY_PARENT_DIRECTORIES.test(input) &&
+    globstarMatcher(input.startsWith('../') ? input.replace(LEADING_PARENT_DIRECTORIES, '') : input);
+
+  if (otherPatterns.length === 0) {
+    return matchGlobstar;
+  }
+
+  const otherMatcher = picomatch(otherPatterns, options);
+  return input => otherMatcher(input) || matchGlobstar(input);
+}
 
 export function buildCrawler(options: InternalOptions, patterns: readonly string[]): [Crawler, false | RelativeMapper] {
   const cwd = options.cwd as string;
@@ -26,7 +60,7 @@ export function buildCrawler(options: InternalOptions, patterns: readonly string
   } satisfies PicomatchOptions;
 
   const matcher = picomatch(processed.match, matchOptions);
-  const ignore = picomatch(processed.ignore, matchOptions);
+  const ignore = buildIgnoreMatcher(processed.ignore, matchOptions, props.depthOffset < 0);
   const partialMatcher = getPartialMatcher(processed.match, matchOptions);
 
   const format = buildFormat(cwd, root, absolute);
