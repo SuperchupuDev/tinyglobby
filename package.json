@@ -50,13 +50,13 @@
     "url": "https://github.com/sponsors/SuperchupuDev"
   },
   "dependencies": {
+    "@types/picomatch": "^4.0.3",
     "fdir": "^6.5.0",
     "picomatch": "^4.0.7"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.11",
     "@types/node": "^26.4.0",
-    "@types/picomatch": "^4.0.3",
     "fast-glob": "^3.3.3",
     "fs-fixture": "^2.14.0",
     "glob": "^13.0.6",
