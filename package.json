@@ -59,7 +59,7 @@
     "@types/picomatch": "^4.0.3",
     "fast-glob": "^3.3.3",
     "fs-fixture": "^2.14.0",
-    "glob": "^13.0.6",
+    "glob": "^14.0.6",
     "tinybench": "^6.1.4",
     "tsdown": "^0.22.14",
     "typescript": "^7.0.2"
