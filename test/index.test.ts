@@ -468,6 +468,16 @@ test('negative patterns in ignore unignore files inside ignored directories', as
   assert.deepEqual(files2.sort(), ['b/a.txt']);
 });
 
+test('negative patterns in ignore unignore files inside directories ignored by a glob', async () => {
+  const files = await glob('**/*', { ignore: ['*', '!b/a.txt'], cwd });
+  assert.deepEqual(files.sort(), ['b/a.txt']);
+});
+
+test('negative patterns in ignore unignore files inside ignored directories without expandDirectories', async () => {
+  const files = await glob('**/*', { ignore: ['a', 'b', '!b/a.txt'], expandDirectories: false, cwd });
+  assert.deepEqual(files.sort(), ['b/a.txt']);
+});
+
 test('negative patterns in ignore with onlyDirectories', async () => {
   const files = await glob('**/*', { ignore: ['*', '!b'], onlyDirectories: true, cwd });
   assert.deepEqual(files.sort(), ['b/']);

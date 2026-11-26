@@ -31,7 +31,10 @@ export function buildCrawler(options: InternalOptions, patterns: readonly string
   let ignore: (p: string) => boolean = picomatch(processed.ignore, matchOptions);
   let ignoreDirectory = ignore;
   if (processed.unignore.length > 0) {
-    const baseIgnore = ignore;
+    const baseIgnore = picomatch(
+      processed.ignore.flatMap(p => (p.endsWith('/**') ? [p] : [p, `${p}/**`])),
+      matchOptions
+    );
     const unignore = picomatch(processed.unignore, matchOptions);
     const partialUnignore = getPartialMatcher(processed.unignore, matchOptions);
     ignore = p => baseIgnore(p) && !unignore(p);
