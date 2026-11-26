@@ -26,15 +26,27 @@ export function buildCrawler(options: InternalOptions, patterns: readonly string
   } satisfies PicomatchOptions;
 
   const matcher = picomatch(processed.match, matchOptions);
-  const ignore = picomatch(processed.ignore, matchOptions);
   const partialMatcher = getPartialMatcher(processed.match, matchOptions);
+
+  let ignore: (p: string) => boolean = picomatch(processed.ignore, matchOptions);
+  let ignoreDirectory = ignore;
+  if (processed.unignore.length > 0) {
+    const baseIgnore = picomatch(
+      processed.ignore.flatMap(p => (p.endsWith('/**') ? [p] : [p, `${p}/**`])),
+      matchOptions
+    );
+    const unignore = picomatch(processed.unignore, matchOptions);
+    const partialUnignore = getPartialMatcher(processed.unignore, matchOptions);
+    ignore = p => baseIgnore(p) && !unignore(p);
+    ignoreDirectory = p => baseIgnore(p) && !partialUnignore(p);
+  }
 
   const format = buildFormat(cwd, root, absolute);
   const excludeFormatter = absolute ? format : buildFormat(cwd, root, true);
 
   const excludePredicate: ExcludePredicate = (_, p): boolean => {
     const relativePath = excludeFormatter(p, true);
-    return (relativePath !== '.' && !partialMatcher(relativePath)) || ignore(relativePath);
+    return (relativePath !== '.' && !partialMatcher(relativePath)) || ignoreDirectory(relativePath);
   };
 
   let maxDepth: number | undefined;

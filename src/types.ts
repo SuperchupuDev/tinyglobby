@@ -35,6 +35,7 @@ export interface Crawler {
 export interface ProcessedPatterns {
   match: string[];
   ignore: string[];
+  unignore: string[];
 }
 
 export interface GlobOptions {

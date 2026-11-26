@@ -452,14 +452,35 @@ test('negative absolute patterns in options', async () => {
   assert.deepEqual(files2.sort(), ['a/b.txt', 'b/b.txt']);
 });
 
-// can't easily make them properly work right now
-// but at least it's consistent with fast-glob this way
-test('negative patterns in ignore are ignored', async () => {
+test('negative patterns in ignore unignore files', async () => {
   const files = await glob('**/*', { ignore: ['**/b.txt', '!a/b.txt'], cwd });
-  assert.deepEqual(files.sort(), ['a/a.txt', 'b/a.txt']);
+  assert.deepEqual(files.sort(), ['a/a.txt', 'a/b.txt', 'b/a.txt']);
 
   const files2 = await glob(['**/*', '!**/b.txt', '!!a/b.txt'], { cwd });
-  assert.deepEqual(files2.sort(), ['a/a.txt', 'b/a.txt']);
+  assert.deepEqual(files2.sort(), ['a/a.txt', 'a/b.txt', 'b/a.txt']);
+});
+
+test('negative patterns in ignore unignore files inside ignored directories', async () => {
+  const files = await glob('**/*', { ignore: ['a/**', '!a/b.txt'], cwd });
+  assert.deepEqual(files.sort(), ['a/b.txt', 'b/a.txt', 'b/b.txt']);
+
+  const files2 = await glob('**/*', { ignore: ['a', 'b', '!b/a.txt'], cwd });
+  assert.deepEqual(files2.sort(), ['b/a.txt']);
+});
+
+test('negative patterns in ignore unignore files inside directories ignored by a glob', async () => {
+  const files = await glob('**/*', { ignore: ['*', '!b/a.txt'], cwd });
+  assert.deepEqual(files.sort(), ['b/a.txt']);
+});
+
+test('negative patterns in ignore unignore files inside ignored directories without expandDirectories', async () => {
+  const files = await glob('**/*', { ignore: ['a', 'b', '!b/a.txt'], expandDirectories: false, cwd });
+  assert.deepEqual(files.sort(), ['b/a.txt']);
+});
+
+test('negative patterns in ignore with onlyDirectories', async () => {
+  const files = await glob('**/*', { ignore: ['*', '!b'], onlyDirectories: true, cwd });
+  assert.deepEqual(files.sort(), ['b/']);
 });
 
 test('sync version', () => {

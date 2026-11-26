@@ -81,14 +81,17 @@ export default function processPatterns(
 ): ProcessedPatterns {
   const matchPatterns: string[] = [];
   const ignorePatterns: string[] = [];
+  const unignorePatterns: string[] = [];
 
   for (const pattern of options.ignore) {
     if (!pattern) {
       continue;
     }
-    // don't handle negated patterns here for consistency with fast-glob
     if (pattern[0] !== '!' || pattern[1] === '(') {
       ignorePatterns.push(normalizePattern(pattern, options, props, true));
+    } else {
+      // negated ignore patterns re-include paths that would otherwise be ignored
+      unignorePatterns.push(normalizePattern(pattern.slice(1), options, props, true));
     }
   }
 
@@ -100,8 +103,10 @@ export default function processPatterns(
       matchPatterns.push(normalizePattern(pattern, options, props, false));
     } else if (pattern[1] !== '!' || pattern[2] === '(') {
       ignorePatterns.push(normalizePattern(pattern.slice(1), options, props, true));
+    } else {
+      unignorePatterns.push(normalizePattern(pattern.slice(2), options, props, true));
     }
   }
 
-  return { match: matchPatterns, ignore: ignorePatterns };
+  return { match: matchPatterns, ignore: ignorePatterns, unignore: unignorePatterns };
 }
